@@ -930,6 +930,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pixelShaderBlob->Release();
 	vertexShaderBlob->Release();
 	materialResource->Release();
+	wvpResource->Release();
 #ifdef _DEBUG
 	debugContoroller->Release();
 #endif // _DEBUG
