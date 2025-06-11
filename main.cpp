@@ -826,13 +826,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-	*wvpDate = worldViewProjectionMatrix;
-
 	// IMGUIの初期化。詳細はさして重要ではないので解説は省略する
 	// こういうもんである
 	IMGUI_CHECKVERSION();
@@ -854,6 +847,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		} 
 		else 
 		{
+
+
+			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+			*wvpDate = worldViewProjectionMatrix;
+
 			//ゲームの処理
 
 			ImGui_ImplDX12_NewFrame();
@@ -861,14 +863,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::NewFrame();
 			// 開発用UIの処理。実際に開発用UIを出す場合はここをゲーム固有の処理に置き換える
 			ImGui::ShowDemoWindow();
-			// ImGuiの内部コマンドを生成する
-			ImGui::Render();
+			
+			ImGui::Begin("Settings");
+			ImGui::ColorEdit4("material", &materialDate->x, ImGuiColorEditFlags_AlphaPreview);
+			ImGui::End();
 
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
 			transform.rotate.y += 0.03f;
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			*wvpDate = worldMatrix;
+			//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			//*wvpDate = worldMatrix;
 
 			//TransitonBarrierの設定
 			D3D12_RESOURCE_BARRIER barrier{};
@@ -884,6 +888,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			//TransitionBarrierを張る
 			commandList->ResourceBarrier(1, &barrier);
+
+			// ImGuiの内部コマンドを生成する
+			ImGui::Render();
+
 			//描画先のRTVを設定する
 			commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
 			//指定した色で画面全体をクリアにする
@@ -963,6 +971,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	CloseHandle(fenceEvent);
 	fence->Release();
 	rtvDescriptorHeap->Release();
+	srvDescriptorHeap->Release();
 	swapChainResources[0]->Release();
 	swapChainResources[1]->Release();
 	swapChain->Release();
@@ -984,9 +993,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexShaderBlob->Release();
 	materialResource->Release();
 	wvpResource->Release();
+
 #ifdef _DEBUG
+
 	debugContoroller->Release();
+
 #endif // _DEBUG
+
 	CloseWindow(hwnd);
 
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
@@ -994,6 +1007,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+	// 何かのReleaseが足りない
 
 	//リソースリークチェック
 	IDXGIDebug1* debug;
