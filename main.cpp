@@ -454,7 +454,7 @@ ID3D12Resource* CreateTextureResource(ID3D12Device* device, const DirectX::TexMe
 	resourceDesc.Height = UINT(metadata.height);
 	resourceDesc.MipLevels = UINT16(metadata.mipLevels);
 	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);
-	resourceDesc.Width = metadata.format;
+	resourceDesc.Format = metadata.format;
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);
 
@@ -1073,6 +1073,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexShaderBlob->Release();
 	materialResource->Release();
 	wvpResource->Release();
+	mipImages.Release();
+	textureResource->Release();
 
 #ifdef _DEBUG
 
