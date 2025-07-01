@@ -1,3 +1,4 @@
+
 #include <Windows.h>
 #include <cstdint>
 #include <string>
@@ -18,6 +19,9 @@
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
+// DirectXを使うため
+#include "externals/DirectXTex/DirectXTex.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
@@ -65,7 +69,6 @@ Matrix4x4 MakeIdentity4x4()
 	identity.m[3][0] = 0.0f;	identity.m[3][1] = 0.0f;	identity.m[3][2] = 0.0f;	identity.m[3][3] = 1.0f;
 	return identity;
 }
-
 
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
 {
@@ -251,7 +254,8 @@ Matrix4x4 Inverse(const Matrix4x4& m)
 }
 
 //ウィンドウプロシーシャ
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
 	if (ImGui_ImplWin32_WndProcHandler(hwnd,msg,wparam,lparam))
 	{
 		return true;
@@ -274,6 +278,7 @@ void Log(const std::string& message) {
 	//os << message << std::endl;
 	OutputDebugStringA(message.c_str());
 }
+
 std::wstring ConvertString(const std::string& str)
 {
 	if (str.empty())
@@ -290,6 +295,7 @@ std::wstring ConvertString(const std::string& str)
 	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), &result[0], sizeNeeded);
 	return result;
 }
+
 std::string ConvertString(const std::wstring& str)
 {
 	if (str.empty())
@@ -422,8 +428,82 @@ ID3D12DescriptorHeap* CreatDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR
 	assert(SUCCEEDED(hr));
 	return desciptorHeap;
 }
+
+DirectX::ScratchImage LoadTexture(const std::string& filePath)
+{
+	// テクスチャファイルを読んでプログラムを扱えるようにする
+	DirectX::ScratchImage image{};
+	std::wstring filePathW = ConvertString(filePath);
+	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	assert(SUCCEEDED(hr));
+
+	// ミニマップの生成
+	DirectX::ScratchImage mipImages{};
+	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+	assert(SUCCEEDED(hr));
+
+	// ミニマップ付きのデータを返す
+	return mipImages;
+}
+
+ID3D12Resource* CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata)
+{
+	// 1.metadataを基にResourceの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = UINT(metadata.width);
+	resourceDesc.Height = UINT(metadata.height);
+	resourceDesc.MipLevels = UINT16(metadata.mipLevels);
+	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);
+	resourceDesc.Width = metadata.format;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);
+
+	// 2.利用するHeapの設定
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+
+	// 3.Resourceの生成
+	ID3D12Resource* resource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&resource)
+	);
+	assert(SUCCEEDED(hr));
+	return resource;
+}
+
+void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages)
+{
+	// Meta情報を取得
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	// 全MipMapについて
+	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel)
+	{
+		// mipLevelsを指定して各Imageを取得
+		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
+		// Textureに転送
+		HRESULT hr = texture->WriteToSubresource(
+			UINT(mipLevel),
+			nullptr,
+			img->pixels,
+			UINT(img->rowPitch),
+			UINT(img->slicePitch)
+		);
+		assert(SUCCEEDED(hr));
+	}
+}
+
+
 //Windouwsアプリでのエントリーポイント(main関数)
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) 
+{
+	CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	WNDCLASS wc{};
 	//ウィンドウプロシーシャ
@@ -586,6 +666,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 	assert(SUCCEEDED(hr));
+
+	DirectX::ScratchImage mipImages = LoadTexture("resource/uvChecker.png");
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	ID3D12Resource* textureResource = CreateTextureResource(device, metadata);
+	UploadTextureData(textureResource, mipImages);
 
 	//ディスクリプタヒープの生成
 	//ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
@@ -836,7 +921,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	MSG msg{};
 	//ウィンドウの×ボタンが押されるまでループ
-	while (msg.message != WM_QUIT) {
+	while (msg.message != WM_QUIT) 
+	{
 		//Windowにメッセージが来てたら最優先で処理させる
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -1014,5 +1100,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debug->Release();
 	}
 
+	CoUninitialize();
+
 	return 0;
 }
+
