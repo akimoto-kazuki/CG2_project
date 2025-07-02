@@ -11,7 +11,7 @@ Texture2D<float32_t4> gTexture : register(t0);
 
 SamplerState gSampler : register(s0);
 
-float32_t4 textureColor = gTexture.Sample(gSampler, input.texcoord);
+
 
 struct PixelShaderOutput
 {
@@ -21,6 +21,7 @@ struct PixelShaderOutput
 PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
+    float32_t4 textureColor = gTexture.Sample(gSampler, input.texcoord);
     output.color = gMaterial.color * textureColor;
     return output;
 }
