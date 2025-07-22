@@ -1043,7 +1043,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
 	// 左下
 	vertexDataSprite[3].position = { 0.0f,  0.0f, 0.0f, 1.0f };
-	vertexDataSprite[3].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
 	// 上
 	vertexDataSprite[4].position = { 640.0f,  0.0f, 0.0f, 1.0f };
 	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
@@ -1058,6 +1058,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDateSprite));
 
 	*transformationMatrixDateSprite = MakeIdentity4x4();
+
+	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -1144,11 +1146,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 			*wvpDate = worldViewProjectionMatrix;
 
-			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-			Matrix4x4 projectionMatrixSprite = (0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-			
+			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f,0.0f, float(kClientWidth) , float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+			*transformationMatrixDateSprite = worldViewProjectionMatrixSprite;
 
 			//ゲームの処理
 
@@ -1308,6 +1310,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	dsvDescriptorHeap->Release();
 
 	vertexResourceSprite->Release();
+	transformationMatrixResourceSprite->Release();
 
 	transformationMatrixResourceSprite->Release();
 
