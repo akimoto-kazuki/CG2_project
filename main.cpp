@@ -173,6 +173,18 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip
 		0.0f, 0.0f, -(nearClip * farClip) / (farClip - nearClip), 0.0f
 	};
 }
+//正射影行列
+Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip)
+{
+	Matrix4x4 result;
+
+
+	result.m[0][0] = 2 / (right - left); result.m[0][1] = 0.0f; result.m[0][2] = 0.0f; result.m[0][3] = 0.0f;
+	result.m[1][0] = 0.0f; result.m[1][1] = 2 / (top - bottom); result.m[1][2] = 0.0f; result.m[1][3] = 0.0f;
+	result.m[2][0] = 0.0f; result.m[2][1] = 0.0f; result.m[2][2] = 1 / (farClip - nearClip); result.m[2][3] = 0.0f;
+	result.m[3][0] = (left + right) / (left - right); result.m[3][1] = (top + bottom) / (bottom - top); result.m[3][2] = nearClip / (nearClip - farClip); result.m[3][3] = 1.0f;
+	return result;
+}
 
 Matrix4x4 Inverse(const Matrix4x4& m) 
 {
@@ -1022,7 +1034,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
 	// 左下
 	vertexDataSprite[3].position = { 0.0f,  0.0f, 0.0f, 1.0f };
-	vertexDataSprite[3].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
 	// 上
 	vertexDataSprite[4].position = { 640.0f,  0.0f, 0.0f, 1.0f };
 	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
@@ -1037,6 +1049,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDateSprite));
 
 	*transformationMatrixDateSprite = MakeIdentity4x4();
+
+	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -1115,11 +1129,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 			*wvpDate = worldViewProjectionMatrix;
 
-			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-			Matrix4x4 projectionMatrixSprite = (0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-			
+			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f,0.0f, float(kClientWidth) , float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+			*transformationMatrixDateSprite = worldViewProjectionMatrixSprite;
 
 			//ゲームの処理
 
@@ -1278,6 +1292,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	debugContoroller->Release();
 	dsvDescriptorHeap->Release();
 	vertexResourceSprite->Release();
+	transformationMatrixResourceSprite->Release();
 
 #ifdef _DEBUG
 
