@@ -174,6 +174,18 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip
 	};
 }
 
+Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip)
+{
+	Matrix4x4 result;
+
+
+	result.m[0][0] = 2 / (right - left); result.m[0][1] = 0.0f; result.m[0][2] = 0.0f; result.m[0][3] = 0.0f;
+	result.m[1][0] = 0.0f; result.m[1][1] = 2 / (top - bottom); result.m[1][2] = 0.0f; result.m[1][3] = 0.0f;
+	result.m[2][0] = 0.0f; result.m[2][1] = 0.0f; result.m[2][2] = 1 / (farClip - nearClip); result.m[2][3] = 0.0f;
+	result.m[3][0] = (left + right) / (left - right); result.m[3][1] = (top + bottom) / (bottom - top); result.m[3][2] = nearClip / (nearClip - farClip); result.m[3][3] = 1.0f;
+	return result;
+}
+
 Matrix4x4 Inverse(const Matrix4x4& m) 
 {
 	float determinant = +m.m[0][0] * m.m[1][1] * m.m[2][2] * m.m[3][3]
@@ -992,6 +1004,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 今回は赤を書き込んでみる
 	*materialDate = Vector4{ 1.0f,1.0f,1.0f,0.0f };
 
+	ID3D12Resource* vertexResourceSprite = CreatBufferResource(device, sizeof(VertexData) * 6);
+
+	// 頂点バッファビューを作成する
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+
+	// リソースの先頭のアドレスから使う
+	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
+
+	// 使用するリソースのサイズは頂点3つ分のサイズ
+	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 6;
+
+	// 1頂点あたりのサイズ
+	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+
+	// 頂点リソースにデータを書き込む
+	VertexData* vertexDataSprite = nullptr;
+	// 書き込むためのアドレスを取得
+	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
+
+	// 左下
+	vertexDataSprite[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };
+	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+	// 上
+	vertexDataSprite[1].position = { 0.0f,  0.0f, 0.0f, 1.0f };
+	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
+	// 右下
+	vertexDataSprite[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };
+	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
+	// 左下
+	vertexDataSprite[3].position = { 0.0f,  0.0f, 0.0f, 1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,1.0f };
+	// 上
+	vertexDataSprite[4].position = { 640.0f,  0.0f, 0.0f, 1.0f };
+	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
+	// 右下
+	vertexDataSprite[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };
+	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
+
+	ID3D12Resource* transformationMatrixResourceSprite = CreatBufferResource(device, sizeof(Matrix4x4));
+
+	Matrix4x4* transformationMatrixDataSprite = nullptr;
+
+	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
+
+	*transformationMatrixDataSprite = MakeIdentity4x4();
+
+	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
 	// クライアント領域のサイズと一緒にして画面全体に表示
@@ -1038,6 +1098,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 
+	Matrix4x4* transformationMatrixDateSprite = nullptr;
+
+	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDateSprite));
+
+	*transformationMatrixDateSprite = MakeIdentity4x4();
+
 	// IMGUIの初期化。詳細はさして重要ではないので解説は省略する
 	// こういうもんである
 	IMGUI_CHECKVERSION();
@@ -1068,6 +1134,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 			*wvpDate = worldViewProjectionMatrix;
+
+			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+			*transformationMatrixDateSprite = worldViewProjectionMatrixSprite;
 
 			//ゲームの処理
 
@@ -1217,6 +1289,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	depthStencilResource->Release();
 	debugContoroller->Release();
 	dsvDescriptorHeap->Release();
+	vertexResourceSprite->Release();
+	transformationMatrixResourceSprite->Release();
 
 #ifdef _DEBUG
 
