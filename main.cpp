@@ -1018,6 +1018,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 1頂点あたりのサイズ
 	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
 
+
 	// 頂点リソースにデータを書き込む
 	VertexData* vertexDataSprite = nullptr;
 	// 書き込むためのアドレスを取得
