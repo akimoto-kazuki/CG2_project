@@ -1213,6 +1213,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 			commandList->DrawInstanced(6, 1, 0, 0);
 
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);  // VBVを設定
+
+			// wvp用のCBufferの場所を設定]
+			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+
+			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
+			commandList->DrawInstanced(6, 1, 0, 0);
+
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
