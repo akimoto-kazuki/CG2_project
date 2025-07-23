@@ -1034,7 +1034,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
 	// 左下
 	vertexDataSprite[3].position = { 0.0f,  0.0f, 0.0f, 1.0f };
-	vertexDataSprite[3].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
 	// 上
 	vertexDataSprite[4].position = { 640.0f,  0.0f, 0.0f, 1.0f };
 	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
