@@ -1,4 +1,3 @@
-
 #include <Windows.h>
 #include <cstdint>
 #include <string>
