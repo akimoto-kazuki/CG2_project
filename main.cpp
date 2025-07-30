@@ -1305,9 +1305,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//	ImGui::ShowDemoWindow();
 			
 			ImGui::Begin("Settings");
+
 			ImGui::ColorEdit4("material", &materialDate->x, ImGuiColorEditFlags_AlphaPreview);
 			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
 			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
+			
+			ImGui::DragFloat("SpriteRotate.y", &transformSprite.rotate.y, 0.1f);
+			ImGui::DragFloat2("SpriteTransform", &transformSprite.translate.x, 0.1f);
+
+			
 			ImGui::End();
 
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
@@ -1381,7 +1387,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 			//commandList->DrawInstanced(6, 1, 0, 0);
-			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
