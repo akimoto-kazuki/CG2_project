@@ -24,6 +24,9 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+#include<fstream>
+#include<sstream>
+
 //libのリンク
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -66,6 +69,17 @@ struct Transform
 struct Matrix4x4
 {
 	float m[4][4];
+};
+
+struct MaterialData
+{
+	std::string textureFilePath;
+};
+
+struct ModelData
+{
+	std::vector<VertexData> vertices;
+	MaterialData material;
 };
 
 Matrix4x4 MakeIdentity4x4() 
@@ -273,26 +287,6 @@ Matrix4x4 Inverse(const Matrix4x4& m)
 	return result;
 }
 
-//ウィンドウプロシーシャ
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	if (ImGui_ImplWin32_WndProcHandler(hwnd,msg,wparam,lparam))
-	{
-		return true;
-	}
-	//メッセージに応じてゲーム固有の処理を行う
-	switch (msg) {
-		//ウィンドウが破棄された
-	case WM_DESTROY:
-		//OSに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	//標準のメッセージ処理を行う
-	return DefWindowProc(hwnd, msg, wparam, lparam);
-}
-
 //log関数
 void Log(const std::string& message) {
 	//os << message << std::endl;
@@ -331,73 +325,6 @@ std::string ConvertString(const std::wstring& str)
 	std::string result(sizeNeeded, 0);
 	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), result.data(), sizeNeeded, NULL, NULL);
 	return result;
-}
-
-IDxcBlob* CompieShadaer(
-	// CompilerするShaderファイルへのパス
-	const std::wstring& filePath,
-	// Compilerに使用するProfile
-	const wchar_t* profile,
-	// 初期化で生成したものを３つ
-	IDxcUtils* dxcUtils,
-	IDxcCompiler3* dxcCompiler,
-	IDxcIncludeHandler* includeHandler)
-{
-	// 1. hlslファイルを読む
-	// これからシェーダーをコンパイルする旨をログに出す
-	Log(ConvertString(std::format(L"BeGin CompileShader,path:{},proile:{}\n", filePath, profile)));
-	// hlslファイルを読む
-	IDxcBlobEncoding* shaderSource = nullptr;
-	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	// 読めなかったら止める
-	assert(SUCCEEDED(hr));
-	// 読み込んだファイルの内容を説明する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8;// UTF8の文字コードであることを通知
-	// 2. Cimpileする
-	LPCWSTR arguments[] = {
-		filePath.c_str(),
-		L"-E",L"main",          //　コンパイル対象のhlslファイル名
-		L"-T",profile,          //　エントリーポイントの指定。基本的にmain以外にはしない
-		L"-Zi",L"-Qembed_debug",//　ShaderProfilenに設定
-		L"-Od",                 //　最適化を外しておく
-		L"-Zpr",                //　メモリレイアウトは行優先
-	};
-	// 実際にShaderをコンパイルする
-	IDxcResult* shaderResult = nullptr;
-	hr = dxcCompiler->Compile(
-		&shaderSourceBuffer,        // 読み込んだファイル
-		arguments,                  // コンパイルオプション
-		_countof(arguments),        // コンパイルオプションの数
-		includeHandler,             // inccludeが含まれた
-		IID_PPV_ARGS(&shaderResult) // コンパイル結果
-	);
-	// コンパイルエラーではなくdxcが起動出来ないなと致命的な状況
-	assert(SUCCEEDED(hr));
-	// 3. 警告，エラーが出ていないか確認する
-	// 警告，エラーが出てきたらログに出して止める
-	IDxcBlobUtf8* shaderError = nullptr;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
-	{
-		Log(shaderError->GetStringPointer());
-		// 警告、エラーだめ絶対
-		assert(false);
-	}
-	// 4. Compile結果を受け取って返す
-// コンパイル結果から実行用のバイナリ部分を取得
-	IDxcBlob* shaderBlob = nullptr;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
-	// 成功したログを出す
-	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
-	// もう使わないリソースを解放
-	shaderSource->Release();
-	shaderResult->Release();
-	// 実行用のバイナリを返却
-	return shaderBlob;
 }
 
 ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes)
@@ -551,6 +478,200 @@ void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mip
 		);
 		assert(SUCCEEDED(hr));
 	}
+}
+
+IDxcBlob* CompieShadaer(
+	// CompilerするShaderファイルへのパス
+	const std::wstring& filePath,
+	// Compilerに使用するProfile
+	const wchar_t* profile,
+	// 初期化で生成したものを３つ
+	IDxcUtils* dxcUtils,
+	IDxcCompiler3* dxcCompiler,
+	IDxcIncludeHandler* includeHandler)
+{
+	// 1. hlslファイルを読む
+	// これからシェーダーをコンパイルする旨をログに出す
+	Log(ConvertString(std::format(L"BeGin CompileShader,path:{},proile:{}\n", filePath, profile)));
+	// hlslファイルを読む
+	IDxcBlobEncoding* shaderSource = nullptr;
+	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	// 読めなかったら止める
+	assert(SUCCEEDED(hr));
+	// 読み込んだファイルの内容を説明する
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;// UTF8の文字コードであることを通知
+	// 2. Cimpileする
+	LPCWSTR arguments[] = {
+		filePath.c_str(),
+		L"-E",L"main",          //　コンパイル対象のhlslファイル名
+		L"-T",profile,          //　エントリーポイントの指定。基本的にmain以外にはしない
+		L"-Zi",L"-Qembed_debug",//　ShaderProfilenに設定
+		L"-Od",                 //　最適化を外しておく
+		L"-Zpr",                //　メモリレイアウトは行優先
+	};
+	// 実際にShaderをコンパイルする
+	IDxcResult* shaderResult = nullptr;
+	hr = dxcCompiler->Compile(
+		&shaderSourceBuffer,        // 読み込んだファイル
+		arguments,                  // コンパイルオプション
+		_countof(arguments),        // コンパイルオプションの数
+		includeHandler,             // inccludeが含まれた
+		IID_PPV_ARGS(&shaderResult) // コンパイル結果
+	);
+	// コンパイルエラーではなくdxcが起動出来ないなと致命的な状況
+	assert(SUCCEEDED(hr));
+	// 3. 警告，エラーが出ていないか確認する
+	// 警告，エラーが出てきたらログに出して止める
+	IDxcBlobUtf8* shaderError = nullptr;
+	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
+	{
+		Log(shaderError->GetStringPointer());
+		// 警告、エラーだめ絶対
+		assert(false);
+	}
+	// 4. Compile結果を受け取って返す
+// コンパイル結果から実行用のバイナリ部分を取得
+	IDxcBlob* shaderBlob = nullptr;
+	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+	assert(SUCCEEDED(hr));
+	// 成功したログを出す
+	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
+	// もう使わないリソースを解放
+	shaderSource->Release();
+	shaderResult->Release();
+	// 実行用のバイナリを返却
+	return shaderBlob;
+}
+
+MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)
+{
+	MaterialData materialData;
+	std::string line;
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
+
+	while (std::getline(file, line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		if (identifier == "map_Kd")
+		{
+			std::string textureFilename;
+			s >> textureFilename;
+
+			materialData.textureFilePath = directoryPath + "/" + textureFilename;
+		}
+	}
+
+	return materialData;
+
+}
+
+ModelData LoadObjFite(const std::string& directoryPath, const std::string& filename)
+{
+	ModelData modelData;
+	std::vector<Vector4> positions;
+	std::vector<Vector3> normals;
+	std::vector<Vector2> texcoords;
+	std::string line;
+
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
+
+	while (std::getline(file,line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		if (identifier == "v")
+		{
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		}
+		else if (identifier == "vt")
+		{
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		}
+		else if (identifier == "vn")
+		{
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}
+		else if (identifier == "f")
+		{
+			VertexData triangle[3];
+			for (int32_t  faceVertex = 0; faceVertex < 3; ++faceVertex)
+			{
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; ++element)
+				{
+					std::string index;
+					std::getline(v, index, '/');
+					elementIndices[element] = std::stoi(index);
+				}
+				Vector4 position = positions[elementIndices[0] - 1];
+				position.x *= -1.0f;
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				texcoord.y = 1.0f - texcoord.y;
+				Vector3 normal = normals[elementIndices[2] - 1];
+				//normal.x *= -1.0f;
+				//VertexData vertex = { position,texcoord,normal };
+				//VertexData vertex = { position,texcoord };
+				//modelData.vertices.push_back(vertex);
+				//triangle[faceVertex] = { position,texcoord,normal };
+				triangle[faceVertex] = { position,texcoord };
+			}
+			modelData.vertices.push_back(triangle[2]);
+			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
+		}
+		else if (identifier == "mtllib")
+		{
+			std::string materialFilename;
+			s >> materialFilename;
+
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+		}
+	}
+
+	return modelData;
+
+}
+
+//ウィンドウプロシーシャ
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	if (ImGui_ImplWin32_WndProcHandler(hwnd,msg,wparam,lparam))
+	{
+		return true;
+	}
+	//メッセージに応じてゲーム固有の処理を行う
+	switch (msg) {
+		//ウィンドウが破棄された
+	case WM_DESTROY:
+		//OSに対して、アプリの終了を伝える
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	//標準のメッセージ処理を行う
+	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 //Windouwsアプリでのエントリーポイント(main関数)
@@ -720,7 +841,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 	assert(SUCCEEDED(hr));
 
-	DirectX::ScratchImage mipImages = LoadTexture("resource/uvChecker.png");
+	ModelData modelData = LoadObjFite("resources", "plane.obj");
+
+	//DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
+	DirectX::ScratchImage mipImages = LoadTexture(modelData.material.textureFilePath);
+
 	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 	ID3D12Resource* textureResource = CreateTextureResource(device, metadata);
 	UploadTextureData(textureResource, mipImages);
@@ -953,6 +1078,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+	// 三角形二つ
+	/*
 	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexData) * 6);
 
 	// 頂点バッファビューを作成する
@@ -991,6 +1118,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 右下
 	vertexData[5].position = { 0.5f, -0.5f,-0.5f, 1.0f };
 	vertexData[5].texcoord = { 1.0f,1.0f };
+	*/
+
+	
+
+	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+
+	// 頂点バッファビューを作成する
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	// リソースの先頭のアドレスから使う
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	// 使用するリソースのサイズは頂点3つ分のサイズ
+	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	// 1頂点あたりのサイズ
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	// マテリアルにデータを書き込む
+	Vector4* vertexData = nullptr;
+	// 書き込むためのアドレスを取得
+	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
+
 
 	// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
 	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Vector4));
@@ -1010,7 +1157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
 
 	// 使用するリソースのサイズは頂点3つ分のサイズ
-	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 6;
+	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
 
 	// 1頂点あたりのサイズ
 	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
@@ -1030,15 +1177,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 右下
 	vertexDataSprite[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };
 	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
-	// 左下
-	vertexDataSprite[3].position = { 0.0f,  0.0f, 0.0f, 1.0f };
-	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
 	// 上
-	vertexDataSprite[4].position = { 640.0f,  0.0f, 0.0f, 1.0f };
-	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
-	// 右下
-	vertexDataSprite[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };
-	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
+	vertexDataSprite[3].position = { 640.0f,  0.0f, 0.0f, 1.0f };
+	vertexDataSprite[3].texcoord = { 1.0f,0.0f };
 
 	ID3D12Resource* transformationMatrixResourceSprite = CreatBufferResource(device, sizeof(Matrix4x4));
 
@@ -1161,15 +1302,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			// 開発用UIの処理。実際に開発用UIを出す場合はここをゲーム固有の処理に置き換える
-			ImGui::ShowDemoWindow();
+		//	ImGui::ShowDemoWindow();
 			
 			ImGui::Begin("Settings");
 			ImGui::ColorEdit4("material", &materialDate->x, ImGuiColorEditFlags_AlphaPreview);
+			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
+			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
 			ImGui::End();
 
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
-			transform.rotate.y += 0.03f;
+			// 自動回転
+			//transform.rotate.y += 0.03f;
 
 			//TransitonBarrierの設定
 			D3D12_RESOURCE_BARRIER barrier{};
@@ -1225,7 +1369,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-			commandList->DrawInstanced(6, 1, 0, 0);
+			//commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);  // VBVを設定
 
@@ -1236,7 +1381,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 			//commandList->DrawInstanced(6, 1, 0, 0);
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
