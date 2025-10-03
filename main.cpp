@@ -1114,6 +1114,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+
 	// 三角形二つ
 	/*
 	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexDate) * 6);
