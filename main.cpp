@@ -1190,9 +1190,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// マテリアルにデータを書き込む
 	Material* materialDateSprite = nullptr;
 	// 書き込むためのアドレスを取得
-	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
-	// 今回は赤を書き込んでみる
-	
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
+	// 色は白 ライトはなし
+	materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
+	materialDateSprite->enableLighting = false;
 
 	ID3D12Resource* vertexResourceSprite = CreatBufferResource(device, sizeof(VertexDate) * 6);
 
@@ -1310,9 +1311,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	*transformationMatrixDateSprite = MakeIdentity4x4();
 
-	materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
-	materialDateSprite->enableLighting = false;
-
 	ID3D12Resource* directionalLightResource = CreatBufferResource(device, sizeof(DirectionalLight));
 
 	DirectionalLight* directionalLightData = nullptr;
@@ -1344,8 +1342,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		} 
 		else 
 		{
-
-
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -1372,6 +1368,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui::ColorEdit4("material", &materialDate->color.x, ImGuiColorEditFlags_AlphaPreview);
 			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
 			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
+			ImGui::DragFloat("Intensity", &directionalLightData->intensity, 0.1f);
 			ImGui::End();
 
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
