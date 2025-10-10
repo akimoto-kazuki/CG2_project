@@ -307,6 +307,26 @@ Matrix4x4 Inverse(const Matrix4x4& m)
 	return result;
 }
 
+float Dot(const Vector3& v1, const Vector3& v2) 
+{
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; 
+}
+
+float Length(const Vector3& v)
+{
+	return std::sqrt(Dot(v, v));
+}
+
+Vector3 Normalize(const Vector3& v)
+{
+	float length = Length(v);
+	if (length == 0.0f)
+	{
+		return v;
+	}
+	return { v.x / length,v.y / length,v.z / length };
+}
+
 //log関数
 void Log(const std::string& message) {
 	//os << message << std::endl;
@@ -1042,14 +1062,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
 	inputElementDescs[1].SemanticName = "TEXCOORD";
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
 	inputElementDescs[2].SemanticName = "NORMAL";
 	inputElementDescs[2].SemanticIndex = 0;
 	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -1185,15 +1208,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	materialDate->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
 	materialDate->enableLighting = true;
 
-	// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
-	ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
-	// マテリアルにデータを書き込む
-	Material* materialDateSprite = nullptr;
-	// 書き込むためのアドレスを取得
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
-	// 色は白 ライトはなし
-	materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
-	materialDateSprite->enableLighting = false;
+	
 
 	ID3D12Resource* vertexResourceSprite = CreatBufferResource(device, sizeof(VertexDate) * 6);
 
@@ -1233,7 +1248,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexDateSprite[3].normal = { 0.0f,0.0f,-1.0f };
 
 	ID3D12Resource* transformationMatrixResourceSprite = CreatBufferResource(device, sizeof(TransformationMatrix));
-
+	
 	TransformationMatrix* transformationMatrixDataSprite = nullptr;
 
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
@@ -1305,12 +1320,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 
-	Matrix4x4* transformationMatrixDateSprite = nullptr;
-
-	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDateSprite));
-
-	*transformationMatrixDateSprite = MakeIdentity4x4();
-
 	ID3D12Resource* directionalLightResource = CreatBufferResource(device, sizeof(DirectionalLight));
 
 	DirectionalLight* directionalLightData = nullptr;
@@ -1330,6 +1339,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		device, swapChainDesc.BufferCount, rtvDesc.Format,
 		srvDescriptorHeap, srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+	//// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
+	//ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
+	//// マテリアルにデータを書き込む
+	//Material* materialDateSprite = nullptr;
+	//// 書き込むためのアドレスを取得
+	//materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
+	//// 色は白 ライトはなし
+	//materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
+	//materialDateSprite->enableLighting = false;
+
+
 
 	MSG msg{};
 	//ウィンドウの×ボタンが押されるまでループ
@@ -1354,8 +1375,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
 			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-			*transformationMatrixDateSprite = worldViewProjectionMatrixSprite;
-
+			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
+			transformationMatrixDataSprite->World = worldMatrixSprite;
+			
 			//ゲームの処理
 
 			ImGui_ImplDX12_NewFrame();
@@ -1371,6 +1393,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui::DragFloat("Intensity", &directionalLightData->intensity, 0.1f);
 			ImGui::End();
 
+			directionalLightData->direction = Normalize(directionalLightData->direction);
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
 			// 自動回転
@@ -1423,7 +1446,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			// マテリアルCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+			//commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
 			// wvp用のCBufferの場所を設定]
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
@@ -1527,7 +1550,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	transformationMatrixResourceSprite->Release();
 	indexResourceSprite->Release();
 	directionalLightResource->Release();
-	materialResourceSprite->Release();
+	//materialResourceSprite->Release();
 
 #ifdef _DEBUG
 
