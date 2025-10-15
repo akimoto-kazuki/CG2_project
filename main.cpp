@@ -1340,15 +1340,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		srvDescriptorHeap, srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
-	//// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
-	//ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
-	//// マテリアルにデータを書き込む
-	//Material* materialDateSprite = nullptr;
-	//// 書き込むためのアドレスを取得
-	//materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
-	//// 色は白 ライトはなし
-	//materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
-	//materialDateSprite->enableLighting = false;
+	// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
+	ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
+	// マテリアルにデータを書き込む
+	Material* materialDateSprite = nullptr;
+	// 書き込むためのアドレスを取得
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDateSprite));
+	// 色は白 ライトはなし
+	materialDateSprite->color = Vector4{ 1.0f,1.0f,1.0f,0.0f };
+	materialDateSprite->enableLighting = true;
 
 
 
@@ -1446,7 +1446,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			// マテリアルCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			//commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
 			// wvp用のCBufferの場所を設定]
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
@@ -1550,7 +1550,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	transformationMatrixResourceSprite->Release();
 	indexResourceSprite->Release();
 	directionalLightResource->Release();
-	//materialResourceSprite->Release();
+	materialResourceSprite->Release();
 
 #ifdef _DEBUG
 
