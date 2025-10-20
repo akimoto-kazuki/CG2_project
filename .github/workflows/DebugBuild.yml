@@ -6,7 +6,7 @@ on:
       
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\project\CG2_project.sln
+  SOLUTION_FILE_PATH: .
   # Visual Studio の構成(Debug / Release)
   CONFIGURATION: Debug
 
