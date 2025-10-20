@@ -1244,7 +1244,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
 
-
 	//logの表示
 	//Log(logStream, ConvertString(std::format(L"WSTRING{}\n", L"abc")));
 
