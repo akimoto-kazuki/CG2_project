@@ -31,6 +31,19 @@ PixelShaderOutput main(VertexShaderOutput input)
     PixelShaderOutput output;
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
     
+    if(textureColor.a <= 0.5f)
+    {
+        discard;
+    }
+    if (textureColor.a == 0.0f)
+    {
+        discard;
+    }
+    if (output.color.a == 0.0f)
+    {
+        discard;
+    }
+    
     if(gMaterial.enableLighting != 0)
     {
         float cos = saturate(dot(normalize(input.normal), -gDirectionalLight.direction));
