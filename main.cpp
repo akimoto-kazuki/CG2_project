@@ -674,8 +674,8 @@ ModelData LoadObjFite(const std::string& directoryPath, const std::string& filen
 				//VertexDate vertex = { position,texcoord,normal };
 				//VertexDate vertex = { position,texcoord };
 				//modelData.vertices.push_back(vertex);
-				//triangle[faceVertex] = { position,texcoord,normal };
-				triangle[faceVertex] = { position,texcoord };
+				triangle[faceVertex] = { position,texcoord,normal };
+				//triangle[faceVertex] = { position,texcoord };
 			}
 			modelData.vertices.push_back(triangle[2]);
 			modelData.vertices.push_back(triangle[1]);
@@ -1326,7 +1326,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
-	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
+	directionalLightData->direction = { 0.0f,0.0f,1.0f };
 	directionalLightData->intensity = 1.0f;
 
 	// IMGUIの初期化。詳細はさして重要ではないので解説は省略する
