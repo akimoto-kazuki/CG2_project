@@ -12,7 +12,7 @@
 //DirectX12のinclude
 #include <d3d12.h>
 #include <dxgi1_6.h>
-#include<cassert>
+#include <cassert>
 #include <dxgidebug.h>
 #include <dxcapi.h>
 // imGuiを使うため
@@ -21,6 +21,8 @@
 #include "externals/imgui/imgui_impl_win32.h"
 // DirectXを使うため
 #include "externals/DirectXTex/DirectXTex.h"
+// 入力デバイス
+#include "externals/DirectXTex/Input.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -679,6 +681,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 
+	// ポインタ
+	Input* input = nullptr;
+
 	WNDCLASS wc{};
 	//ウィンドウプロシーシャ
 	wc.lpfnWndProc = WindowProc;
@@ -726,7 +731,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		debugContoroller->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif // _DEBUG
-
 
 	//DXGIファクトリーの生成
 	IDXGIFactory7* dxgiFactory = nullptr;
@@ -777,6 +781,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//デバイスの生成がうまくいかなかったので起動できない
 	assert(device != nullptr);
 	Log("Complete create D3D12Device!!!\n");
+
+	// キー入力 始
+	
+	WNDCLASS w{};
+	w.lpfnWndProc = WindowProc;
+	//ウィンドウクラス名
+	w.lpszClassName = L"CG2WindowClass";
+	//インスタンスハンドル
+	w.hInstance = GetModuleHandle(nullptr);
+	//カーソル
+	w.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	// キーの初期化
+	input = new Input();
+	input->Initialize(w.hInstance,hwnd);
+
+	// キー入力 終
 
 #ifdef _DEBUG
 	ID3D12InfoQueue* infoQueue = nullptr;
@@ -1120,7 +1140,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexData[5].texcoord = { 1.0f,1.0f };
 	*/
 
-	
 
 	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 
@@ -1281,7 +1300,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		} 
 		else 
 		{
-
+			// キー入力 始
+			input->Update();
+			if (input->PushKey(DIK_0))
+			{
+				OutputDebugStringA("Hit 0\n");
+			}
+			// キー入力 終
 
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
@@ -1462,6 +1487,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexResourceSprite->Release();
 	transformationMatrixResourceSprite->Release();
 	indexResourceSprite->Release();
+
+	// 入力解放
+	delete input;
 
 #ifdef _DEBUG
 
