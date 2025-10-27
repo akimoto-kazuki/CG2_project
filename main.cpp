@@ -984,6 +984,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
+	D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
+	descriptorRangeForInstancing[0].BaseShaderRegister = 0;
+	descriptorRangeForInstancing[0].NumDescriptors = 1;
+	descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 	// RootSignature作成。複数設定できるので配列。今回は結果1つだけなので長さ１の配列
 	D3D12_ROOT_PARAMETER rootParameters[4] = {};
 	// CBVを使う
@@ -1378,6 +1384,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
 			transformationMatrixDataSprite->World = worldMatrixSprite;
 			
+			int instanceCount = 10;
+
 			//ゲームの処理
 
 			ImGui_ImplDX12_NewFrame();
@@ -1457,7 +1465,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 			//commandList->DrawInstanced(6, 1, 0, 0);
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), instanceCount, 0, 0);
 
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);  // VBVを設定
 
