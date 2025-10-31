@@ -4,6 +4,7 @@ struct Material
 {
     float4 color;
     int enableLighting;
+    float4x4 uvTransform;
 };
 
 struct DirectionalLight
@@ -29,9 +30,10 @@ struct PixelShaderOutput
 PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
+    
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
     
-    if(textureColor.a <= 0.5f)
+    if (textureColor.a <= 0.5f)
     {
         discard;
     }
@@ -44,7 +46,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         discard;
     }
     
-    if(gMaterial.enableLighting != 0)
+    if (gMaterial.enableLighting != 0)
     {
         float cos = saturate(dot(normalize(input.normal), -gDirectionalLight.direction));
         output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
