@@ -23,6 +23,8 @@
 #include "externals/DirectXTex/DirectXTex.h"
 // 入力デバイス
 #include "externals/DirectXTex/Input.h"
+//WindowsAPI
+#include "externals/DirectXTex/WinApp.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -694,9 +696,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//カーソル
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 
-	//ウィンドウクラスを登録する
-	RegisterClass(&wc);
-
 	//クライアント領域のサイズ
 	const int32_t kClientWidth = 1280;
 	const int32_t kClientHeight = 720;
@@ -707,7 +706,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//クライアント領域を元に実際のサイズにwrcを変更してもらう
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-	//ウィンドウの生成
+	//ウィンドウクラスを登録する
+	RegisterClass(&wc);
 	HWND hwnd = CreateWindow(
 		wc.lpszClassName,				//利用するクラス名
 		L"CG2_LE2D_03_アキモト_カズキ",	//タイトルバーの文字
@@ -721,6 +721,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		wc.hInstance,					//インスタンスハンドル
 		nullptr							//オプション
 	);
+	
 
 #ifdef _DEBUG
 	ID3D12Debug1* debugContoroller = nullptr;

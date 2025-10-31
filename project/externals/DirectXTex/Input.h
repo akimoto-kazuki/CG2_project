@@ -17,7 +17,7 @@ public:
 public:
 	// 初期化
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
-	// アップデート
+	// 更新
 	void Update();
 
 	/// <summary>
