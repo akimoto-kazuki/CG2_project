@@ -1048,35 +1048,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
-	descriptorRangeForInstancing[0].BaseShaderRegister = 0;
-	descriptorRangeForInstancing[0].NumDescriptors = 1;
-	descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
 	// RootSignature作成。複数設定できるので配列。今回は結果1つだけなので長さ１の配列
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
+	D3D12_ROOT_PARAMETER rootParametersObj[4] = {};
+
 	// CBVを使う
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
+	rootParametersObj[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
+	rootParametersObj[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 	// レジスタ番号０とバインド
-	rootParameters[0].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
+	rootParametersObj[0].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
+
 	// CBVを使う
-	rootParameters[1].ParameterType = 0;	// b0のbと一致する
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
-	rootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;	// b0のbと一致する
-	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstancing); // PixelShaderで使う
-
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;	// b0のbと一致する
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
-	rootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;	// b0のbと一致する
-	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstancing); // PixelShaderで使う
-
+	rootParametersObj[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
+	rootParametersObj[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
 
 	// レジスタ番号０とバインド
-	rootParameters[1].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
-	descriptionRootSignature.pParameters = rootParameters;				// ルートパラメータ配列へのポインタ
-	descriptionRootSignature.NumParameters = _countof(rootParameters);	// 配列の長さ
+	rootParametersObj[1].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
+	descriptionRootSignature.pParameters = rootParametersObj;				// ルートパラメータ配列へのポインタ
+	descriptionRootSignature.NumParameters = _countof(rootParametersObj);	// 配列の長さ
 	
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -1085,14 +1073,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
+	rootParametersObj[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParametersObj[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersObj[2].DescriptorTable.pDescriptorRanges = descriptorRange;
+	rootParametersObj[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[3].Descriptor.ShaderRegister = 1;
+	rootParametersObj[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParametersObj[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersObj[3].Descriptor.ShaderRegister = 1;
+
+
+	D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
+	descriptorRangeForInstancing[0].BaseShaderRegister = 0;
+	descriptorRangeForInstancing[0].NumDescriptors = 1;
+	descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// RootSignature作成。複数設定できるので配列。今回は結果1つだけなので長さ１の配列
+	D3D12_ROOT_PARAMETER rootParametersPart[4] = {};
+
+	// CBVを使う
+	rootParametersPart[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
+	rootParametersPart[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
+	// レジスタ番号０とバインド
+	rootParametersPart[0].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
+
+	// CBVを使う
+	rootParametersPart[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;	// b0のbと一致する
+	rootParametersPart[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
+	rootParametersPart[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;	// b0のbと一致する
+	rootParametersPart[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstancing); // PixelShaderで使う
+
+	// レジスタ番号０とバインド
+	rootParametersPart[1].Descriptor.ShaderRegister = 0;					// b0のbと一致する。もしb11と紐づけたいなら11となる
+	descriptionRootSignature.pParameters = rootParametersPart;				// ルートパラメータ配列へのポインタ
+	descriptionRootSignature.NumParameters = _countof(rootParametersPart);	// 配列の長さ
+
+	rootParametersPart[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParametersPart[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersPart[2].DescriptorTable.pDescriptorRanges = descriptorRange;
+	rootParametersPart[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
+
+	rootParametersPart[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParametersPart[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersPart[3].Descriptor.ShaderRegister = 1;
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
