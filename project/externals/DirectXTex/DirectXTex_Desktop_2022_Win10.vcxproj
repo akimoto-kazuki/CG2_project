@@ -451,8 +451,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="WinApp.cpp" />
     <CLInclude Include="BC.h" />
     <ClCompile Include="BC.cpp" />
     <ClCompile Include="BC4BC5.cpp" />
@@ -461,7 +459,6 @@
     <ClInclude Include="d3dx12.h" />
     <CLInclude Include="DDS.h" />
     <ClInclude Include="filters.h" />
-    <ClInclude Include="Input.h" />
     <CLInclude Include="scoped.h" />
     <CLInclude Include="DirectXTex.h" />
     <CLInclude Include="DirectXTexP.h" />
@@ -494,7 +491,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="DirectXTexWIC.cpp" />
-    <ClInclude Include="WinApp.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\CompileShaders.cmd" />

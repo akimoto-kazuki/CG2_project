@@ -1,45 +1,5 @@
-﻿  Input.cpp
-C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\project\externals\DirectXTex\Input.cpp(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
-C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\project\externals\DirectXTex\Input.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
-  (ソース ファイル '/Input.cpp' をコンパイルしています)
-  
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(65,1): warning C5204: 'Microsoft::WRL::CloakedIid<IMarshal>': クラスは仮想関数を含んでいますが、その単純なデストラクターが仮想ではありません。このクラスから派生したオブジェクトのインスタンスは正しく消滅されない可能性があります
-  (ソース ファイル '/Input.cpp' をコンパイルしています)
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(65,1):
-      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1339,12):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::Implements<Microsoft::WRL::RuntimeClassFlags<3>,Microsoft::WRL::CloakedIid<IMarshal>>' のリファレンスを確認してください
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1305,84):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::Details::AdjustImplements<Microsoft::WRL::RuntimeClassFlags<3>,true,I0>' のリファレンスを確認してください
-          with
-          [
-              I0=Microsoft::WRL::CloakedIid<IMarshal>
-          ]
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(813,93):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::CloakedIid<IMarshal>' のリファレンスを確認してください
-  
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19): warning C5220: 'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IWeakReference>::refcount_': 揮発性修飾型の非静的データ メンバーは、コンパイラによって生成された
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19): warning C5220:         コピーまたは移動コンストラクターとコピーまたは移動代入演算子がトリビアルではないことを示さなくなりました
-  (ソース ファイル '/Input.cpp' をコンパイルしています)
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19):
-      'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IWeakReference>::refcount_' の宣言を確認してください
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19):
-      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(2232,34):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<2>,IWeakReference>' のリファレンスを確認してください
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(2206,21):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IWeakReference>' のリファレンスを確認してください
-  
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19): warning C5220: 'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IUnknown>::refcount_': 揮発性修飾型の非静的データ メンバーは、コンパイラによって生成された
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19): warning C5220:         コピーまたは移動コンストラクターとコピーまたは移動代入演算子がトリビアルではないことを示さなくなりました
-  (ソース ファイル '/Input.cpp' をコンパイルしています)
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19):
-      'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IUnknown>::refcount_' の宣言を確認してください
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(1686,19):
-      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\event.h(585,60):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<2>,IUnknown>' のリファレンスを確認してください
-          C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\winrt\wrl\implements.h(2206,21):
-          コンパイル対象の クラス テンプレート インスタンス化 'Microsoft::WRL::Details::RuntimeClassImpl<Microsoft::WRL::RuntimeClassFlags<2>,true,false,true,IUnknown>' のリファレンスを確認してください
-  
+﻿  BC.cpp
+  DirectXTexResize.cpp
+  DirectXTexWIC.cpp
+  コードを生成中...
   DirectXTex_Desktop_2022_Win10.vcxproj -> C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\project\externals\DirectXTex\Bin\Desktop_2022_Win10\x64\Debug\DirectXTex.lib

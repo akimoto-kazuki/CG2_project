@@ -51,12 +51,6 @@
     <ClInclude Include="d3dx12.h">
       <Filter>DirectXFiles\Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>ProgramFiles\ヘッターファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="WinApp.h">
-      <Filter>ProgramFiles\ヘッターファイル</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BC.cpp">
@@ -118,12 +112,6 @@
     </ClCompile>
     <ClCompile Include="DirectXTexD3D12.cpp">
       <Filter>DirectXFiles\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>ProgramFiles\ソースファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="WinApp.cpp">
-      <Filter>ProgramFiles\ソースファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
