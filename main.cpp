@@ -963,27 +963,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 
 	// metadataを基にSRVを設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC instansingSrvDesc{};
-	instansingSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	instansingSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	instansingSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	instansingSrvDesc.Buffer.FirstElement = 0;
-	instansingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	instansingSrvDesc.Buffer.NumElements = kNumInstance;
-	instansingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
+	D3D12_SHADER_RESOURCE_VIEW_DESC instancingSrvDesc{};
+	instancingSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	instancingSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	instancingSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	instancingSrvDesc.Buffer.FirstElement = 0;
+	instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	instancingSrvDesc.Buffer.NumElements = kNumInstance;
+	instancingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
 
 	// SRVを作成する
-	D3D12_CPU_DESCRIPTOR_HANDLE instansingSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptorHeap,desriptorSizeSRV,3);
-	D3D12_GPU_DESCRIPTOR_HANDLE instansingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptorHeap, desriptorSizeSRV, 3);
-	device->CreateShaderResourceView(instancingResource.Get(), &instansingSrvDesc, instansingSrvHandleCPU);
+	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptorHeap,desriptorSizeSRV,3);
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptorHeap, desriptorSizeSRV, 3);
+	device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc, instancingSrvHandleCPU);
 
-	Transform transforms[kNumInstance];
-	for (uint32_t index = 0; index < kNumInstance; ++index)
-	{
-		transforms[index].scale = { 1.0f,1.0f,1.0f };
-		transforms[index].rotate = { 0.0f,0.0f,0.0f };
-		transforms[index].translate = { index * 0.1f,index * 0.1f,index * 0.1f };
-	}
 
 	// DSVの設定
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
@@ -1481,6 +1474,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
 			transformationMatrixDataSprite->World = worldMatrixSprite;
+
+			Transform transforms[kNumInstance];
+			for (uint32_t index = 0; index < kNumInstance; ++index)
+			{
+				transforms[index].scale = { 1.0f,1.0f,1.0f };
+				transforms[index].rotate = { 0.0f,0.0f,0.0f };
+				transforms[index].translate = { index * 0.1f,index * 0.1f,index * 0.1f };
+			}
 			
 			for (uint32_t index = 0; index < kNumInstance; ++index)
 			{
@@ -1552,7 +1553,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			// RootSignatureを設定。PSOに設定しているけど別途設定が必要
 			commandList->SetGraphicsRootSignature(rootSignature);
 			commandList->SetPipelineState(graphicsPipelineState);  // PSOを設定
-			commandList->SetGraphicsRootDescriptorTable(1, instansingSrvHandleGPU);
+			commandList->SetGraphicsRootDescriptorTable(1, instancingSrvHandleGPU);
 
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
 
