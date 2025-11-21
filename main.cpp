@@ -1005,11 +1005,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	assert(SUCCEEDED(hr));
 
-	
-
-	
-
-
 	/*============================================================
 	 オブジェクト 始
 	=============================================================*/
