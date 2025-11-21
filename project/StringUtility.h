@@ -2,11 +2,6 @@
 #include <string>
 #include <Windows.h>
 
-class StringUtility
-{
-	
-};
-
 namespace StringUtility
 {
 	std::wstring ConvertString(const std::string& str);

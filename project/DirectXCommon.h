@@ -1,6 +1,6 @@
 #pragma once
 #include <format>
-
+#include <array>
 #include "Logger.h"
 #include "StringUtility.h"
 #include "WinApp.h"
@@ -44,13 +44,16 @@ public:
 	void DxcCompilerInitialize();
 	// ImGuiの初期化
 	void ImGuiInitialize();
+	// 描画前処理
+	void PreDraw();
+	// 描画後処理
+	void PostDraw();
 
 	/// <summary>
 	/// デスクリプタヒープを生成する
 	/// </summary>
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
 		CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
-
 	
 	/// <summary>
 	/// SRVの指定番号のCPUデスクリプタハンドルを取得する
@@ -62,17 +65,45 @@ public:
 	/// </summary>
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
-private:
+	/// <summary>
+	/// RTVの指定番号のCPUデスクリプタハンドルを取得する
+	/// </summary>
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index);
+
+	/// <summary>
+	/// RTVの指定番号のGPUデスクリプタハンドルを取得する
+	/// </summary>
+	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
+
+	/// <summary>
+	/// DSVの指定番号のCPUデスクリプタハンドルを取得する
+	/// </summary>
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
+
+	/// <summary>
+	/// DSVの指定番号のGPUデスクリプタハンドルを取得する
+	/// </summary>
+	D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
+
+	/// <summary>
+	/// 
+	/// </summary>
+	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
 
 	// DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
+
+private:
+
+	
 	// DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
 	HRESULT hr;
 	//使用するアダプタ用の変数。最初にnullptrを入れておく
 	IDXGIAdapter4* useAdapter = nullptr;
-
-	ID3D12Device* device = nullptr;
+	//SwapChainからResourcceを引っ張ってくる
+	//ID3D12Resource* swapChainResources[2] = { nullptr };
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> swapChainResources;
 	//スワップチェーンを生成する
 	IDXGISwapChain4* swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -82,14 +113,37 @@ private:
 	ID3D12GraphicsCommandList* commandList = nullptr;
 	//コマンドキューを生成する
 	ID3D12CommandQueue* commandQueue = nullptr;
+	// サイズ
+	uint32_t descriptorSizeSRV;
+	uint32_t descriptorSizeRTV;
+	uint32_t descriptorSizeDSV;
+	// RTVヒープ
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap = nullptr;
+	//
+	int rtvNum_ = 2;
 	// SRVヒープ
-	ID3D12DescriptorHeap* srvDescriptorHeap = nullptr;
-	//RTVの設定
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap = nullptr;
+	// DSVヒープ
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap = nullptr;
+	// RTVの設定
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-
+	// RTVを2つ作るのでディスクリプタを2つ用意
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
+	//初期値0でFenceを作る
+	ID3D12Fence* fence = nullptr;
+	uint64_t fenceValue = 0;
+	// ビューポート
+	D3D12_VIEWPORT viewport{};
+	// シザー矩形
+	D3D12_RECT scissorRect{};
+	//TransitonBarrierの設定
+	D3D12_RESOURCE_BARRIER barrier{};
+	//FenceのSignalを待つためのイベントを作成する
+	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	// ポインタ
 	// WindowsAPI
 	WinApp* winApp = nullptr;
+
 
 	/// <summary>
 	/// 指定番号のCPUデスクリプタハンドルを取得する
