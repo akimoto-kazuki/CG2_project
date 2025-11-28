@@ -15,15 +15,15 @@ struct VertexShaderInput
     float3 normal : NORMAL0;
 };
 
-VertexShaderOutput main(VertexShaderInput input,uint32_t instanceId : SV_InstanceID)
+VertexShaderOutput main(VertexShaderInput input,uint instanceId : SV_InstanceID)
 {
     VertexShaderOutput output;
     
-    output.position = mul(input.position, gtransformationMatrices[intstanceId].WVP);
+    output.position = mul(input.position, gtransformationMatrices[instanceId].WVP);
     
     output.texcoord = input.texcoord;
     
-    output.normal = normalize(mul(input.normal, (float3x3) gtransformationMatrices[intstanceId].World));
+    output.normal = normalize(mul(input.normal, (float3x3) gtransformationMatrices[instanceId].World));
     
     return output;
     
