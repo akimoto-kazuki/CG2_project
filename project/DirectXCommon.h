@@ -8,10 +8,24 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
+#include <cassert>
+#include <dxgidebug.h>
+#include <dxcapi.h>
+
+#include <chrono>
+#include <thread>
+
+// DirectXを使うため
+#include "externals/DirectXTex/DirectXTex.h"
 // imGuiを使うため
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
+//libのリンク
+#pragma comment(lib,"d3d12.lib")
+#pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"dxguid.lib")
+#pragma comment(lib,"dxcompiler.lib")
 
 
 class DirectXCommon
@@ -54,7 +68,20 @@ public:
 	/// </summary>
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
 		CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
+	/// <summary>
+	/// シェーダーコンパイル
+	/// </summary>
+	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreatBufferResource(size_t sizeInBytes);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreatTextureResource(const DirectX::TexMetadata& metadata);
+
+	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages);
 	
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+
 	/// <summary>
 	/// SRVの指定番号のCPUデスクリプタハンドルを取得する
 	/// </summary>
@@ -90,11 +117,17 @@ public:
 	/// </summary>
 	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
 
-	// DirectX12デバイス
-	Microsoft::WRL::ComPtr<ID3D12Device> device;
+	ID3D12Device* GetDevice()const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
 
 private:
 
+	// dxcCompilerを初期化
+	IDxcUtils* dxcUtils = nullptr;
+	IDxcCompiler3* dxcCompiler = nullptr;
+	IDxcIncludeHandler* includeHandler = nullptr;
+	// DirectX12デバイス
+	Microsoft::WRL::ComPtr<ID3D12Device> device;
 	
 	// DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
@@ -102,17 +135,17 @@ private:
 	//使用するアダプタ用の変数。最初にnullptrを入れておく
 	IDXGIAdapter4* useAdapter = nullptr;
 	//SwapChainからResourcceを引っ張ってくる
-	//ID3D12Resource* swapChainResources[2] = { nullptr };
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> swapChainResources;
 	//スワップチェーンを生成する
-	IDXGISwapChain4* swapChain = nullptr;
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+
 	//コマンドアロケータを生成する
-	ID3D12CommandAllocator* commandAllocator = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = nullptr;
 	//コマンドリストを生成する
-	ID3D12GraphicsCommandList* commandList = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList = nullptr;
 	//コマンドキューを生成する
-	ID3D12CommandQueue* commandQueue = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue = nullptr;
 	// サイズ
 	uint32_t descriptorSizeSRV;
 	uint32_t descriptorSizeRTV;
@@ -130,7 +163,7 @@ private:
 	// RTVを2つ作るのでディスクリプタを2つ用意
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
 	//初期値0でFenceを作る
-	ID3D12Fence* fence = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
 	uint64_t fenceValue = 0;
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -138,11 +171,16 @@ private:
 	D3D12_RECT scissorRect{};
 	//TransitonBarrierの設定
 	D3D12_RESOURCE_BARRIER barrier{};
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHwaps = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> desciptorHeap = nullptr;
 	//FenceのSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	// ポインタ
 	// WindowsAPI
 	WinApp* winApp = nullptr;
+
 
 
 	/// <summary>
@@ -156,7 +194,11 @@ private:
 	static D3D12_GPU_DESCRIPTOR_HANDLE
 		GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
+	void InitializeFixFPS();
 
+	void UpdateFixFPS();
 	
+	std::chrono::steady_clock::time_point reference_;
+
 };
 
