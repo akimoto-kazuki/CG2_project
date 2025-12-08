@@ -561,16 +561,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreatTextureResource(metadata);
 	dxCommon->UploadTextureData(textureResource, mipImages);
 
-	//ディスクリプタヒープの生成
-	// RTV用のヒープでディスクリプタの数は２。RTVはShader内で触るものではないので、ShaderVisibleはfalse
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap = CreatDescriptorHeap(dxCommon->GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
-	// SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものなので、ShaderVisibleはtrue
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap = CreatDescriptorHeap(dxCommon->GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, true);
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
-
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;//レンダーターゲットビュー用
-	rtvDescriptorHeapDesc.NumDescriptors = 2;//ダブルバッファように2つ。多くても別に構わない
-
 	// metadataを基にSRVを設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 	srvDesc.Format = metadata.format;
@@ -579,12 +569,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
 
 	// SRVを作成する
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	// 先頭はImGuiが使っているのでその次を使う
-	textureSrvHandleCPU.ptr += dxCommon->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	textureSrvHandleGPU.ptr += dxCommon->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
+	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = dxCommon->GetSRVCPUDescriptorHandle(1);
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = dxCommon->GetSRVGPUDescriptorHandle(1);
+	
 	// SRVの生成
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
 	// DepthStencilTextureをウィンドウのサイズで作成
@@ -653,6 +640,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpDate));
 	// 単位行列を書きこんでおく
 	*wvpDate = MakeIdentity4x4();
+	ID3DBlob* signatureBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
+		D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+	if (FAILED(hr))
+	{
+		Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		assert(false);
+	}
+
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
+	 hr = dxCommon->GetDevice()->CreateRootSignature(
+		0,
+		signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
+		IID_PPV_ARGS(&rootSignature));
+	assert(SUCCEEDED(hr));
 
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
@@ -676,14 +679,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	// 三角形の中を塗りつぶす
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0");
+	assert(vertexShaderBlob != nullptr);
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0");
+	assert(pixelShaderBlob != nullptr);
 	assert(fenceEvent != nullptr);
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-	//graphicsPipelineStateDesc.pRootSignature = rootSignature;            // RootSignature
+	graphicsPipelineStateDesc.pRootSignature = rootSignature.Get();            // RootSignature
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;             // InputLayout
-	//graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-	//								 vertexShaderBlob->GetBufferSize() };// VertexShader
-	//graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-	//								 pixelShaderBlob->GetBufferSize() }; // PixelShader
+	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
+									 vertexShaderBlob->GetBufferSize() };// VertexShader
+	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
+									 pixelShaderBlob->GetBufferSize() }; // PixelShader
 	graphicsPipelineStateDesc.BlendState = blendDesc;                    // BlendState
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;          // RasterizerState
 	// 書き込むRTVの情報
@@ -696,7 +703,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	// 実際に生成
-	//ID3D12PipelineState* graphicsPipelineState = nullptr;
+	ID3D12PipelineState* graphicsPipelineState = nullptr;
 	// depthStencilDescの設定
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	// Depthの機能を有効化
@@ -710,8 +717,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-	/*hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,IID_PPV_ARGS(&graphicsPipelineState));
-	assert(SUCCEEDED(hr));*/
+	hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
+	assert(SUCCEEDED(hr));
 
 	// 三角形二つ
 	/*
@@ -925,11 +932,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			dxCommon->PreDraw();
 			
 			// ImGuiの内部コマンドを生成する
-			//ImGui::Render();
+			ImGui::Render();
 
 			// RootSignatureを設定。PSOに設定しているけど別途設定が必要
-			//commandList->SetGraphicsRootSignature(rootSignature);
-			//commandList->SetPipelineState(graphicsPipelineState);  // PSOを設定
+			dxCommon->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
+			dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState);  // PSOを設定
 
 			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
 
@@ -987,8 +994,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		errorBlob->Release();
 	}
 	rootSignature->Release();*/
-	/*pixelShaderBlob->Release();
-	vertexShaderBlob->Release();*/
 	//materialResource->Release();
 	//wvpResource->Release();
 	mipImages.Release();

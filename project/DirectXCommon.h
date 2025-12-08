@@ -173,7 +173,7 @@ private:
 	D3D12_RESOURCE_BARRIER barrier{};
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHwaps = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeaps = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> desciptorHeap = nullptr;
 	//FenceのSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

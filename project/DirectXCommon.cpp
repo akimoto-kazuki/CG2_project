@@ -337,8 +337,8 @@ void DirectXCommon::PreDraw()
 	// 指定した深度で画面全体をクリアする
 	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	// 描画用のDescriptorHeapの設定
-	descriptorHwaps = { srvDescriptorHeap.Get()};
-	commandList->SetDescriptorHeaps(1, descriptorHwaps.GetAddressOf());
+	descriptorHeaps = { srvDescriptorHeap.Get()};
+	commandList->SetDescriptorHeaps(1, descriptorHeaps.GetAddressOf());
 	commandList->RSSetViewports(1, &viewport);        // Viewportを設定
 	commandList->RSSetScissorRects(1, &scissorRect);  // Scissorを設定
 }
