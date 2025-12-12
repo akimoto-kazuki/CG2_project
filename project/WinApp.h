@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <Windows.h>
 
+
 class WinApp
 {
 public:
