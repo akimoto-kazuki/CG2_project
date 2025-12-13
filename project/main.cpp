@@ -31,6 +31,8 @@
 #include "Sprite.h"
 #include "SpriteCommon.h"
 
+#include "MyMath.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #include<fstream>
@@ -42,44 +44,29 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
-struct Vector4{
-	float x;
-	float y;
-	float z;
-	float w;
-};
 
-struct Vector3
-{
-	float x;
-	float y;
-	float z;
-};
-
-struct Vector2
-{
-	float x;
-	float y;
-};
+using namespace MyMath;
 
 struct VertexData
 {
-	Vector4 position;
-	Vector2 texcoord;
+	MyMath::Vector4 position;
+	MyMath::Vector2 texcoord;
+	MyMath::Vector3 normal;
 };
 
-struct Transform
+struct Material
 {
-	Vector3 scale;
-	Vector3 rotate;
-	Vector3 translate;
+	MyMath::Vector4 color;
+	int32_t enableLighting;
+	float padding[3];
+	MyMath::Matrix4x4 uvTransform;
 };
 
-struct Matrix4x4
+struct TransformationMatrix
 {
-	float m[4][4];
+	MyMath::Matrix4x4 WVP;
+	MyMath::Matrix4x4 World;
 };
-
 struct MaterialData
 {
 	std::string textureFilePath;
@@ -172,7 +159,7 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
 	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
 	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
-	Matrix4x4 XYZ = Multiply(rotateXMatrix, Multiply(rotateYMatrix, rotateZMatrix));
+	Matrix4x4 XYZ = MyMath::Multiply(rotateXMatrix, MyMath::Multiply(rotateYMatrix, rotateZMatrix));
 
 	result.m[0][0] = scale.x * XYZ.m[0][0]; result.m[0][1] = scale.x * XYZ.m[0][1]; result.m[0][2] = scale.x * XYZ.m[0][2]; result.m[0][3] = 0.0f;
 	result.m[1][0] = scale.y * XYZ.m[1][0]; result.m[1][1] = scale.y * XYZ.m[1][1]; result.m[1][2] = scale.y * XYZ.m[1][2]; result.m[1][3] = 0.0f;
@@ -574,7 +561,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// SRVを作成する
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = dxCommon->GetSRVCPUDescriptorHandle(1);
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = dxCommon->GetSRVGPUDescriptorHandle(1);
+	
 	
 	// SRVの生成
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
@@ -597,7 +584,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 書き込むためのアドレスを取得
 	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpDate));
 	// 単位行列を書きこんでおく
-	*wvpDate = MakeIdentity4x4();
+	*wvpDate = MyMath::MakeIdentity4x4();
 
 	assert(fenceEvent != nullptr);
 	
@@ -646,14 +633,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexData[5].texcoord = { 1.0f,1.0f };
 	*/
 
-	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-
-	D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
-
-
-	indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
-
-
 	//ログのディレクトリを用意する
 	std::filesystem::create_directory("logs");
 	//現在時刻を取得する(UTC時刻)
@@ -698,11 +677,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 			// キー入力 終
 
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+			Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 cameraMatrix = MyMath::MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+			Matrix4x4 worldViewProjectionMatrix = MyMath::Multiply(worldMatrix, MyMath::Multiply(viewMatrix, projectionMatrix));
 			*wvpDate = worldViewProjectionMatrix;
 
 			//ゲームの処理

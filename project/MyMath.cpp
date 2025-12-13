@@ -1,29 +1,12 @@
 #include "MyMath.h"
+#include <cmath>
+#define _USE_MATH_DEFINES
+#include <algorithm>
+
+#include <numbers>
+
 namespace MyMath
 {
-	struct Matrix4x4
-	{
-		float m[4][4];
-	};
-	struct Vector4 {
-		float x;
-		float y;
-		float z;
-		float w;
-	};
-
-	struct Vector3
-	{
-		float x;
-		float y;
-		float z;
-	};
-
-	struct Vector2
-	{
-		float x;
-		float y;
-	};
 
 	Matrix4x4 MakeIdentity4x4()
 	{

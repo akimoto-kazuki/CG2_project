@@ -153,7 +153,7 @@ private:
 	// RTVヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap = nullptr;
 	//
-	int rtvNum_ = 2;
+	uint32_t rtvNum_ = 2;
 	// SRVヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap = nullptr;
 	// DSVヒープ
