@@ -7,6 +7,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 {
 	this->spriteCommon = spriteCommon;
 
+	position_ = { 0.0f,0.0f };
+
 	vertexResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * 6);
 	indexResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * 6);
 
@@ -41,22 +43,26 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 void Sprite::Update()
 {
 	// 左下
-	vertexData[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };
+	vertexData[0].position = { 0.0f, 1.0f, 0.0f, 1.0f };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	// 上
 	vertexData[1].position = { 0.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[1].texcoord = { 0.0f,0.0f };
 	// 右下
-	vertexData[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };
+	vertexData[2].position = { 1.0f, 1.0f, 0.0f, 1.0f };
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	// 上
-	vertexData[3].position = { 640.0f,  0.0f, 0.0f, 1.0f };
+	vertexData[3].position = { 1.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[3].texcoord = { 1.0f,0.0f };
 
 	indexData[0] = 0; indexData[1] = 1; indexData[2] = 2;
 	indexData[3] = 1; indexData[4] = 3; indexData[5] = 2;
 
+
 	Transform transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	transform.rotate = { 0.0f,0.0f,rotation };
+	transform.scale = { size.x,size.y,1.0f };
+	transform.translate = { position_.x,position_.y,0.0f };
 
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 viewMatrix = MakeIdentity4x4();

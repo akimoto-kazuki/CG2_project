@@ -529,8 +529,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	sprite = new Sprite();
-	sprite->Initialize(spriteCommon);
+	/*sprite = new Sprite();
+	sprite->Initialize(spriteCommon);*/
+	Vector3 position = {0.0f,0.0f,0.0f};
+	float rotation = 0.0f;
+	Vector4 color = {1.0f,1.0f,1.0f,1.0f};
+	Vector2 size = {1.0f,1.0f};
+
+	
+
+	std::vector<Sprite*> sprites_;
+	for (uint32_t i = 0; i < 5; ++i)
+	{
+		Sprite* sprite = new Sprite();
+		sprite->Initialize(spriteCommon);
+		sprites_.push_back(sprite);
+	}
 
 	ModelData modelData = LoadObjFite("resources", "plane.obj");
 
@@ -577,8 +591,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	assert(fenceEvent != nullptr);
 	
-	sprite->Update();
+	
 
+	
 
 	// 三角形二つ
 	/*
@@ -664,7 +679,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				OutputDebugStringA("Hit 0\n");
 			}
-			// キー入力 終
+
+			float pos = 0.0f;
+
+			for (Sprite* sprite : sprites_)
+			{
+				Vector3 changePos = {pos,0.0f,0.0f};
+				pos += 10.0f;
+				sprite->SetRotation(rotation);
+				sprite->SetSize(size);
+				sprite->SetPosition(Add(position,changePos));
+				sprite->SetColor(color);
+				sprite->Update();
+				
+			}
+			
+			
+
+					// キー入力 終
 
 			Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 cameraMatrix = MyMath::MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
@@ -685,6 +717,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//	ImGui::ColorEdit4("material", &materialDate->x, ImGuiColorEditFlags_AlphaPreview);
 			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
 			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
+			ImGui::DragFloat2("SpritePosition", &position.x, 0.1f);
+			ImGui::DragFloat("SpriteRotation", &rotation, 0.1f);
+			ImGui::DragFloat4("SpriteColor", &color.x, 0.1f);
+			ImGui::DragFloat2("SpriteSize", &size.x, 0.1f);
 			ImGui::End();
 
 			dxCommon->PreDraw();
@@ -693,7 +729,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui::Render();
 			spriteCommon->DrawCommon();
 
-			sprite->Draw();
+			for (Sprite* sprite : sprites_)
+			{
+				
+					sprite->Draw();
+			}
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
