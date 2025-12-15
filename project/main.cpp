@@ -516,17 +516,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
 
-#ifdef _DEBUG
-	ID3D12Debug1* debugContoroller = nullptr;
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugContoroller)))) {
-		//デバッグレイヤーを有効化する
-		debugContoroller->EnableDebugLayer();
-		//さらにGPU側でもチェックを行うようにする
-		debugContoroller->SetEnableGPUBasedValidation(TRUE);
-	}
-#endif // _DEBUG
-
-
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -721,7 +710,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	CloseHandle(fenceEvent);
 	mipImages.Release();
-	debugContoroller->Release();
 	// WindowsAPIの終了処理
 	winApp->Finalize();
 
@@ -735,12 +723,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	delete dxCommon;
 
 	delete spriteCommon;
-
-#ifdef _DEBUG
-
-	debugContoroller->Release();
-
-#endif // _DEBUG
 
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	// こういうもんである。初期化を逆順に行う

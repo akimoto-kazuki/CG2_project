@@ -11,6 +11,7 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 	indexResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * 6);
 
 	vertexBufferView.BufferLocation = vertexResource.Get()->GetGPUVirtualAddress();
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
 	indexBufferView.BufferLocation = indexResource.Get()->GetGPUVirtualAddress();
 	indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
@@ -40,28 +41,16 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 void Sprite::Update()
 {
 	// 左下
-	//vertexData[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };
-	//vertexData[0].texcoord = { 0.0f,1.0f };
-	//// 上
-	//vertexData[1].position = { 0.0f,  0.0f, 0.0f, 1.0f };
-	//vertexData[1].texcoord = { 0.0f,0.0f };
-	//// 右下
-	//vertexData[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };
-	//vertexData[2].texcoord = { 1.0f,1.0f };
-	//// 上
-	//vertexData[3].position = { 640.0f,  0.0f, 0.0f, 1.0f };
-	//vertexData[3].texcoord = { 1.0f,0.0f };
-
-	vertexData[0].position = { 0.0f, 1.0f, 0.0f, 1.0f };
+	vertexData[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	// 上
 	vertexData[1].position = { 0.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[1].texcoord = { 0.0f,0.0f };
 	// 右下
-	vertexData[2].position = { 1.0f, 1.0f, 0.0f, 1.0f };
+	vertexData[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	// 上
-	vertexData[3].position = { 1.0f,  0.0f, 0.0f, 1.0f };
+	vertexData[3].position = { 640.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[3].texcoord = { 1.0f,0.0f };
 
 	indexData[0] = 0; indexData[1] = 1; indexData[2] = 2;

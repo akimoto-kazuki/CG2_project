@@ -17,6 +17,16 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	assert(winApp);
 	// 借りて来たWinAppのインスタンスを記録
 	this->winApp = winApp;
+#ifdef _DEBUG
+	Microsoft::WRL::ComPtr<ID3D12Debug1> debugContoroller = nullptr;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugContoroller)))) {
+		//デバッグレイヤーを有効化する
+		debugContoroller->EnableDebugLayer();
+		//さらにGPU側でもチェックを行うようにする
+		debugContoroller->SetEnableGPUBasedValidation(TRUE);
+	}
+#endif // _DEBUG
+
 	// デバイスの初期化
 	DeviceInitialize();
 	// コマンド関連の初期化
