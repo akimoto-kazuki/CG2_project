@@ -9,6 +9,7 @@
 
 using namespace Microsoft::WRL;
 
+const uint32_t DirectXCommon::kMaxSRVCount = 512;
 
 void DirectXCommon::Initialize(WinApp* winApp)
 {
@@ -220,7 +221,7 @@ void DirectXCommon::DescriptorInitialize()
 	// RTV用のヒープでディスクリプタの数は２。RTVはShader内で触るものではないので、ShaderVisibleはfalse
 	rtvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	// SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものなので、ShaderVisibleはtrue
-	srvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, true);
+	srvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount, true);
 	// DSV用のヒープでディスクリプタの数は1。
 	//dsvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 

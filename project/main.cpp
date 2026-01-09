@@ -31,6 +31,8 @@
 #include "Sprite.h"
 #include "SpriteCommon.h"
 
+#include "TextureManager.h"
+
 #include "MyMath.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -529,6 +531,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
+	TextureManager::GetInstance()->Initialize();
+
 	/*sprite = new Sprite();
 	sprite->Initialize(spriteCommon);*/
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -576,7 +580,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-
+	
 	//FenceのSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -753,6 +757,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// WindowsAPIの終了処理
 	winApp->Finalize();
 
+	TextureManager::GetInstance()->Finalize();
 	delete sprite;
 	
 	// ウィンドウ解放

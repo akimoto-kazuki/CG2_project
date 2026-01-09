@@ -31,7 +31,8 @@
 class DirectXCommon
 {
 public:
-
+	// 最大SRV数 (最大テクスチャ枚数)
+	static const uint32_t kMaxSRVCount;
 	// 初期化
 	void Initialize(WinApp* winApp);
 	// デバイスの初期化
@@ -200,5 +201,6 @@ private:
 	
 	std::chrono::steady_clock::time_point reference_;
 
+	
 };
 
