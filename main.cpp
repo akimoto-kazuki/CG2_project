@@ -24,6 +24,7 @@
 
 #include <wrl.h>
 #include <array>
+#include <numbers>
 
 #include "ResourceObject.h"
 
@@ -58,7 +59,7 @@ struct Vector2
 	float y;
 };
 
-struct VertexDate
+struct VertexData
 {
 	Vector4 position;
 	Vector2 texcoord;
@@ -89,7 +90,7 @@ struct MaterialData
 
 struct ModelData
 {
-	std::vector<VertexDate> vertices;
+	std::vector<VertexData> vertices;
 	MaterialData material;
 };
 
@@ -663,7 +664,7 @@ ModelData LoadObjFite(const std::string& directoryPath, const std::string& filen
 		}
 		else if (identifier == "f")
 		{
-			VertexDate triangle[3];
+			VertexData triangle[3];
 			for (int32_t  faceVertex = 0; faceVertex < 3; ++faceVertex)
 			{
 				std::string vertexDefinition;
@@ -1334,6 +1335,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(fenceEvent != nullptr);
 	
 
+	
 	// 三角形二つ
 	/*
 	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexDate) * 6);
@@ -1376,21 +1378,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexDate[5].texcoord = { 1.0f,1.0f };
 	*/
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = CreateBufferResource(device.Get(), sizeof(VertexDate) * modelData.vertices.size());
+	//Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = 
+	// CreateBufferResource(device.Get(), sizeof(VertexData) * modelData.vertices.size());
 
-	// 頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	// リソースの先頭のアドレスから使う
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	// 使用するリソースのサイズは頂点3つ分のサイズ
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexDate) * modelData.vertices.size());
-	// 1頂点あたりのサイズ
-	vertexBufferView.StrideInBytes = sizeof(VertexDate);
-	// マテリアルにデータを書き込む
-	Vector4* vertexDate = nullptr;
-	// 書き込むためのアドレスを取得
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDate));
-	std::memcpy(vertexDate, modelData.vertices.data(), sizeof(VertexDate)* modelData.vertices.size());
+	//// 頂点バッファビューを作成する
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	//// リソースの先頭のアドレスから使う
+	//vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	//// 使用するリソースのサイズは頂点3つ分のサイズ
+	//vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	//// 1頂点あたりのサイズ
+	//vertexBufferView.StrideInBytes = sizeof(VertexData);
+	//// マテリアルにデータを書き込む
+	//Vector4* vertexDate = nullptr;
+	//// 書き込むためのアドレスを取得
+	//vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDate));
+	//std::memcpy(vertexDate, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
 
 
 	// マテリアル用のリソースを作る。今回はcoler１つ分のサイズを用意する
@@ -1404,9 +1407,95 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	materialDate->enableLighting = true;
 	materialDate->uvTransform = MakeIdentity4x4();
 
-	
+	// 球表示用
+	const uint32_t kSubdivision = 16;
+	// 緯度 × 経度 × 6（三角形2枚）
+	const uint32_t kNumSphereVertices = kSubdivision * kSubdivision * 6;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(device.Get(), sizeof(VertexDate) * 6);
+	// 円周率
+	const float pi = std::numbers::pi_v<float>;
+
+	// 頂点リソースを作る
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource =
+		CreateBufferResource(device.Get(), sizeof(VertexData) * kNumSphereVertices);
+
+	// 頂点バッファビューを作成する
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * kNumSphereVertices;
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+
+	// 頂点リソースにデータを書き込む
+	VertexData* vertexData = nullptr;
+	// 書き込むためのアドレスを取得
+	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	// 緯度分割1つ分の角度
+	const float kLatEvery = pi / float(kSubdivision);
+	// 経度分割1つ分の角度
+	const float kLonEvery = pi * 2.0f / float(kSubdivision);
+
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+
+		float lat = -pi / 2.0f + kLatEvery * latIndex;
+
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+
+			uint32_t startIndex = (latIndex * kSubdivision + lonIndex) * 6;
+			float lon = lonIndex * kLonEvery;
+
+			// 0
+			vertexData[startIndex].position.x = std::cos(lat) * std::cos(lon);
+			vertexData[startIndex].position.y = std::sin(lat);
+			vertexData[startIndex].position.z = std::cos(lat) * std::sin(lon);
+			vertexData[startIndex].position.w = 1.0f;
+			vertexData[startIndex].texcoord = {
+				float(lonIndex) / float(kSubdivision),
+				1.0f - float(latIndex) / float(kSubdivision)
+			};
+
+			// 1
+			vertexData[startIndex + 1].position.x = std::cos(lat + kLatEvery) * std::cos(lon);
+			vertexData[startIndex + 1].position.y = std::sin(lat + kLatEvery);
+			vertexData[startIndex + 1].position.z = std::cos(lat + kLatEvery) * std::sin(lon);
+			vertexData[startIndex + 1].position.w = 1.0f;
+			vertexData[startIndex + 1].texcoord = {
+				float(lonIndex) / float(kSubdivision),
+				1.0f - float(latIndex + 1) / float(kSubdivision)
+			};
+
+			// 2
+			vertexData[startIndex + 2].position.x = std::cos(lat) * std::cos(lon + kLonEvery);
+			vertexData[startIndex + 2].position.y = std::sin(lat);
+			vertexData[startIndex + 2].position.z = std::cos(lat) * std::sin(lon + kLonEvery);
+			vertexData[startIndex + 2].position.w = 1.0f;
+			vertexData[startIndex + 2].texcoord = {
+				float(lonIndex + 1) / float(kSubdivision),
+				1.0f - float(latIndex) / float(kSubdivision)
+			};
+
+			// 3（2と同じ）
+			vertexData[startIndex + 3] = vertexData[startIndex + 2];
+
+			// 4（1と同じ）
+			vertexData[startIndex + 4] = vertexData[startIndex + 1];
+
+			// 5
+			vertexData[startIndex + 5].position.x =
+				std::cos(lat + kLatEvery) * std::cos(lon + kLonEvery);
+			vertexData[startIndex + 5].position.y =
+				std::sin(lat + kLatEvery);
+			vertexData[startIndex + 5].position.z =
+				std::cos(lat + kLatEvery) * std::sin(lon + kLonEvery);
+			vertexData[startIndex + 5].position.w = 1.0f;
+			vertexData[startIndex + 5].texcoord = {
+				float(lonIndex + 1) / float(kSubdivision),
+				1.0f - float(latIndex + 1) / float(kSubdivision)
+			};
+		}
+	}
+
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(device.Get(), sizeof(VertexData) * 6);
 
 	// 頂点バッファビューを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
@@ -1415,14 +1504,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
 
 	// 使用するリソースのサイズは頂点3つ分のサイズ
-	vertexBufferViewSprite.SizeInBytes = sizeof(VertexDate) * 4;
+	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
 
 	// 1頂点あたりのサイズ
-	vertexBufferViewSprite.StrideInBytes = sizeof(VertexDate);
+	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
 
 
 	// 頂点リソースにデータを書き込む
-	VertexDate* vertexDateSprite = nullptr;
+	VertexData* vertexDateSprite = nullptr;
 	// 書き込むためのアドレスを取得
 	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDateSprite));
 
@@ -1703,8 +1792,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-			//commandList->DrawInstanced(6, 1, 0, 0);
-			commandList->DrawInstanced(6, kNumInstance, 0, 0);
+			commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);
+			//commandList->DrawInstanced(6, kNumInstance, 0, 0);
 
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);  // VBVを設定
 
@@ -1714,7 +1803,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 
 			// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-			//commandList->DrawInstanced(6, 1, 0, 0);
+			//commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);
 			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
