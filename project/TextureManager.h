@@ -3,6 +3,7 @@
 #include "externals/DirectXTex/DirectXTex.h"
 #include "DirectXCommon.h"
 #include <string>
+#include <wrl.h>
 
 class TextureManager
 {
@@ -17,6 +18,7 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU;
 	};
 
+	
 
 public:
 	// シングルトンインスタンスの取得
@@ -24,7 +26,7 @@ public:
 	// 終了
 	void Finalize();
 
-	void Initialize();
+	void Initialize(DirectXCommon* dxCommon);
 	std::vector<TextureData> textureDatas;
 
 	/// <summary>
@@ -34,14 +36,21 @@ public:
 
 	void LoadTexture(const std::string& filePath);
 
+	uint32_t GetTextureIndexByFilepath(const std::string& filePath);
+
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
+
 private:
 	static TextureManager* instance;
+
+	DirectXCommon* dxCommon_ = nullptr;
 
 	TextureManager() = default;
 	~TextureManager() = default;
 	TextureManager(TextureManager&) = default;
 	TextureManager& operator=(TextureManager&) = delete;
 
+	static uint32_t kSRVIndexTop;
 	
 };
 

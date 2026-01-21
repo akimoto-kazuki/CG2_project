@@ -3,7 +3,7 @@
 
 using namespace MyMath;
 
-void Sprite::Initialize(SpriteCommon* spriteCommon)
+void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
 	this->spriteCommon = spriteCommon;
 
@@ -37,6 +37,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 
 	transformationMatrixData->WVP = MakeIdentity4x4();
 	transformationMatrixData->World = MakeIdentity4x4();
+
+	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath(textureFilePath);
 
 }
 
@@ -83,7 +85,7 @@ void Sprite::Draw()
 	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = spriteCommon->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 	spriteCommon->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }

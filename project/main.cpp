@@ -518,6 +518,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
 
+
+
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -531,7 +533,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	TextureManager::GetInstance()->Initialize();
+
+	TextureManager::GetInstance()->Initialize(dxCommon);
+
+	TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
+	TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
 
 	/*sprite = new Sprite();
 	sprite->Initialize(spriteCommon);*/
@@ -546,34 +552,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	for (uint32_t i = 0; i < 5; ++i)
 	{
 		Sprite* sprite = new Sprite();
-		sprite->Initialize(spriteCommon);
+		sprite->Initialize(spriteCommon,);
 		sprites_.push_back(sprite);
 	}
 
 	ModelData modelData = LoadObjFite("resources", "plane.obj");
 
 	//DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
-	DirectX::ScratchImage mipImages = dxCommon->LoadTexture(modelData.material.textureFilePath);
-
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreatTextureResource(metadata);
-	dxCommon->UploadTextureData(textureResource, mipImages);
-
-	// metadataを基にSRVを設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-
-	// SRVを作成する
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = dxCommon->GetSRVCPUDescriptorHandle(1);
-	
-	
-	// SRVの生成
-	dxCommon->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
-	// DepthStencilTextureをウィンドウのサイズで作成
-	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = CreateDepthStencilTextureResource(dxCommon->GetDevice(), WinApp::kClientWidth, WinApp::kClientHeight);
 	// DSV用のヒープでディスクリプタの数は1。
 
 	// DSVの設定
@@ -753,7 +738,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	OutputDebugStringA("Hello,DirectX!\n");
 
 	CloseHandle(fenceEvent);
-	mipImages.Release();
 	// WindowsAPIの終了処理
 	winApp->Finalize();
 

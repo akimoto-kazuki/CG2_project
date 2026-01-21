@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "StringUtility.h"
 #include "MyMath.h"
+#include "TextureManager.h"
 
 #include <stdint.h>
 
@@ -33,7 +34,7 @@ class Sprite
 public:
 
 	// 初期化
-	void Initialize(SpriteCommon* spriteCommon);
+	void Initialize(SpriteCommon* spriteCommon, std::string textureFilePath);
 
 	void Update();
 
@@ -88,6 +89,8 @@ private:
 	/// スプライトのサイズ
 	/// </summary>
 	MyMath::Vector2 size;
+
+	uint32_t textureIndex = 0;
 
 };
 

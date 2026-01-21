@@ -1,0 +1,21 @@
+﻿  main.cpp
+C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1404,41): error C2374: 'vertexResource': 再定義されています。2 回以上初期化されています。
+      C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1345,41):
+      'vertexResource' の宣言を確認してください
+  
+C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1404,41): error C2086: 'Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource': 再定義されました。
+      C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1345,41):
+      'vertexResource' の宣言を確認してください
+  
+C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1407,27): error C2374: 'vertexBufferView': 再定義されています。2 回以上初期化されています。
+      C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1348,27):
+      'vertexBufferView' の宣言を確認してください
+  
+C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1407,27): error C2086: 'D3D12_VERTEX_BUFFER_VIEW vertexBufferView': 再定義されました。
+      C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1348,27):
+      'vertexBufferView' の宣言を確認してください
+  
+C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1415,11): error C2371: 'vertexDate': 再定義されています。異なる基本型です。
+      C:\Users\k024g\OneDrive\デスクトップ\CG2\CG2_project\main.cpp(1360,14):
+      'vertexDate' の宣言を確認してください
+  
