@@ -45,16 +45,16 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 void Sprite::Update()
 {
 	// 左下
-	vertexData[0].position = { 0.0f, 1.0f, 0.0f, 1.0f };
+	vertexData[0].position = { 0.0f, 100.0f, 0.0f, 1.0f };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	// 上
 	vertexData[1].position = { 0.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[1].texcoord = { 0.0f,0.0f };
 	// 右下
-	vertexData[2].position = { 1.0f, 1.0f, 0.0f, 1.0f };
+	vertexData[2].position = { 100.0f, 100.0f, 0.0f, 1.0f };
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	// 上
-	vertexData[3].position = { 1.0f,  0.0f, 0.0f, 1.0f };
+	vertexData[3].position = { 100.0f,  0.0f, 0.0f, 1.0f };
 	vertexData[3].texcoord = { 1.0f,0.0f };
 
 	indexData[0] = 0; indexData[1] = 1; indexData[2] = 2;

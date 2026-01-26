@@ -16,6 +16,10 @@
 # Mono auto generated filesmono_crash.*
 
 # Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
 generated/
 
 # Visual Studio 2015/2017 cache/options directory
@@ -311,8 +315,10 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-DirectXGame/DirectXGame.exe
-DirectXGame/imgui.ini
+imgui.ini
+
+*.log
+/logs
 
 # DirectXTex Compiled Shaders
 **/DirectXTex/Shaders/Compiled/

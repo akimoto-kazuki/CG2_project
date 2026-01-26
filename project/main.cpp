@@ -533,26 +533,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
+	std::array<std::string, 2> spriteFile;
+
+	spriteFile[0] = "resources/uvChecker.png";
+	spriteFile[1] = "resources/monsterBall.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon);
 
-	TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
-	TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
+	for (int i = 0; i < spriteFile.size(); i++)
+	{
+		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
+	}
 
-	/*sprite = new Sprite();
-	sprite->Initialize(spriteCommon);*/
 	Vector3 position = {0.0f,0.0f,0.0f};
 	float rotation = 0.0f;
 	Vector4 color = {1.0f,1.0f,1.0f,1.0f};
 	Vector2 size = {1.0f,1.0f};
 
-	
 
 	std::vector<Sprite*> sprites_;
 	for (uint32_t i = 0; i < 5; ++i)
 	{
 		Sprite* sprite = new Sprite();
-		sprite->Initialize(spriteCommon,);
+		sprite->Initialize(spriteCommon, spriteFile[i%2]);
 		sprites_.push_back(sprite);
 	}
 
@@ -638,7 +641,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//formatを使って年月日_時分秒の文字列に変換
 	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
 	//時刻を使ってファイル名を決定
-	std::string logFilePath = std::string("logs/") + dateString + "log";
+	std::string logFilePath = std::string("logs/") + dateString + ".log";
 	//ファイルを作って書き込み準備
 	std::ofstream logStream(logFilePath);
 
@@ -674,7 +677,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			for (Sprite* sprite : sprites_)
 			{
 				Vector3 changePos = {pos,0.0f,0.0f};
-				pos += 10.0f;
+				pos += 100.0f;
 				sprite->SetRotation(rotation);
 				sprite->SetSize(size);
 				sprite->SetPosition(Add(position,changePos));
