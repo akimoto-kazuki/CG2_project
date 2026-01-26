@@ -677,7 +677,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			for (Sprite* sprite : sprites_)
 			{
 				Vector3 changePos = {pos,0.0f,0.0f};
-				pos += 100.0f;
+				pos += 200.0f;
 				sprite->SetRotation(rotation);
 				sprite->SetSize(size);
 				sprite->SetPosition(Add(position,changePos));
@@ -686,10 +686,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				
 			}
 			
-			
-
-					// キー入力 終
-
+			// キー入力 終
 			Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 cameraMatrix = MyMath::MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -722,8 +719,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			spriteCommon->DrawCommon();
 
 			for (Sprite* sprite : sprites_)
-			{
-				
+			{	
 					sprite->Draw();
 			}
 

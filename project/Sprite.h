@@ -11,6 +11,12 @@ class SpriteCommon;
 class Sprite
 {
 
+	MyMath::Vector2 anchorPoint = { 0.0f,0.0f };
+
+	MyMath::Vector2 textureLeftTop = { 0.0f,0.0f };
+
+	MyMath::Vector2 textureSize = { 100.0f,100.0f };
+
 	struct VertexData
 	{
 		MyMath::Vector4 position;
@@ -52,6 +58,20 @@ public:
 	const MyMath::Vector2& GetSize()const { return size; }
 	void SetSize(const MyMath::Vector2& size) { this->size = size; }
 
+	const MyMath::Vector2& GetAnchorPoint()const { return anchorPoint; }
+	void SetAnchorPoint(const MyMath::Vector2& anchorPoint) { this->anchorPoint = anchorPoint; }
+
+	bool GetIsFlipX()const { return isFlipX_; }
+	void SetIsFlipX(const bool isFlipX) { this->isFlipX_ = isFlipX; }
+
+	bool GetIsFlipY()const { return isFlipY_; }
+	void SetIsFlipY(const bool isFlipY) { this->isFlipY_ = isFlipY; }
+
+	const MyMath::Vector2& GetTextureLeftTop()const { return textureLeftTop; }
+	void SetTextureLeftTop(const MyMath::Vector2& textureLeftTop) { this->textureLeftTop = textureLeftTop; }
+	const MyMath::Vector2& GetTextureSize()const { return textureSize; }
+	void SetTextureSize(const MyMath::Vector2& textureSize) { this->textureSize = textureSize; }
+
 private:
 
 	/// <summary>
@@ -91,6 +111,13 @@ private:
 	MyMath::Vector2 size;
 
 	uint32_t textureIndex = 0;
+
+	bool isFlipX_ = false;
+
+	bool isFlipY_ = false;
+
+	// テクスチャサイズをイメージに合わせる
+	void AdjustTextureSize();
 
 };
 
