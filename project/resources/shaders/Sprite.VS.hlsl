@@ -1,4 +1,4 @@
-#include "Object3d.hlsli"
+#include "Sprite.hlsli"
 
 struct TransformationMatrix
 {
@@ -17,7 +17,7 @@ VertexShaderOutput main(VertexShaderInput input)
     VertexShaderOutput output;
     
     output.position = mul(input.position, gtransformationMatrix.WVP);
-    
+   
     output.texcoord = input.texcoord;
     
     return output;
