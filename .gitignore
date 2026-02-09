@@ -18,9 +18,13 @@
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
+Development/
 [Rr]elease/
 [Rr]eleases/
 generated/
+
+x64/
+x86/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
