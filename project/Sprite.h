@@ -77,7 +77,7 @@ private:
 	/// <summary>
 	/// ポインタ
 	/// </summary>
-	SpriteCommon* spriteCommon = nullptr;
+	SpriteCommon* spriteCommon_ = nullptr;
 	VertexData* vertexData = nullptr;
 	uint32_t* indexData = nullptr;
 	TransformationMatrix* transformationMatrixData = nullptr;

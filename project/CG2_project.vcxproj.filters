@@ -28,6 +28,21 @@
     <Filter Include="ヘッダー ファイル\Sprite">
       <UniqueIdentifier>{dd0ae0f7-9b1b-4e61-b7a3-3593831d5b2b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Object3d">
+      <UniqueIdentifier>{958d4b3e-4be3-441f-923d-f4603ff8289d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Object3d">
+      <UniqueIdentifier>{e548482a-87d0-4e46-ab87-846b79117e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\hlsl">
+      <UniqueIdentifier>{6c9f5658-1887-4f0a-9467-8f8436c6b06b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\hlsl\Sprite">
+      <UniqueIdentifier>{5808d023-fda0-4773-a603-45b651130236}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\hlsl\Object">
+      <UniqueIdentifier>{4f3f46f7-dc2f-4961-9704-fb8f5d5fcc7f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -84,10 +99,29 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Object3d.cpp">
+      <Filter>ソース ファイル\Object3d</Filter>
+    </ClCompile>
+    <ClCompile Include="Object3dCommon.cpp">
+      <Filter>ソース ファイル\Object3d</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>ソース ファイル\Object3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="resources\shaders\Sprite.VS.hlsl" />
-    <FxCompile Include="resources\shaders\Sprite.PS.hlsl" />
+    <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
+      <Filter>ソース ファイル\hlsl\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\Sprite.VS.hlsl">
+      <Filter>ソース ファイル\hlsl\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="Object3d.VS.hlsl">
+      <Filter>ソース ファイル\hlsl\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="Object3d.PS.hlsl">
+      <Filter>ソース ファイル\hlsl\Object</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -144,6 +178,18 @@
     <ClInclude Include="TextureManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Object3d.h">
+      <Filter>ヘッダー ファイル\Object3d</Filter>
+    </ClInclude>
+    <ClInclude Include="Object3dCommon.h">
+      <Filter>ヘッダー ファイル\Object3d</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>ヘッダー ファイル\Object3d</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">
@@ -151,6 +197,16 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\Sprite.hlsli" />
+    <None Include="resources\shaders\Sprite.hlsli">
+      <Filter>ソース ファイル\hlsl\Sprite</Filter>
+    </None>
+    <None Include="Object3d.hlsli">
+      <Filter>ソース ファイル\hlsl\Object</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CG2_project.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
