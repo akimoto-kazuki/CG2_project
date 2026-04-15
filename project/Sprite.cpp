@@ -5,16 +5,17 @@ using namespace MyMath;
 
 void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
-	this->spriteCommon = spriteCommon;
+	this->spriteCommon_ = spriteCommon;
 
 	position_ = { 0.0f,0.0f };
 
-	vertexResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * 6);
-	indexResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * 6);
+	vertexResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * 6);
+	indexResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * 6);
 
 	vertexBufferView.BufferLocation = vertexResource.Get()->GetGPUVirtualAddress();
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
+
 	indexBufferView.BufferLocation = indexResource.Get()->GetGPUVirtualAddress();
 	indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
@@ -22,7 +23,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 	vertexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	indexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
-	materialResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(Vector4));
+	// マテリアル
+	materialResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(Vector4));
 	// 書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
@@ -31,7 +33,7 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 	materialData->enableLighting = false;
 	materialData->uvTransform = MakeIdentity4x4();
 
-	transformationMatrixResource = spriteCommon->GetDxCommon()->CreatBufferResource(sizeof(Matrix4x4));
+	transformationMatrixResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(Matrix4x4));
 
 	transformationMatrixResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 
@@ -101,19 +103,19 @@ void Sprite::Update()
 
 void Sprite::Draw()
 {
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
+	spriteCommon_->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
 	// インデックス
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView);
+	spriteCommon_->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView);
 
 	// マテリアルCBufferの場所を設定
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// wvp用のCBufferの場所を設定]
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = spriteCommon->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = spriteCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-	spriteCommon->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	spriteCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
 void Sprite::AdjustTextureSize()
