@@ -7,11 +7,57 @@
 
 using namespace MyMath;
 
-void Model::Initialize(ModelCommon* modelCommon)
+void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
 	modelCommon_ = modelCommon;
-	modelData = LoadObjFile("resources", "plane.obj");
+	modelData = LoadObjFile(directorypath, filename);
+	// リソース制作
+	vertexResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * modelData.vertices.size());
 
+	// リソースの先頭のアドレスから使う
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	// 使用するリソースのサイズは頂点3つ分のサイズ
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * UINT(modelData.vertices.size());
+	// 1頂点あたりのサイズ
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+
+	// 書き込むためのアドレスを取得
+	vertexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+
+	// 左下
+	vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
+	vertexData[0].texcoord = { 0.0f,1.0f };
+	// 上
+	vertexData[1].position = { 0.0f,  0.5f, 0.0f, 1.0f };
+	vertexData[1].texcoord = { 0.5f,0.0f };
+	// 右下
+	vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
+	vertexData[2].texcoord = { 1.0f,1.0f };
+
+	// 左下
+	vertexData[3].position = { -0.5f, -0.5f,0.5f, 1.0f };
+	vertexData[3].texcoord = { 0.0f,1.0f };
+	// 上
+	vertexData[4].position = { 0.0f,  0.0f, 0.0f, 1.0f };
+	vertexData[4].texcoord = { 0.5f,0.0f };
+	// 右下
+	vertexData[5].position = { 0.5f, -0.5f,-0.5f, 1.0f };
+	vertexData[5].texcoord = { 1.0f,1.0f };
+
+	//マテリアル
+	materialResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(Vector4));
+	// 書き込むためのアドレスを取得
+	materialResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+	// 今回は赤を書き込んでみる
+	materialData->color = Vector4{ 1.0f,1.0f,1.0f,1.0f };
+	materialData->enableLighting = false;
+	materialData->uvTransform = MakeIdentity4x4();
+	// テクスチャ読み込み
+	TextureManager::GetInstance()->LoadTexture(modelData.material.textureFilePath);
+	// 番号を取得
+	modelData.material.textureIndex =
+		TextureManager::GetInstance()->GetTextureIndexByFilepath(modelData.material.textureFilePath);
 }
 
 Model::MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)
@@ -117,4 +163,17 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 	}
 
 	return modelData;
+}
+
+void Model ::Draw()
+{
+	modelCommon_->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
+	// マテリアルCBufferの場所を設定
+	modelCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = modelCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
+	modelCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureIndex));
+	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
+	modelCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
+
 }

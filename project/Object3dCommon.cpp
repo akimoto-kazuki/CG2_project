@@ -121,6 +121,7 @@ void Object3dCommon::GraphicsPipelineState()
 	// BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
 
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	// RasterizerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	// 裏面(時計回り)を表示しない
@@ -158,7 +159,7 @@ void Object3dCommon::GraphicsPipelineState()
 	// Depthの機能を有効化
 	depthStencilDescObj.DepthEnable = true;
 	// 書き込みをする
-	depthStencilDescObj.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDescObj.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	// 比較関数はLessEqual。つまり、近ければ描画される
 	depthStencilDescObj.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 

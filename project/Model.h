@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+using namespace MyMath;
+
 class Model
 {
 	struct VertexData
@@ -38,12 +40,13 @@ class Model
 
 public:
 
-	void Initialize(ModelCommon* modelCommon);
+	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
+
+	void Draw();
 
 	static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-
 
 private:
 

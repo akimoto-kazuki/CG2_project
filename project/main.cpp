@@ -35,6 +35,7 @@
 #include "Object3dCommon.h"
 
 #include "TextureManager.h"
+#include "ModelManager.h"
 
 #include "MyMath.h"
 
@@ -51,38 +52,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 
 using namespace MyMath;
-
-struct VertexData
-{
-	MyMath::Vector4 position;
-	MyMath::Vector2 texcoord;
-	MyMath::Vector3 normal;
-};
-
-struct Material
-{
-	MyMath::Vector4 color;
-	int32_t enableLighting;
-	float padding[3];
-	MyMath::Matrix4x4 uvTransform;
-};
-
-struct TransformationMatrix
-{
-	MyMath::Matrix4x4 WVP;
-	MyMath::Matrix4x4 World;
-};
-
-struct MaterialData
-{
-	std::string textureFilePath;
-};
-
-struct ModelData
-{
-	std::vector<VertexData> vertices;
-	MaterialData material;
-};
 
 std::wstring ConvertString(const std::string& str)
 {
@@ -179,11 +148,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteFile[1] = "resources/monsterBall.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon);
+	ModelManager::GetInstance()->Initialize(dxCommon);
 
 	for (int i = 0; i < spriteFile.size(); i++)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
+	ModelManager::GetInstance()->LoadModel("plane.obj");
 
 	Vector3 position = {0.0f,0.0f,0.0f};
 	float rotation = 0.0f;
@@ -192,6 +163,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
+	object3d->SetModel("plane.obj");
 
 	std::vector<Sprite*> sprites_;
 	for (uint32_t i = 0; i < 5; ++i)
@@ -302,7 +274,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			for (Sprite* sprite : sprites_)
 			{	
-				sprite->Draw();
+				//sprite->Draw();
 			}
 
 			
@@ -325,6 +297,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	winApp->Finalize();
 
 	TextureManager::GetInstance()->Finalize();
+	ModelManager::GetInstance()->Finalize();
 	delete sprite;
 	delete object3d;
 	
