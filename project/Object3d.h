@@ -34,6 +34,11 @@ class Object3d
 		float intensity;
 	};
 
+	struct CameraForGPU 
+	{
+		MyMath::Vector3 worldPosition;
+	};
+
 public:
 	
 	// 初期化
@@ -75,6 +80,10 @@ private:
 	float rotation = 0.0f;
 
 	Model* model_ = nullptr;
+
+	// private メンバに追加
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = nullptr;
+	CameraForGPU* cameraData = nullptr;
 
 };
 

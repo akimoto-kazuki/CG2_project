@@ -28,8 +28,13 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 	transform = { {1.0f,1.0f,1.0f},{0.0f,rotation,0.0f},{0.0f,0.0f,0.0f} };
 
-	cameraTransform = { {1.0f,1.0f,1.0f},{0.3f,0.0f,0.0f},{0.0f,4.0f,-10.0f} };
+	cameraTransform = { {1.0f,1.0f,1.0f},{0.3f,0.0f,0.0f},{0.0f,2.0f,-5.0f} };
 
+	// Initialize 内に追加
+	cameraResource = object3dCommon_->GetDxCommon()->CreatBufferResource(sizeof(CameraForGPU));
+	cameraResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
+	// カメラの座標を設定 (とりあえず cameraTransform の位置など)
+	cameraData->worldPosition = cameraTransform.translate;
 }
 
 void Object3d::Update()
@@ -47,10 +52,14 @@ void Object3d::Update()
 
 void Object3d::Draw()
 {
+	auto commandList = object3dCommon_->GetDxCommon()->GetCommandList();
+
 	// wvp用のCBufferの場所を設定]
-	object3dCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	
+	commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
 	// ライティング
-	object3dCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 	if (model_)
 	{
