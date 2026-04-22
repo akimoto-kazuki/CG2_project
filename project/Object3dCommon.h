@@ -3,6 +3,8 @@
 #include "Logger.h"
 #include "StringUtility.h"
 
+class Camera;
+
 class Object3dCommon
 {
 public:
@@ -13,6 +15,11 @@ public:
 
     DirectXCommon* GetDxCommon()const { return dxCommon_; }
 
+    // set
+    void SetDefaultCamera(Camera* camera) { this->defaultCamera = camera; }
+    // get
+    Camera* GetDefaultCamera()const { return defaultCamera; }
+
 private:
     // ルートシグネチャの作成
     void RootSignature();
@@ -22,6 +29,8 @@ private:
     // ルートシグネチャ
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
+
+    Camera* defaultCamera = nullptr;
 
 };
 

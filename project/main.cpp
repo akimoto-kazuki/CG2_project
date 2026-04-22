@@ -36,6 +36,8 @@
 
 #include "TextureManager.h"
 #include "ModelManager.h"
+//カメラ
+#include "Camera.h"
 
 #include "MyMath.h"
 
@@ -50,42 +52,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
-
 using namespace MyMath;
-
-std::wstring ConvertString(const std::string& str)
-{
-	if (str.empty())
-	{
-		return std::wstring();
-	}
-	auto sizeNeeded =
-		MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), NULL, 0);
-	if (sizeNeeded == 0)
-	{
-		return std::wstring();
-	}
-	std::wstring result(sizeNeeded, 0);
-	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), &result[0], sizeNeeded);
-	return result;
-}
-
-std::string ConvertString(const std::wstring& str)
-{
-	if (str.empty())
-	{
-		return std::string();
-	}
-	auto sizeNeeded =
-		WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
-	if (sizeNeeded == 0)
-	{
-		return std::string();
-	}
-	std::string result(sizeNeeded, 0);
-	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), result.data(), sizeNeeded, NULL, NULL);
-	return result;
-}
 
 //ウィンドウプロシーシャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -125,6 +92,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// スプライト
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
+	
 
 	// ウィンドウ
 	winApp = new WinApp();
@@ -141,6 +109,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
+
+	// カメラ
+	Camera* camera = new Camera();
+	camera->SetRotate({ 0.0f,0.0f,0.0f });
+	camera->SetTranslate({ 0.0f,0.0f,0.0f });
+	object3dCommon->SetDefaultCamera(camera);
+
+	Vector3 rotate = {0.0f,0.0f,0.0f};
+	Vector3 translate = {0.0f,0.0f,0.0f};
 
 	std::array<std::string, 2> spriteFile;
 
@@ -172,23 +149,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		sprite->Initialize(spriteCommon, spriteFile[i%2]);
 		sprites_.push_back(sprite);
 	}
-
-	// DSVの設定
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	
 	//FenceのSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	// WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreatBufferResource(sizeof(Matrix4x4));
-	// データを書き込む
-	Matrix4x4* wvpDate = nullptr;
-	// 書き込むためのアドレスを取得
-	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpDate));
-	// 単位行列を書きこんでおく
-	*wvpDate = MyMath::MakeIdentity4x4();
 
 	assert(fenceEvent != nullptr);
 
@@ -228,7 +191,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 
 			float pos = 0.0f;
-
+			camera->Update();
 			object3d->Update();
 			object3d->SetRotation(rotation);
 
@@ -244,7 +207,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				
 			}
 			
-
+			camera->SetRotate(rotate);
+			camera->SetTranslate(translate);
 			//ゲームの処理
 
 			ImGui_ImplDX12_NewFrame();
@@ -254,7 +218,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			//ImGui::ShowDemoWindow();
 			
 			ImGui::Begin("Settings");
-		//	ImGui::ColorEdit4("material", &materialDate->x, ImGuiColorEditFlags_AlphaPreview);
+			ImGui::DragFloat3("cameraRotato", &rotate.x ,0.1f);
+			ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
 			ImGui::DragFloat2("SpritePosition", &position.x, 0.1f);
 			ImGui::DragFloat("SpriteRotation", &rotation, 0.1f);
 			ImGui::DragFloat4("SpriteColor", &color.x, 0.1f);
@@ -277,8 +242,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				//sprite->Draw();
 			}
 
-			
-
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 
@@ -300,6 +263,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ModelManager::GetInstance()->Finalize();
 	delete sprite;
 	delete object3d;
+	delete camera;
 	
 	// ウィンドウ解放
 	delete winApp;

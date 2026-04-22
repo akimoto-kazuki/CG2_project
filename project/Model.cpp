@@ -167,13 +167,16 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 
 void Model ::Draw()
 {
-	modelCommon_->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
+
+	auto commandList = modelCommon_->GetDxCommon()->GetCommandList();
+
+	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
 	// マテリアルCBufferの場所を設定
-	modelCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = modelCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(2);
-	modelCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-	modelCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
+	commandList->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
 
 }
