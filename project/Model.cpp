@@ -46,11 +46,11 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	vertexData[5].texcoord = { 1.0f,1.0f };
 
 	//マテリアル
-	materialResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(Vector4));
+	materialResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(ModelData));
 	// 書き込むためのアドレスを取得
 	materialResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	// 今回は赤を書き込んでみる
-	materialData->color = Vector4{ 1.0f,1.0f,1.0f,1.0f };
+	materialData->color = { 1.0f,1.0f,1.0f,1.0f };
 	materialData->enableLighting = false;
 	materialData->uvTransform = MakeIdentity4x4();
 	// テクスチャ読み込み
@@ -174,7 +174,7 @@ void Model ::Draw()
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = modelCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(2);
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = modelCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
 	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);

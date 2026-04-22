@@ -93,7 +93,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
 	
-
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
