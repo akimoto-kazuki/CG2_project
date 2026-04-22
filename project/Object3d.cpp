@@ -12,6 +12,7 @@ using namespace MyMath;
 void Object3d::Initialize(Object3dCommon* object3dCommon)
 {
 	this->object3dCommon_ = object3dCommon;
+	this->camera = object3dCommon->GetDefaultCamera();
 
 	//トランスフォーム
 	transformationMatrixResource = object3dCommon_->GetDxCommon()->CreatBufferResource(sizeof(TransformationMatrix));
@@ -23,35 +24,50 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 	directionalLightResource = object3dCommon_->GetDxCommon()->CreatBufferResource(sizeof(DirectionalLight));
 	directionalLightResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
-	directionalLightData->direction = { 0.0f,0.0f,1.0f };
+	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
 	directionalLightData->intensity = 1.0f;
 
 	transform = { {1.0f,1.0f,1.0f},{0.0f,rotation,0.0f},{0.0f,0.0f,0.0f} };
 
 	cameraTransform = { {1.0f,1.0f,1.0f},{0.3f,0.0f,0.0f},{0.0f,4.0f,-10.0f} };
 
+	// Initialize 内に追加
+	cameraResource = object3dCommon_->GetDxCommon()->CreatBufferResource(sizeof(CameraForGPU));
+	cameraResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
+	// カメラの座標を設定 (とりあえず cameraTransform の位置など)
+	cameraData->worldPosition = cameraTransform.translate;
 }
 
 void Object3d::Update()
 {
-	transform = { {1.0f,1.0f,1.0f},{0.0f,rotation,0.0f},{0.0f,0.0f,0.0f} };
+	//transform.rotate.y += 0.1f;
 
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrix;
+	if (camera)
+	{
+		const Matrix4x4& viewProjectionMatrix = camera->GetViewProjectionMatrix();
+		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+	}
+	else
+	{
+		worldViewProjectionMatrix = worldMatrix;
+	}
 
-	transformationMatrixData->WVP = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	transformationMatrixData->WVP = worldViewProjectionMatrix;
 	transformationMatrixData->World = worldMatrix;
 }
 
 void Object3d::Draw()
 {
-	// wvp用のCBufferの場所を設定]
-	object3dCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-	// ライティング
-	object3dCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	auto commandList = object3dCommon_->GetDxCommon()->GetCommandList();
 
+	// wvp用のCBufferの場所を設定]
+	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	// ライティング
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+
+	commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
 	if (model_)
 	{
 		model_->Draw();

@@ -5,10 +5,10 @@
 #include "MyMath.h"
 #include "ModelManager.h"
 #include "Model.h"
-
-#include <stdint.h>
+#include "Camera.h"
 
 class Object3dCommon;
+class Camera;
 
 class Object3d
 {
@@ -34,6 +34,11 @@ class Object3d
 		float intensity;
 	};
 
+	struct CameraForGPU 
+	{
+		MyMath::Vector3 worldPosition;
+	};
+
 public:
 	
 	// 初期化
@@ -52,6 +57,8 @@ public:
 	void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
 	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
 
+	void SetCamera(Camera* camera) { this->camera = camera; }
+
 	const Vector3& GetScale()const { transform.scale; }
 	const Vector3& GetRotate()const { transform.rotate; }
 	const Vector3& GetTranslate()const { transform.translate; }
@@ -59,6 +66,7 @@ public:
 private:
 
 	Object3dCommon* object3dCommon_ = nullptr;
+	Camera* camera = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;
 	TransformationMatrix* transformationMatrixData = nullptr;
@@ -75,6 +83,10 @@ private:
 	float rotation = 0.0f;
 
 	Model* model_ = nullptr;
+
+	// private メンバに追加
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = nullptr;
+	CameraForGPU* cameraData = nullptr;
 
 };
 

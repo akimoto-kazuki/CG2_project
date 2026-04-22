@@ -26,8 +26,6 @@ namespace MyMath
 		float y;
 	};
 
-	
-
 	struct Transform
 	{
 		Vector3 scale;

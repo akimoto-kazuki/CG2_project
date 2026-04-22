@@ -182,8 +182,6 @@ private:
 	// WindowsAPI
 	WinApp* winApp = nullptr;
 
-
-
 	/// <summary>
 	/// 指定番号のCPUデスクリプタハンドルを取得する
 	/// </summary>
@@ -200,7 +198,6 @@ private:
 	void UpdateFixFPS();
 	
 	std::chrono::steady_clock::time_point reference_;
-
 	
 };
 
