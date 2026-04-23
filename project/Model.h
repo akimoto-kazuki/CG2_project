@@ -60,6 +60,10 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	//
 	VertexData* vertexData = nullptr;
+
+	uint32_t* indexData = nullptr;
+	D3D12_INDEX_BUFFER_VIEW indexBufferView;
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexResource = nullptr;
 	//
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = nullptr;
 	//

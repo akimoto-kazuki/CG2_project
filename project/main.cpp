@@ -274,8 +274,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	delete spriteCommon;
 	delete object3dCommon;
 
-
-
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	// こういうもんである。初期化を逆順に行う
 	ImGui_ImplDX12_Shutdown();
