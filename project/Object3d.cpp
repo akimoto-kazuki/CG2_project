@@ -1,12 +1,6 @@
 #include "Object3d.h"
 #include "Object3dCommon.h"
 
-#include <cassert>
-//ファイルやディレクトリに関する操作を行うライブラリ
-#include <filesystem>
-//ファイルに書いたり読んだりするライブラリ
-#include<fstream>
-
 using namespace MyMath;
 
 void Object3d::Initialize(Object3dCommon* object3dCommon)
@@ -27,7 +21,7 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
 	directionalLightData->intensity = 1.0f;
 
-	transform = { {1.0f,1.0f,1.0f},{0.0f,rotation,0.0f},{0.0f,0.0f,10.0f} };
+	transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
 	// Initialize 内に追加
 	cameraResource = object3dCommon_->GetDxCommon()->CreatBufferResource(sizeof(CameraForGPU));
@@ -39,7 +33,6 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 void Object3d::Update()
 {
 
-	transform.rotate.y += 0.05f;
 	cameraData->worldPosition = camera->GetTranslate();
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 worldViewProjectionMatrix;

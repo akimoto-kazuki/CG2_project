@@ -92,7 +92,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// スプライト
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
-	
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -102,10 +101,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// DirectX
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
-
+	// Common
+	// object3d
 	object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
-
+	// sprite
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
@@ -114,7 +114,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
 	camera->SetTranslate({ 0.0f,0.0f,0.0f });
 	object3dCommon->SetDefaultCamera(camera);
-
+	// カメラの用
 	Vector3 rotate = {0.0f,0.0f,0.0f};
 	Vector3 translate = {0.0f,0.0f,0.0f};
 
@@ -132,15 +132,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 
+	// obj用
+	Vector3 objPosition = { -2.0f,0.0f,10.0f };
+	Vector3 obj2Position = { 2.0f,0.0f,10.0f };
+	Vector3 objRotate = { 0.0f,3.0f,0.0f };
+	Vector3 obj2Rotate = { 0.0f,3.0f,0.0f };
+	// obj初期化
+	object3d = new Object3d();
+	object3d->Initialize(object3dCommon);
+	object3d->SetModel("plane.obj");
+
+	Object3d* obj2 = new Object3d();
+	obj2->Initialize(object3dCommon);
+	obj2->SetModel("plane.obj");
+
+	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
 	float rotation = 0.0f;
 	Vector4 color = {1.0f,1.0f,1.0f,1.0f};
 	Vector2 size = {1.0f,1.0f};
 
-	object3d = new Object3d();
-	object3d->Initialize(object3dCommon);
-	object3d->SetModel("plane.obj");
-
+	// spr初期化
 	std::vector<Sprite*> sprites_;
 	for (uint32_t i = 0; i < 5; ++i)
 	{
@@ -192,7 +204,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
-			object3d->SetRotation(rotation);
+			object3d->SetRotate(objRotate);
+			object3d->SetTranslate(objPosition);
+
+			obj2->Update();
+			obj2->SetRotate(obj2Rotate);
+			obj2->SetTranslate(obj2Position);
 
 			for (Sprite* sprite : sprites_)
 			{
@@ -203,7 +220,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				sprite->SetPosition(Add(position,changePos));
 				sprite->SetColor(color);
 				sprite->Update();
-				
 			}
 			
 			camera->SetRotate(rotate);
@@ -217,12 +233,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			//ImGui::ShowDemoWindow();
 			
 			ImGui::Begin("Settings");
+			ImGui::Text("Camera");
 			ImGui::DragFloat3("cameraRotato", &rotate.x ,0.1f);
 			ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
+			ImGui::Text("Sprite");
 			ImGui::DragFloat2("SpritePosition", &position.x, 0.1f);
 			ImGui::DragFloat("SpriteRotation", &rotation, 0.1f);
 			ImGui::DragFloat4("SpriteColor", &color.x, 0.1f);
 			ImGui::DragFloat2("SpriteSize", &size.x, 0.1f);
+			ImGui::Text("object3D");
+			ImGui::DragFloat3("ObjectPosition", &objPosition.x, 0.1f);
+			ImGui::DragFloat3("ObjectRotation", &objRotate.x, 0.1f);
+			ImGui::Text("object3D_2");
+			ImGui::DragFloat3("Object2Position", &obj2Position.x, 0.1f);
+			ImGui::DragFloat3("Object2Rotation", &obj2Rotate.x, 0.1f);
 			ImGui::End();
 
 			dxCommon->PreDraw();
@@ -233,12 +257,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3dCommon->DrawCommon();
 
 			object3d->Draw();
+			obj2->Draw();
 
 			spriteCommon->DrawCommon();
 
 			for (Sprite* sprite : sprites_)
 			{	
-				//sprite->Draw();
+				sprite->Draw();
 			}
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
@@ -262,6 +287,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ModelManager::GetInstance()->Finalize();
 	delete sprite;
 	delete object3d;
+	delete obj2;
 	delete camera;
 	
 	// ウィンドウ解放
