@@ -1,7 +1,6 @@
 #pragma once
 #include "DirectXCommon.h"
 #include "Logger.h"
-#include "StringUtility.h"
 #include "MyMath.h"
 #include "ModelManager.h"
 #include "Model.h"
@@ -48,9 +47,6 @@ public:
 
 	void Draw();
 
-	float GetRotation()const { return rotation; }
-	void SetRotation(float rotation) { this->rotation = rotation; }
-
 	void SetModel(const std::string& filePath);
 
 	void SetScale(const Vector3& scale) { transform.scale = scale; }
@@ -79,8 +75,6 @@ private:
 	MyMath::Transform cameraTransform;
 
 	uint32_t textureIndex = 0;
-
-	float rotation = 0.0f;
 
 	Model* model_ = nullptr;
 
