@@ -4,6 +4,8 @@
 #include "DirectXCommon.h"
 #include <string>
 #include <wrl.h>
+#include <unordered_map>
+#include "SrvManager.h"
 
 class TextureManager
 {
@@ -11,9 +13,9 @@ private:
 
 	struct TextureData
 	{
-		std::string filePath;
 		DirectX::TexMetadata metadata;
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		uint32_t srvIndex;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU;
 		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU;
 	};
@@ -26,8 +28,8 @@ public:
 	// 終了
 	void Finalize();
 
-	void Initialize(DirectXCommon* dxCommon);
-	std::vector<TextureData> textureDatas;
+	void Initialize(DirectXCommon* dxCommon,SrvManager* SrvManeger);
+	std::unordered_map<std::string,TextureData> textureDatas;
 
 	/// <summary>
 	/// テクスチャファイルの読み込み
@@ -38,12 +40,14 @@ public:
 
 	uint32_t GetTextureIndexByFilepath(const std::string& filePath);
 
-	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(const std::string& filePath);
 
-	const DirectX::TexMetadata& GetMetaData(uint32_t textureIndex);
+	const DirectX::TexMetadata& GetMetaData(const std::string& filePath);
 
 private:
 	static TextureManager* instance;
+
+	SrvManager* srvManager = nullptr;
 
 	DirectXCommon* dxCommon_ = nullptr;
 

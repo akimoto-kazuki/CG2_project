@@ -138,6 +138,9 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>Engine\ソース ファイル\2d\Sprite</Filter>
     </ClCompile>
+    <ClCompile Include="SrvManager.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -228,6 +231,9 @@
     </ClInclude>
     <ClInclude Include="TextureManager.h">
       <Filter>Engine\ヘッダー ファイル\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="SrvManager.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

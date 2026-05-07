@@ -33,12 +33,14 @@
 // オブジェクト
 #include "Object3d.h"
 #include "Object3dCommon.h"
-
+// マネージャ
 #include "TextureManager.h"
 #include "ModelManager.h"
 //カメラ
 #include "Camera.h"
-
+//
+#include "SrvManager.h"
+//
 #include "MyMath.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -92,6 +94,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// スプライト
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
+	// SRV
+	SrvManager* srvManager = nullptr;
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -101,6 +105,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// DirectX
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
+	// SRV初期化
+	srvManager = new SrvManager();
+	srvManager->Initialize(dxCommon);
 	// Common
 	// object3d
 	object3dCommon = new Object3dCommon();
@@ -123,7 +130,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	spriteFile[0] = "resources/uvChecker.png";
 	spriteFile[1] = "resources/monsterBall.png";
 
-	TextureManager::GetInstance()->Initialize(dxCommon);
+	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
 	ModelManager::GetInstance()->Initialize(dxCommon);
 
 	for (int i = 0; i < spriteFile.size(); i++)
@@ -225,7 +232,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			camera->SetRotate(rotate);
 			camera->SetTranslate(translate);
 			//ゲームの処理
-
+			
+			/*
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
@@ -248,11 +256,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui::DragFloat3("Object2Position", &obj2Position.x, 0.1f);
 			ImGui::DragFloat3("Object2Rotation", &obj2Rotate.x, 0.1f);
 			ImGui::End();
-
+			*/
 			dxCommon->PreDraw();
 
+			srvManager->PreDraw();
 			// ImGuiの内部コマンドを生成する
-			ImGui::Render();
+			//ImGui::Render();
 
 			object3dCommon->DrawCommon();
 
@@ -267,7 +276,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 
 			// 実際のcommandListのImGuiの描画コマンドを積む
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
+			//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 
 			//GPUにコマンドリストの実行を行わせる
 			ID3D12CommandList* commandLists[] = { dxCommon->GetCommandList() };
@@ -283,13 +292,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// WindowsAPIの終了処理
 	winApp->Finalize();
 
-	TextureManager::GetInstance()->Finalize();
-	ModelManager::GetInstance()->Finalize();
 	delete sprite;
 	delete object3d;
 	delete obj2;
 	delete camera;
 	
+	delete spriteCommon;
+	delete object3dCommon;
+
+	TextureManager::GetInstance()->Finalize();
+	ModelManager::GetInstance()->Finalize();
+
+	delete srvManager;
+
 	// ウィンドウ解放
 	delete winApp;
 	// 入力解放
@@ -297,8 +312,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// DirectXの解放
 	delete dxCommon;
 
-	delete spriteCommon;
-	delete object3dCommon;
 
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	// こういうもんである。初期化を逆順に行う
