@@ -111,6 +111,7 @@ private:
 	MyMath::Vector2 size;
 
 	uint32_t textureIndex = 0;
+	std::string textureFilePath_; // ★ファイルパスを保存する変数を追加
 
 	bool isFlipX_ = false;
 

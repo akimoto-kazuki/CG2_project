@@ -6,6 +6,7 @@ using namespace MyMath;
 void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
 	this->spriteCommon_ = spriteCommon;
+	this->textureFilePath_ = textureFilePath; // ★初期化時にパスを保存しておく
 
 	position_ = { 0.0f,0.0f };
 
@@ -66,7 +67,7 @@ void Sprite::Update()
 	}
 
 	const DirectX::TexMetadata& metadata =
-		TextureManager::GetInstance()->GetMetaData(textureIndex);
+		TextureManager::GetInstance()->GetMetaData(textureFilePath_);
 	float tex_left	= textureLeftTop.x / metadata.width;
 	float tex_right = (textureLeftTop.x + textureSize.x) / metadata.width;
 	float tex_top = textureLeftTop.y / metadata.height;
@@ -114,16 +115,14 @@ void Sprite::Draw()
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// wvp用のCBufferの場所を設定]
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = spriteCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
+	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureFilePath_));
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
 void Sprite::AdjustTextureSize()
 {
-	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureIndex);
+	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureFilePath_);
 
 	textureSize.x = static_cast<float>(metadata.width);
 	textureSize.y = static_cast<float>(metadata.height);

@@ -163,8 +163,10 @@ void Model ::Draw()
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = modelCommon_->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+	assert(!modelData.material.textureFilePath.empty()); // パスが空じゃないか？
+	assert(TextureManager::GetInstance()->textureDatas.contains(modelData.material.textureFilePath)); // 登録されているか？
+
+	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureFilePath));
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
