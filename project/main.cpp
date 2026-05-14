@@ -15,10 +15,6 @@
 #include <cassert>
 #include <dxgidebug.h>
 #include <dxcapi.h>
-// imGuiを使うため
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
 // DirectXを使うため
 #include "externals/DirectXTex/DirectXTex.h"
 // 入力デバイス
@@ -42,6 +38,8 @@
 #include "SrvManager.h"
 //
 #include "MyMath.h"
+// ImGuiManager
+#include "ImGuiManager.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -96,6 +94,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Sprite* sprite = nullptr;
 	// SRV
 	SrvManager* srvManager = nullptr;
+	// ImGui
+	ImGuiManager* imGuiManeger = nullptr;
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -108,6 +108,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// SRV初期化
 	srvManager = new SrvManager();
 	srvManager->Initialize(dxCommon);
+	// ImGui
+	imGuiManeger = new ImGuiManager;
+	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
 	// Common
 	// object3d
 	object3dCommon = new Object3dCommon();
@@ -115,7 +118,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// sprite
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
-
+	
 	// カメラ
 	Camera* camera = new Camera();
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
@@ -201,6 +204,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 		else 
 		{
+			// ImGuiの設定 始
+			imGuiManeger->ImGuiBegin();
+
 			// キー入力 始
 			input->Update();
 			if (input->PushKey(DIK_0))
@@ -232,15 +238,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			camera->SetRotate(rotate);
 			camera->SetTranslate(translate);
 			//ゲームの処理
-			
-			/*
-			ImGui_ImplDX12_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-			// 開発用UIの処理。実際に開発用UIを出す場合はここをゲーム固有の処理に置き換える
-			//ImGui::ShowDemoWindow();
-			
-			ImGui::Begin("Settings");
+
+			// ImGui
+#ifdef USE_IMGUI			
+
+			ImGui::ShowDemoWindow();
+
 			ImGui::Text("Camera");
 			ImGui::DragFloat3("cameraRotato", &rotate.x ,0.1f);
 			ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
@@ -255,13 +258,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui::Text("object3D_2");
 			ImGui::DragFloat3("Object2Position", &obj2Position.x, 0.1f);
 			ImGui::DragFloat3("Object2Rotation", &obj2Rotate.x, 0.1f);
-			ImGui::End();
-			*/
+			
+#endif // USE_IMGUI
+			// ImGuiの設定 終
+			imGuiManeger->ImGuiEnd();
+
 			dxCommon->PreDraw();
 
 			srvManager->PreDraw();
-			// ImGuiの内部コマンドを生成する
-			//ImGui::Render();
 
 			object3dCommon->DrawCommon();
 
@@ -274,13 +278,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{	
 				sprite->Draw();
 			}
-
-			// 実際のcommandListのImGuiの描画コマンドを積む
-			//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
-
-			//GPUにコマンドリストの実行を行わせる
-			ID3D12CommandList* commandLists[] = { dxCommon->GetCommandList() };
 			
+			// ImGuiの描画
+			imGuiManeger->ImGuiDraw();
 		}
 		dxCommon->PostDraw();
 	}
@@ -289,8 +289,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	OutputDebugStringA("Hello,DirectX!\n");
 
 	CloseHandle(fenceEvent);
+
+	
 	// WindowsAPIの終了処理
 	winApp->Finalize();
+
 
 	delete sprite;
 	delete object3d;
@@ -299,6 +302,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	
 	delete spriteCommon;
 	delete object3dCommon;
+	delete imGuiManeger;
 
 	TextureManager::GetInstance()->Finalize();
 	ModelManager::GetInstance()->Finalize();
@@ -315,11 +319,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	// こういうもんである。初期化を逆順に行う
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-
-	// 何かのReleaseが足りない
+	imGuiManeger->Finalize();
 
 	//リソースリークチェック
 	IDXGIDebug1* debug;

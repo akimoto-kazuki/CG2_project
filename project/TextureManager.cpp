@@ -35,6 +35,8 @@ void TextureManager::LoadTexture(const std::string& filePath)
 		return;
 	}
 
+	uint32_t index = srvManager->Allocate();
+
 	DirectX::ScratchImage image{};
 	std::wstring filePathW = StringUtility::ConvertString(filePath);
 	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
