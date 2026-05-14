@@ -1,7 +1,18 @@
 #include "SrvManager.h"
 #include <cassert>
 
+SrvManager* SrvManager::instance = nullptr;
+
 const uint32_t SrvManager::kMaxSRVCount = 512;
+
+SrvManager* SrvManager::GetInstance()
+{
+	if (instance == nullptr)
+	{
+		instance = new SrvManager;
+	}
+	return instance;
+}
 
 void SrvManager::Initialize(DirectXCommon* dxCommon)
 {

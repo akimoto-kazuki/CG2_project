@@ -111,6 +111,13 @@ public:
 	ID3D12Device* GetDevice()const { return device.Get(); }
 	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
 
+	ID3D12CommandQueue* GetCommandQueue() const { return commandQueue.Get(); }
+	DXGI_FORMAT GetBackBufferFormat() const { return rtvDesc.Format; }
+	DXGI_FORMAT GetDepthBufferFormat() const { return DXGI_FORMAT_D24_UNORM_S8_UINT; } // StencilInitializeで使用しているフォーマット
+	uint32_t GetBackBufferCount() const { return static_cast<uint32_t>(swapChainResources.size()); }
+
+	size_t GetSwapChainResourcesNum()const { return swapChainResources.size(); }
+
 private:
 
 	// dxcCompilerを初期化

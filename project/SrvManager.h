@@ -4,6 +4,9 @@
 class SrvManager
 {
 private:
+
+	static SrvManager* instance;
+
 	DirectXCommon* directXCommon = nullptr;
 	
 	// サイズ
@@ -14,6 +17,9 @@ private:
 	uint32_t useIndex = 0;
 
 public:
+
+	// シングルトンインスタンスの取得
+	static SrvManager* GetInstance();
 
 	// 最大SRV
 	static const uint32_t kMaxSRVCount;
@@ -39,5 +45,7 @@ public:
 	void PreDraw();
 	// SRVセットコマンド
 	void SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_t srvIndex);
+	// SRVデスクリプタヒープを取得する
+	ID3D12DescriptorHeap* GetDescriptorHeap() const { return descriptorHeap.Get(); }
 };
 

@@ -117,6 +117,9 @@
     <ClCompile Include="SrvManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="ImGuiManager.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -185,6 +188,9 @@
       <Filter>Engine\ヘッダー ファイル\2d</Filter>
     </ClInclude>
     <ClInclude Include="SrvManager.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
