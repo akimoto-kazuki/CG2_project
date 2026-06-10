@@ -86,6 +86,34 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 	);
 }
 
+void SrvManager::CreateSRVforCubeBox(uint32_t srvIndex, ID3D12Resource* pResource, const DirectX::TexMetadata& metadata)
+{
+	// metaDataを基にSRVの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = metadata.format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	// metadataからcubemapかどうかを取得できるので利用して分岐
+	if (metadata.IsCubemap()) {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MostDetailedMip = 0;
+		srvDesc.TextureCube.MipLevels = UINT_MAX;
+		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	}
+	else {
+		// 今まで通り2d textureの設定を行う
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+	}
+
+	// デバイスを使ってSRVを生成
+	directXCommon->GetDevice()->CreateShaderResourceView(
+		pResource,
+		&srvDesc,
+		GetCPUDescriptorHandle(srvIndex)
+	);
+}
+
 void SrvManager::PreDraw()
 {
 	// 描画用のDescriptorHeapの設定

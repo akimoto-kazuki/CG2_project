@@ -11,12 +11,14 @@
 #include <cassert>
 #include <dxgidebug.h>
 #include <dxcapi.h>
+#include <vector>
 
 #include <chrono>
 #include <thread>
 
 // DirectXを使うため
 #include "externals/DirectXTex/DirectXTex.h"
+#include "externals/DirectXTex/d3dx12.h"
 // imGuiを使うため
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"

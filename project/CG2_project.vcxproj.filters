@@ -15,15 +15,6 @@
     <Filter Include="Engine\ソース ファイル\namespace">
       <UniqueIdentifier>{aa6e406d-47a3-4d69-9773-fc462458c9ff}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\ソース ファイル\hlsl">
-      <UniqueIdentifier>{6c9f5658-1887-4f0a-9467-8f8436c6b06b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\ソース ファイル\hlsl\Sprite">
-      <UniqueIdentifier>{5808d023-fda0-4773-a603-45b651130236}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\ソース ファイル\hlsl\Object">
-      <UniqueIdentifier>{4f3f46f7-dc2f-4961-9704-fb8f5d5fcc7f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\ソース ファイル\2d">
       <UniqueIdentifier>{d5cfdd24-c374-4146-95f5-dd15f1734e34}</UniqueIdentifier>
     </Filter>
@@ -60,6 +51,24 @@
     </Filter>
     <Filter Include="Engine\ヘッダー ファイル\3d\Model">
       <UniqueIdentifier>{1e249632-6497-4d26-abea-b417996b89ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl">
+      <UniqueIdentifier>{6c9f5658-1887-4f0a-9467-8f8436c6b06b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl\Sprite">
+      <UniqueIdentifier>{5808d023-fda0-4773-a603-45b651130236}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl\Object">
+      <UniqueIdentifier>{4f3f46f7-dc2f-4961-9704-fb8f5d5fcc7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl\SkyBox">
+      <UniqueIdentifier>{fd3cc19a-35fb-43eb-8403-23a664c2fe4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ソース ファイル\3d\SkyBox">
+      <UniqueIdentifier>{3b2cd2b6-a510-44ab-975d-559af6190add}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ヘッダー ファイル\3d\SkyBox">
+      <UniqueIdentifier>{3af33331-5eec-4baf-bd09-9b6d49848758}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -120,19 +129,31 @@
     <ClCompile Include="ImGuiManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="SkyBox.cpp">
+      <Filter>Engine\ソース ファイル\3d\SkyBox</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyBoxCommon.cpp">
+      <Filter>Engine\ソース ファイル\3d\SkyBox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
-      <Filter>Engine\ソース ファイル\hlsl\Sprite</Filter>
+      <Filter>リソース ファイル\hlsl\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="resources\shaders\Sprite.VS.hlsl">
-      <Filter>Engine\ソース ファイル\hlsl\Sprite</Filter>
+      <Filter>リソース ファイル\hlsl\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="Object3d.VS.hlsl">
-      <Filter>Engine\ソース ファイル\hlsl\Object</Filter>
+      <Filter>リソース ファイル\hlsl\Object</Filter>
     </FxCompile>
     <FxCompile Include="Object3d.PS.hlsl">
-      <Filter>Engine\ソース ファイル\hlsl\Object</Filter>
+      <Filter>リソース ファイル\hlsl\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxPS.hlsl">
+      <Filter>リソース ファイル\hlsl\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxVS.hlsl">
+      <Filter>リソース ファイル\hlsl\SkyBox</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -193,13 +214,22 @@
     <ClInclude Include="ImGuiManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="SkyBox.h">
+      <Filter>Engine\ヘッダー ファイル\3d\SkyBox</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyBoxCommon.h">
+      <Filter>Engine\ヘッダー ファイル\3d\SkyBox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Sprite.hlsli">
-      <Filter>Engine\ソース ファイル\hlsl\Sprite</Filter>
+      <Filter>リソース ファイル\hlsl\Sprite</Filter>
     </None>
     <None Include="Object3d.hlsli">
-      <Filter>Engine\ソース ファイル\hlsl\Object</Filter>
+      <Filter>リソース ファイル\hlsl\Object</Filter>
+    </None>
+    <None Include="Skybox.hlsli">
+      <Filter>リソース ファイル\hlsl\SkyBox</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
