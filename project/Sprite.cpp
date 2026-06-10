@@ -10,8 +10,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 
 	position_ = { 0.0f,0.0f };
 
-	vertexResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * 6);
-	indexResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * 6);
+	vertexResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * 6);
+	indexResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(uint32_t) * 6);
 
 	vertexBufferView.BufferLocation = vertexResource.Get()->GetGPUVirtualAddress();
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
@@ -25,7 +25,7 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 	indexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
 	// マテリアル
-	materialResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(Vector4));
+	materialResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(Vector4));
 	// 書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
@@ -34,7 +34,7 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 	materialData->enableLighting = false;
 	materialData->uvTransform = MakeIdentity4x4();
 
-	transformationMatrixResource = spriteCommon_->GetDxCommon()->CreatBufferResource(sizeof(Matrix4x4));
+	transformationMatrixResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(Matrix4x4));
 
 	transformationMatrixResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 

@@ -41,8 +41,6 @@ PixelShaderOutput main(VertexShaderOutput input)
     
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
     
-   
-    
     if (textureColor.a <= 0.5f)
     {
         discard;

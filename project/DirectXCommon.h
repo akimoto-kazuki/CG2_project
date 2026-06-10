@@ -77,11 +77,12 @@ public:
 	/// </summary>
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreatBufferResource(size_t sizeInBytes);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreatTextureResource(const DirectX::TexMetadata& metadata);
 
-	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages);
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, ID3D12Device* device,
+		ID3D12GraphicsCommandList* commandList);
 	
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 

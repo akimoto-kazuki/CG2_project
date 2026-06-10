@@ -12,9 +12,9 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	modelCommon_ = modelCommon;
 	modelData = LoadObjFile(directorypath, filename);
 	// リソース制作
-	vertexResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(VertexData) * modelData.vertices.size());
+	vertexResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * modelData.vertices.size());
 
-	indexResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(uint32_t) * modelData.vertices.size());
+	indexResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(uint32_t) * modelData.vertices.size());
 	
 	// リソースの先頭のアドレスから使う
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
@@ -33,7 +33,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
 	//マテリアル
-	materialResource = modelCommon_->GetDxCommon()->CreatBufferResource(sizeof(ModelData));
+	materialResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(ModelData));
 	// 書き込むためのアドレスを取得
 	materialResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	// 今回は赤を書き込んでみる

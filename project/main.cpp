@@ -133,6 +133,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
 	camera->SetTranslate({ 0.0f,0.0f,0.0f });
 	object3dCommon->SetDefaultCamera(camera);
+	skyBoxCommon->SetDefaultCamera(camera);
 	// カメラの用
 	Vector3 rotate = {0.0f,0.0f,0.0f};
 	Vector3 translate = {0.0f,0.0f,0.0f};
