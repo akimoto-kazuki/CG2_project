@@ -16,7 +16,7 @@ void SkyBox::Initialize(SkyBoxCommon* skyboxCommon)
 	auto dxCommon = skyboxCommon_->GetDxCommon();
 
 	// 1. WVP行列用の定数バッファ作成 (Object3d.cpp からの移植)
-	transformationMatrixResource = dxCommon->CreatBufferResource(sizeof(TransformationMatrix));
+	transformationMatrixResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
 	transformationMatrixResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	transformationMatrixData->WVP = MakeIdentity4x4();
 	transformationMatrixData->World = MakeIdentity4x4();
@@ -45,7 +45,7 @@ void SkyBox::Initialize(SkyBoxCommon* skyboxCommon)
 	};
 
 	// 3. 頂点バッファの作成とデータ転送 (Model.cpp からの移植)
-	vertexResource = dxCommon->CreatBufferResource(sizeof(VertexData) * _countof(vertices));
+	vertexResource = dxCommon->CreateBufferResource(sizeof(VertexData) * _countof(vertices));
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * _countof(vertices);
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
@@ -56,7 +56,7 @@ void SkyBox::Initialize(SkyBoxCommon* skyboxCommon)
 	vertexResource.Get()->Unmap(0, nullptr);
 
 	// 4. インデックスバッファの作成とデータ転送
-	indexResource = dxCommon->CreatBufferResource(sizeof(uint32_t) * _countof(indices));
+	indexResource = dxCommon->CreateBufferResource(sizeof(uint32_t) * _countof(indices));
 	indexBufferView.BufferLocation = indexResource.Get()->GetGPUVirtualAddress();
 	indexBufferView.SizeInBytes = sizeof(uint32_t) * _countof(indices);
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
@@ -67,7 +67,7 @@ void SkyBox::Initialize(SkyBoxCommon* skyboxCommon)
 	indexResource.Get()->Unmap(0, nullptr);
 
 	// 3. マテリアル用の定数バッファ作成 (Model.cpp と同様の手順)
-	materialResource = dxCommon->CreatBufferResource(sizeof(Material));
+	materialResource = dxCommon->CreateBufferResource(sizeof(Material));
 	materialResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
 	// 初期値を設定（色は白、ライティングはOFF）

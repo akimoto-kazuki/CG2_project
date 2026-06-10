@@ -85,7 +85,7 @@ void TextureManager::LoadTexture(const std::string& filePath)
 	// DepthStencilTextureをウィンドウのサイズで作成
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = dxCommon_->CreateDepthStencilTextureResource(dxCommon_->GetDevice(), WinApp::kClientWidth, WinApp::kClientHeight);
 
-	dxCommon_->UploadTextureData(textureData.resource, mipImages);
+	dxCommon_->UploadTextureData(textureData.resource.Get(), mipImages,dxCommon_->GetDevice(),dxCommon_->GetCommandList());
 	
 }
 

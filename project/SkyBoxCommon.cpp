@@ -24,7 +24,7 @@ void SkyBoxCommon::RootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	// RootSignature作成。複数設定できるので配列。今回は結果1つだけなので長さ１の配列
-	D3D12_ROOT_PARAMETER rootParametersObj[3] = {};
+	D3D12_ROOT_PARAMETER rootParametersObj[5] = {};
 
 	// CBVを使う
 	rootParametersObj[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
@@ -49,6 +49,14 @@ void SkyBoxCommon::RootSignature()
 	rootParametersObj[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParametersObj[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParametersObj[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
+
+	rootParametersObj[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParametersObj[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersObj[3].Descriptor.ShaderRegister = 1;
+
+	rootParametersObj[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParametersObj[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersObj[4].Descriptor.ShaderRegister = 2;
 
 	descriptionRootSignature.pParameters = rootParametersObj;
 	descriptionRootSignature.NumParameters = _countof(rootParametersObj);

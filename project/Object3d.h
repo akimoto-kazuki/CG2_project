@@ -63,7 +63,7 @@ private:
 
 	Object3dCommon* object3dCommon_ = nullptr;
 	Camera* camera = nullptr;
-
+	
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;
 	TransformationMatrix* transformationMatrixData = nullptr;
 
