@@ -319,14 +319,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// WindowsAPIの終了処理
 	winApp->Finalize();
 
-
 	delete sprite;
 	delete object3d;
 	delete obj2;
+	delete skyBox;
 	delete camera;
 	
 	delete spriteCommon;
 	delete object3dCommon;
+	delete skyBoxCommon;
 	delete imGuiManeger;
 
 	TextureManager::GetInstance()->Finalize();
