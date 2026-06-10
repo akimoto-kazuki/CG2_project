@@ -40,6 +40,9 @@
 #include "MyMath.h"
 // ImGuiManager
 #include "ImGuiManager.h"
+// スカイボックス
+#include "SkyBox.h"
+#include "SkyBoxCommon.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -75,7 +78,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 }
 
 //Windouwsアプリでのエントリーポイント(main関数)
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) 
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) 
 {
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 
@@ -92,6 +95,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// スプライト
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
+	// スカイボックス
+	SkyBoxCommon* skyBoxCommon = nullptr;
+	SkyBox* skyBox = nullptr;
 	// SRV
 	SrvManager* srvManager = nullptr;
 	// ImGui
@@ -106,7 +112,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 	// SRV初期化
-	srvManager = new SrvManager();
+	srvManager = SrvManager::GetInstance();
 	srvManager->Initialize(dxCommon);
 	// ImGui
 	imGuiManeger = new ImGuiManager;
@@ -118,6 +124,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// sprite
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
+	// SkyBox
+	skyBoxCommon = new SkyBoxCommon();
+	skyBoxCommon->Initialize(dxCommon);
 	
 	// カメラ
 	Camera* camera = new Camera();
@@ -155,6 +164,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Object3d* obj2 = new Object3d();
 	obj2->Initialize(object3dCommon);
 	obj2->SetModel("plane.obj");
+
+	skyBox = new SkyBox();
+	skyBox->Initialize(skyBoxCommon);
+	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
+	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
+
+	// 3. 読み込んだテクスチャの番号を SkyBox に教える
+	skyBox->SetTextureIndex(skyboxTextureIndex);
 
 	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -224,6 +241,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			obj2->SetRotate(obj2Rotate);
 			obj2->SetTranslate(obj2Position);
 
+			// 3. 更新
+			skyBox->Update();
+
 			for (Sprite* sprite : sprites_)
 			{
 				Vector3 changePos = {pos,0.0f,0.0f};
@@ -272,13 +292,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3d->Draw();
 			obj2->Draw();
 
-			spriteCommon->DrawCommon();
+			// 4. 描画
+			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
+			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+
+			/*spriteCommon->DrawCommon();
 
 			for (Sprite* sprite : sprites_)
 			{	
 				sprite->Draw();
 			}
-			
+			*/
 			// ImGuiの描画
 			imGuiManeger->ImGuiDraw();
 		}

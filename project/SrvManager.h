@@ -41,6 +41,9 @@ public:
 	void CreateSRVforTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT Format, UINT MipLevels);
 	// SRV生成(Structured Buffer用)
 	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
+	// SRV生成(CubeBox用)
+	void CreateSRVforCubeBox(uint32_t srvIndex, ID3D12Resource* pResource, const DirectX::TexMetadata& metadata);
+
 	// ヒープセットコマンド
 	void PreDraw();
 	// SRVセットコマンド
