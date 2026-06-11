@@ -36,6 +36,8 @@ class Model
 		int32_t enableLighting;
 		float padding[3];
 		MyMath::Matrix4x4 uvTransform;
+		float shininess;                  // 4バイト
+		float environmentCoefficient;
 	};
 
 public:
@@ -47,6 +49,8 @@ public:
 	static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+
+	Material* GetMaterialData() { return materialData; }
 
 private:
 
