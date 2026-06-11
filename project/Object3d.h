@@ -55,6 +55,13 @@ public:
 
 	void SetCamera(Camera* camera) { this->camera = camera; }
 
+	// [追加] 環境マップ用のテクスチャインデックスを設定する関数
+	void SetEnvironmentTextureIndex(uint32_t index) { environmentTextureIndex_ = index; }
+
+	// ★追加：映り込みの強さを取得・設定する関数
+	void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; }
+	float GetEnvironmentCoefficient() const { return environmentCoefficient_; }
+
 	const Vector3& GetScale()const { transform.scale; }
 	const Vector3& GetRotate()const { transform.rotate; }
 	const Vector3& GetTranslate()const { transform.translate; }
@@ -81,6 +88,11 @@ private:
 	// private メンバに追加
 	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = nullptr;
 	CameraForGPU* cameraData = nullptr;
+
+	// [追加] 環境マップ用のテクスチャインデックスを管理する変数
+	uint32_t environmentTextureIndex_ = 0;
+
+	float environmentCoefficient_ = 0.3f;
 
 };
 

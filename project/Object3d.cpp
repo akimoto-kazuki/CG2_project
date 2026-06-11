@@ -23,11 +23,13 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 	transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
+	environmentCoefficient_ = 0.3f;
 	// Initialize 内に追加
 	cameraResource = object3dCommon_->GetDxCommon()->CreateBufferResource(sizeof(CameraForGPU));
 	cameraResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
 	// カメラの座標を設定 (とりあえず cameraTransform の位置など)
 	cameraData->worldPosition = cameraTransform.translate;
+
 }
 
 void Object3d::Update()
@@ -46,6 +48,12 @@ void Object3d::Update()
 		worldViewProjectionMatrix = worldMatrix;
 	}
 
+	if (model_) {
+		if (model_->GetMaterialData()) {
+			model_->GetMaterialData()->environmentCoefficient = environmentCoefficient_;
+		}
+	}
+
 	transformationMatrixData->WVP = worldViewProjectionMatrix;
 	transformationMatrixData->World = worldMatrix;
 }
@@ -60,6 +68,16 @@ void Object3d::Draw()
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 	commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+
+	// 1. SrvManagerのインスタンスを取得
+	SrvManager* srvManager = SrvManager::GetInstance();
+
+	// 2. ステップ1で保存したインデックスから、GPU上のハンドルを取得
+	D3D12_GPU_DESCRIPTOR_HANDLE envSrvGpuHandle = srvManager->GetGPUDescriptorHandle(environmentTextureIndex_);
+
+	// 3. ルートパラメータ[5]番にデスクリプタテーブルとしてセット
+	commandList->SetGraphicsRootDescriptorTable(5, envSrvGpuHandle);
+
 	if (model_)
 	{
 		model_->Draw();

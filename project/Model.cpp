@@ -33,18 +33,23 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
 	//マテリアル
-	materialResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(ModelData));
+	materialResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(Material));
 	// 書き込むためのアドレスを取得
 	materialResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	// 今回は赤を書き込んでみる
 	materialData->color = { 1.0f,1.0f,1.0f,1.0f };
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 	materialData->uvTransform = MakeIdentity4x4();
 	// テクスチャ読み込み
 	TextureManager::GetInstance()->LoadTexture(modelData.material.textureFilePath);
 	// 番号を取得
 	modelData.material.textureIndex =
 		TextureManager::GetInstance()->GetTextureIndexByFilepath(modelData.material.textureFilePath);
+
+	// ======= ★ここを追加！ =======
+	materialData->shininess = 70.0f;               // 光沢度（基本は 10.0f 〜 100.0f あたり）
+	materialData->environmentCoefficient = 0.3f;   // 環境マップの映り込みの強さ（0.0f 〜 1.0f）
+	// =============================
 }
 
 Model::MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)

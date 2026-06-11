@@ -150,26 +150,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("plane.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
+
+	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
+	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
 	// obj用
 	Vector3 objPosition = { -2.0f,0.0f,10.0f };
-	Vector3 obj2Position = { 2.0f,0.0f,10.0f };
 	Vector3 objRotate = { 0.0f,3.0f,0.0f };
-	Vector3 obj2Rotate = { 0.0f,3.0f,0.0f };
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("plane.obj");
-
-	Object3d* obj2 = new Object3d();
-	obj2->Initialize(object3dCommon);
-	obj2->SetModel("plane.obj");
+	object3d->SetModel("axis.obj");
+	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	skyBox = new SkyBox();
 	skyBox->Initialize(skyBoxCommon);
-	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
-	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
+	
 
 	// 3. 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
@@ -238,10 +235,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			object3d->SetRotate(objRotate);
 			object3d->SetTranslate(objPosition);
 
-			obj2->Update();
-			obj2->SetRotate(obj2Rotate);
-			obj2->SetTranslate(obj2Position);
-
 			// 3. 更新
 			skyBox->Update();
 
@@ -276,9 +269,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			ImGui::Text("object3D");
 			ImGui::DragFloat3("ObjectPosition", &objPosition.x, 0.1f);
 			ImGui::DragFloat3("ObjectRotation", &objRotate.x, 0.1f);
-			ImGui::Text("object3D_2");
-			ImGui::DragFloat3("Object2Position", &obj2Position.x, 0.1f);
-			ImGui::DragFloat3("Object2Rotation", &obj2Rotate.x, 0.1f);
+			// 1. 現在の数値を Object3d から取得してローカル変数に入れる
+			float envCoef = object3d->GetEnvironmentCoefficient();
+
+			// 2. ImGuiのスライダーでローカル変数の値をいじる
+			if (ImGui::SliderFloat("Environment Rate", &envCoef, 0.0f, 1.0f))
+			{
+				// 3. スライダーが動いて値が変わったら、新しい数値を Object3d にセットする
+				object3d->SetEnvironmentCoefficient(envCoef);
+			}
 			
 #endif // USE_IMGUI
 			// ImGuiの設定 終
@@ -291,7 +290,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			object3dCommon->DrawCommon();
 
 			object3d->Draw();
-			obj2->Draw();
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
@@ -321,7 +319,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	delete sprite;
 	delete object3d;
-	delete obj2;
 	delete skyBox;
 	delete camera;
 	

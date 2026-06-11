@@ -24,7 +24,7 @@ void Object3dCommon::RootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	// RootSignature作成。複数設定できるので配列。今回は結果1つだけなので長さ１の配列
-	D3D12_ROOT_PARAMETER rootParametersObj[5] = {};
+	D3D12_ROOT_PARAMETER rootParametersObj[6] = {};
 
 	// CBVを使う
 	rootParametersObj[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;	// b0のbと一致する
@@ -58,6 +58,18 @@ void Object3dCommon::RootSignature()
 	rootParametersObj[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParametersObj[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParametersObj[4].Descriptor.ShaderRegister = 2;
+
+	// [追加] t1用の設定
+	D3D12_DESCRIPTOR_RANGE descriptorRangeEnv[1] = {};
+	descriptorRangeEnv[0].BaseShaderRegister = 1; // t1 レジスタ
+	descriptorRangeEnv[0].NumDescriptors = 1;
+	descriptorRangeEnv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRangeEnv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	rootParametersObj[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParametersObj[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParametersObj[5].DescriptorTable.pDescriptorRanges = descriptorRangeEnv;
+	rootParametersObj[5].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeEnv);
 
 	descriptionRootSignature.pParameters = rootParametersObj;
 	descriptionRootSignature.NumParameters = _countof(rootParametersObj);
