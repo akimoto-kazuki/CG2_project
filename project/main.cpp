@@ -44,6 +44,10 @@
 #include "SkyBox.h"
 #include "SkyBoxCommon.h"
 
+// ★ここに追加：パーティクル
+#include "ParticleManager.h"
+#include "ParticleEmitter.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #include<fstream>
@@ -166,10 +170,27 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	skyBox = new SkyBox();
 	skyBox->Initialize(skyBoxCommon);
-	
-
 	// 3. 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
+
+	// ★ここに追加：パーティクルマネージャの初期化
+	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
+
+
+	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
+	TextureManager::GetInstance()->LoadTexture("Resources/uvChecker.png");
+
+	// 2. これが「何枚目に読み込んだ画像か」で番号を直接決める
+	// (例: 他に2枚読み込んでいて、これが3枚目の画像なら、0から数えて「2」になります)
+	uint32_t particleTexIndex = 1; // ★環境に合わせて 1 や 2 などに変えてみてください
+
+	// ★ここに追加：パーティクルグループの作成とエミッターの生成
+	// ※ 第2引数のSRVインデックスは、本来は TextureManager で読み込んだパーティクル用画像の番号を入れます。
+	// 今回は仮に 0 を入れています。
+	ParticleManager::GetInstance()->CreateGroup("magic", particleTexIndex);
+
+	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
+	ParticleEmitter* particleEmitter = new ParticleEmitter("magic", { 0.0f, 0.0f, 0.0f }, 1, 0.1f);
 
 	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -238,6 +259,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			// 3. 更新
 			skyBox->Update();
 
+			// ★ここに追加：パーティクルの更新
+			particleEmitter->Update();               // エミッターが時間を計ってEmitを呼ぶ
+			ParticleManager::GetInstance()->Update(); // 発生した全パーティクルの移動と寿命チェック
+
 			for (Sprite* sprite : sprites_)
 			{
 				Vector3 changePos = {pos,0.0f,0.0f};
@@ -289,11 +314,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			object3dCommon->DrawCommon();
 
-			object3d->Draw();
+			//object3d->Draw();
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
 			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+
+			// ★ここに追加：パーティクルの描画
+			ParticleManager::GetInstance()->Draw();
 
 			/*spriteCommon->DrawCommon();
 
@@ -321,7 +349,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete object3d;
 	delete skyBox;
 	delete camera;
-	
+	// ★ここに追加：エミッターの削除
+	// (ParticleManagerはシングルトンなのでdelete不要です)
+	delete particleEmitter;
+
 	delete spriteCommon;
 	delete object3dCommon;
 	delete skyBoxCommon;
