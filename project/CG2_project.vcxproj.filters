@@ -70,6 +70,15 @@
     <Filter Include="Engine\ヘッダー ファイル\3d\SkyBox">
       <UniqueIdentifier>{3af33331-5eec-4baf-bd09-9b6d49848758}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\hlsl\Particle">
+      <UniqueIdentifier>{4226c0a1-f9ea-4ce2-ad5d-ca4665a48577}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ソース ファイル\3d\Particle">
+      <UniqueIdentifier>{c21ffe7f-9bdd-4bcc-b02e-74eca5243dfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ヘッダー ファイル\3d\Particle">
+      <UniqueIdentifier>{106d5f83-fb9e-4daf-a07b-6e5f87c489ef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -135,6 +144,12 @@
     <ClCompile Include="SkyBoxCommon.cpp">
       <Filter>Engine\ソース ファイル\3d\SkyBox</Filter>
     </ClCompile>
+    <ClCompile Include="ParticleManager.cpp">
+      <Filter>Engine\ソース ファイル\3d\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleEmitter.cpp">
+      <Filter>Engine\ソース ファイル\3d\Particle</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -154,6 +169,12 @@
     </FxCompile>
     <FxCompile Include="SkyboxVS.hlsl">
       <Filter>リソース ファイル\hlsl\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="Particle.PS.hlsl">
+      <Filter>リソース ファイル\hlsl\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Particle.VS.hlsl">
+      <Filter>リソース ファイル\hlsl\Particle</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -220,6 +241,12 @@
     <ClInclude Include="SkyBoxCommon.h">
       <Filter>Engine\ヘッダー ファイル\3d\SkyBox</Filter>
     </ClInclude>
+    <ClInclude Include="ParticleManager.h">
+      <Filter>Engine\ヘッダー ファイル\3d\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleEmitter.h">
+      <Filter>Engine\ヘッダー ファイル\3d\Particle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Sprite.hlsli">
@@ -230,6 +257,9 @@
     </None>
     <None Include="Skybox.hlsli">
       <Filter>リソース ファイル\hlsl\SkyBox</Filter>
+    </None>
+    <None Include="Particle.hlsli">
+      <Filter>リソース ファイル\hlsl\Particle</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
