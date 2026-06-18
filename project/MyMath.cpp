@@ -249,4 +249,20 @@ namespace MyMath
 		return result;
 	}
 
+	float Length(const Vector3& v)
+	{
+		float result;
+		result = static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+		return result;
+	}
+
+	Vector3 Normalize(const Vector3& v)
+	{
+		Vector3 result;
+		result.x = v.x / static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+		result.y = v.y / static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+		result.z = v.z / static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+		return result;
+	}
+
 }

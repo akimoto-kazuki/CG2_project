@@ -50,4 +50,8 @@ namespace MyMath
 	Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
 
 	Matrix4x4 MakeScaleMatrix(const Vector3& scale);
+
+	float Length(const Vector3& v);
+
+	Vector3 Normalize(const Vector3& v);
 }

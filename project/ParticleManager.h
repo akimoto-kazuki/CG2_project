@@ -3,6 +3,7 @@
 #include "SrvManager.h"
 #include "Logger.h"
 #include "StringUtility.h"
+#include "Camera.h"
 //
 #include "MyMath.h"
 
@@ -12,8 +13,10 @@
 #include <string>
 #include <wrl.h>
 #include <d3d12.h>
+#include <numbers>
 
 using namespace MyMath;
+class Camera;
 
 class ParticleManager
 {
@@ -28,7 +31,8 @@ public:
 	struct TransformationMatrix {
 		MyMath::Matrix4x4 WVP;
 		MyMath::Matrix4x4 World;
-		char padding[128]; // ★256バイトアライメントにするためのゴミデータ（余白）
+		MyMath::Vector4 color;      // ★追加：16バイト（色と透明度）
+		char padding[112]; // ★256バイトアライメントにするためのゴミデータ（余白）
 	};
 
 	// ★追加：同時に画面に出せるパーティクルの最大数
@@ -48,9 +52,13 @@ public:
 		Vector3 position;       // 座標
 		Vector3 velocity;       // 速度
 		Vector4 color;          // 色
-		float scale;            // スケール
+		Transform transform;
 		float lifeTime;         // 生存可能時間（寿命）
 		float currentLifeTime;  // 現在の経過時間
+
+		// ★追加：このパーティクルが重力の影響を受けるかどうか
+		bool useGravity = false;
+		bool isExploded = false; // ★追加：爆発済みかどうかのフラグ
 	};
 
 	// ★スライド3枚目：パーティクルグループの構造体
@@ -73,7 +81,7 @@ public:
 	static ParticleManager* GetInstance();
 
 	// 初期化（引数にSrvManagerを追加）
-	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
+	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager, Camera* camera);
 
 	// 更新処理
 	void Update();
@@ -83,10 +91,21 @@ public:
 
 	// ★スライド5枚目：パーティクル発生関数
 	// どこから、何個のパーティクルを出すかを指定して発生させます
-	void Emit(const std::string& groupName, const Vector3& position, uint32_t count);
+	void EmitEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+
+	void EmitHitEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+
+	void EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count);
 
 	// ★新しくグループを作って登録する関数
 	void CreateGroup(const std::string& groupName, uint32_t srvIndex);
+
+	// set
+	void SetDefaultCamera(Camera* camera) { this->defaultCamera = camera; }
+	// get
+	Camera* GetDefaultCamera()const { return defaultCamera; }
+
+	void SetCamera(Camera* camera) { this->camera_ = camera; }
 
 private:
 
@@ -118,5 +137,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
+
+	Camera* defaultCamera = nullptr;
+	Camera* camera_ = nullptr;
+	CameraForGPU* cameraData = nullptr;
+
+	Transform cameraTransform;
 };
 

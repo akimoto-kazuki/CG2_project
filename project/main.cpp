@@ -47,8 +47,9 @@
 // ★ここに追加：パーティクル
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
-
+#ifdef USE_IMGUI	
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif // DEBUG
 
 #include<fstream>
 #include<sstream>
@@ -64,10 +65,12 @@ using namespace MyMath;
 //ウィンドウプロシーシャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+#ifdef USE_IMGUI	
 	if (ImGui_ImplWin32_WndProcHandler(hwnd,msg,wparam,lparam))
 	{
 		return true;
 	}
+#endif // DEBUE
 	//メッセージに応じてゲーム固有の処理を行う
 	switch (msg) {
 		//ウィンドウが破棄された
@@ -144,7 +147,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	std::array<std::string, 2> spriteFile;
 
-	spriteFile[0] = "resources/uvChecker.png";
+	spriteFile[0] = "resources/circle2.png";
 	spriteFile[1] = "resources/monsterBall.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
@@ -174,11 +177,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	skyBox->SetTextureIndex(skyboxTextureIndex);
 
 	// ★ここに追加：パーティクルマネージャの初期化
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
-
+	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager,camera);
 
 	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
-	TextureManager::GetInstance()->LoadTexture("Resources/uvChecker.png");
+	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
 
 	// 2. これが「何枚目に読み込んだ画像か」で番号を直接決める
 	// (例: 他に2枚読み込んでいて、これが3枚目の画像なら、0から数えて「2」になります)
@@ -187,10 +189,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// ★ここに追加：パーティクルグループの作成とエミッターの生成
 	// ※ 第2引数のSRVインデックスは、本来は TextureManager で読み込んだパーティクル用画像の番号を入れます。
 	// 今回は仮に 0 を入れています。
+	
+	// パーティクル
 	ParticleManager::GetInstance()->CreateGroup("magic", particleTexIndex);
+	//ヒットエフェクト
+	ParticleManager::GetInstance()->CreateGroup("Hit", particleTexIndex);
+	ParticleManager::GetInstance()->CreateGroup("spark", particleTexIndex);
+
+	Transform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	Transform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 
 	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
-	ParticleEmitter* particleEmitter = new ParticleEmitter("magic", { 0.0f, 0.0f, 0.0f }, 1, 0.1f);
+	ParticleEmitter* particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
+	ParticleEmitter* particleEmitterHitEffect = new ParticleEmitter("Hit", particleHitEffectTransform, 10, 2.0f);
+	ParticleEmitter* particleEmitterSparkEffect = new ParticleEmitter("spark", particleHitEffectTransform, 20, 2.0f);
 
 	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -250,6 +262,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 				OutputDebugStringA("Hit 0\n");
 			}
 
+			if (input->TriggerKey(DIK_1))
+			{
+				particleEmitterEffect->InputEffect();
+			}
+			if (input->TriggerKey(DIK_2))
+			{
+				particleEmitterHitEffect->InputHitEffect();
+			}
+			if (input->TriggerKey(DIK_3))
+			{
+				particleEmitterSparkEffect->InputSprakEffect();
+			}
+
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
@@ -260,8 +285,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			skyBox->Update();
 
 			// ★ここに追加：パーティクルの更新
-			particleEmitter->Update();               // エミッターが時間を計ってEmitを呼ぶ
-			ParticleManager::GetInstance()->Update(); // 発生した全パーティクルの移動と寿命チェック
+			ParticleManager::GetInstance()->Update();	   // 発生した全パーティクルの移動と寿命チェック
 
 			for (Sprite* sprite : sprites_)
 			{
@@ -318,7 +342,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+			//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 
 			// ★ここに追加：パーティクルの描画
 			ParticleManager::GetInstance()->Draw();
@@ -351,7 +375,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete camera;
 	// ★ここに追加：エミッターの削除
 	// (ParticleManagerはシングルトンなのでdelete不要です)
-	delete particleEmitter;
+	delete particleEmitterEffect;
+	delete particleEmitterHitEffect;
+	delete particleEmitterSparkEffect;
 
 	delete spriteCommon;
 	delete object3dCommon;

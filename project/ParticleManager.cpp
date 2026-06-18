@@ -7,16 +7,18 @@ ParticleManager* ParticleManager::GetInstance()
 	return &instance;
 }
 
-void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
+void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager,Camera* camera)
 {
 	// スライド2枚目の処理
-	dxCommon_ = dxCommon;
-	srvManager_ = srvManager;
+	this->dxCommon_ = dxCommon;
+	this->srvManager_ = srvManager;
+	this->camera_ = camera;
 
 	// ランダムエンジンの初期化
 	randomEngine_.seed(seedGenerator_());
 
 	// TODO: パイプライン生成 (前回の授業などの板ポリゴン描画を参考に rootSignature_ と pipelineState_ を生成)
+	
 	// TODO: 頂点リソース・VBV生成 (四角形の頂点4つ分などのデータを vertexResource_ に書き込む)
 
 	// 分割した初期化関数を順番に呼び出す
@@ -49,9 +51,8 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 
 	// 4. カメラ (4番)
 	cameraResource_ = dxCommon_->CreateBufferResource(sizeof(CameraForGPU));
-	CameraForGPU* cameraData = nullptr;
 	cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
-	cameraData->worldPosition = { 0.0f, 0.0f, 0.0f };
+	cameraData->worldPosition = cameraTransform.translate;
 }
 
 // ★新しくパーティクルのグループ（枠）を作る関数
@@ -68,7 +69,7 @@ void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvInde
 }
 
 // ★スライド5枚目：パーティクル発生（Emit）の実装
-void ParticleManager::Emit(const std::string& groupName, const Vector3& position, uint32_t count)
+void ParticleManager::EmitEffect(const std::string& groupName, const Transform& transform, uint32_t count)
 {
 	// 指定されたグループが存在するかチェック
 	auto it = particleGroups_.find(groupName);
@@ -81,19 +82,94 @@ void ParticleManager::Emit(const std::string& groupName, const Vector3& position
 	for (uint32_t i = 0; i < count; ++i)
 	{
 		Particle newParticle;
-		newParticle.position = position; // 発生座標を設定
 
+		newParticle.position = transform.translate;
 		// 速度をランダムに決定
 		newParticle.velocity.x = distVelocity(randomEngine_);
 		newParticle.velocity.y = distVelocity(randomEngine_);
 		newParticle.velocity.z = distVelocity(randomEngine_);
 
 		newParticle.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 初期の色（白）
-		newParticle.scale = 1.0f;                       // 初期サイズ
+		newParticle.transform.scale = { transform.scale };			// 初期サイズ
+		newParticle.transform.rotate = { transform.rotate };        // 初期回転
+		newParticle.transform.translate = transform.translate;      // 初期位置
 		newParticle.lifeTime = distLifeTime(randomEngine_); // ランダムな寿命
 		newParticle.currentLifeTime = 0.0f;             // 経過時間は0からスタート
 
 		// グループのリストに新しく作ったパーティクルを追加
+		it->second.particles.push_back(newParticle);
+	}
+}
+
+void ParticleManager::EmitHitEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+{
+	// 指定されたグループが存在するかチェック
+	auto it = particleGroups_.find(groupName);
+	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
+
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		Particle newParticle;
+
+		newParticle.position = transform.translate;
+		// 速度をランダムに決定
+		newParticle.velocity = {0.0f,0.0f,0.0f};
+		newParticle.color = { 1.0f, 1.0f, 1.0f, 1.0f };				// 初期の色（白）
+		newParticle.transform.scale = { transform.scale };			// 初期サイズ
+		newParticle.transform.rotate = { transform.rotate.x,transform.rotate.y,distRotate(randomEngine_)};        // 初期回転
+		newParticle.transform.translate = transform.translate;      // 初期位置
+		newParticle.lifeTime = 1.0f;								// 寿命固定
+		newParticle.currentLifeTime = 0.0f;							// 経過時間は0からスタート
+
+		// グループのリストに新しく作ったパーティクルを追加
+		it->second.particles.push_back(newParticle);
+	}
+}
+
+void ParticleManager::EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+{
+	auto it = particleGroups_.find(groupName);
+	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
+
+	// -1.0 〜 1.0 のランダム値（方向用）
+	std::uniform_real_distribution<float> distDir(-1.0f, 1.0f);
+	// 5.0 〜 15.0 のランダム値（初速のスピード用。最初はかなり速くする！）
+	std::uniform_real_distribution<float> distSpeed(5.0f, 15.0f);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		Particle newParticle;
+		newParticle.transform = transform;
+		newParticle.position = transform.translate;
+		// ① ランダムな方向ベクトルを作る
+		MyMath::Vector3 dir = { distDir(randomEngine_), distDir(randomEngine_), distDir(randomEngine_) };
+
+		// ベクトルの長さを1にする（正規化）ことで、綺麗な球状に飛ぶようにする
+		float length = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+		if (length > 0.0f) {
+			dir.x /= length;
+			dir.y /= length;
+			dir.z /= length;
+		}
+
+		// ② 正規化した方向に、ランダムなスピードを掛ける
+		float speed = distSpeed(randomEngine_);
+		newParticle.velocity.x = dir.x * speed;
+		newParticle.velocity.y = dir.y * speed;
+		newParticle.velocity.z = dir.z * speed;
+
+		// 火花らしい色（オレンジ・黄色系）
+		newParticle.color = { 1.0f, 0.6f, 0.1f, 1.0f };
+		newParticle.transform.scale = { 0.3f, 0.3f, 0.3f }; // 少し小さめ
+
+		// 寿命（0.5秒〜0.8秒くらいでランダムにすると散り際が綺麗になります）
+		newParticle.lifeTime = 0.5f + (distDir(randomEngine_) + 1.0f) * 0.15f;
+		newParticle.currentLifeTime = 0.0f;
+
+		newParticle.useGravity = true; // 重力もON
+
 		it->second.particles.push_back(newParticle);
 	}
 }
@@ -123,10 +199,23 @@ void ParticleManager::Update()
 			}
 			else
 			{
+				it->velocity.x *= 0.92f; // 1.0より少し小さい値を掛ける
+				it->velocity.y *= 0.92f;
+				it->velocity.z *= 0.92f;
+				if (it->useGravity)
+				{
+					it->velocity.y -= 9.8f * kDeltaTime; // 9.8fは重力加速度。好みに応じて調整してください
+				}
 				// まだ生きている場合は移動させる (座標 = 速度 * 時間)
 				it->position.x += it->velocity.x * kDeltaTime;
 				it->position.y += it->velocity.y * kDeltaTime;
 				it->position.z += it->velocity.z * kDeltaTime;
+
+				it->transform.translate = it->position;
+
+				// ★追加：フェードアウト処理 (0.0 〜 1.0 の範囲)
+				float alpha = 1.0f - (it->currentLifeTime / it->lifeTime);
+				it->color.w = alpha;
 
 				// 次のパーティクルへ進む
 				++it;
@@ -159,6 +248,7 @@ void ParticleManager::Draw()
 
 	size_t particleIndex = 0; // 何個目のパーティクルか数えるカウンター
 
+	cameraData->worldPosition = camera_->GetTranslate();
 	for (const auto& pair : particleGroups_)
 	{
 		const ParticleGroup& group = pair.second;
@@ -171,15 +261,22 @@ void ParticleManager::Draw()
 		{
 			// 制限個数を超えたら安全のために描画を終了
 			if (particleIndex >= kMaxParticles) break;
-
 			// ① パーティクルの現在位置からワールド行列を作る
-			MyMath::Matrix4x4 worldMatrix = MyMath::MakeTranslateMatrix(particle.position);
-
+			MyMath::Matrix4x4 worldMatrix = MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
+			Matrix4x4 worldViewProjectionMatrix;
+			if (camera_)
+			{
+				const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+				worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+			}
+			else
+			{
+				worldViewProjectionMatrix = worldMatrix;
+			}
 			// ② 行列を書き込む（本来はここにカメラのViewProjection行列を掛け算します）
-			// ※ もしカメラの行列を掛け算する関数（例: Multiply等）があれば、ここで適用してください。
-			// 一旦動くか確認するため、今回はそのままワールド行列を入れます。
 			wvpData[particleIndex].World = worldMatrix;
-			wvpData[particleIndex].WVP = worldMatrix;
+			wvpData[particleIndex].WVP = worldViewProjectionMatrix;
+			wvpData[particleIndex].color = particle.color;
 
 			// ③ GPU側のアドレスを、このパーティクルの番号（インデックス）の分だけズラして指定する
 			D3D12_GPU_VIRTUAL_ADDRESS wvpAddress = wvpResource_->GetGPUVirtualAddress() + (sizeof(TransformationMatrix) * particleIndex);
@@ -356,12 +453,12 @@ void ParticleManager::CreateParticleVertexData()
 	vertexResource_.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
 	// 四角形を形作る三角形2枚分の頂点データ (position, texcoord, normal)
-	vertexData[0] = { {-0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 左下
-	vertexData[1] = { {-0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 左上
-	vertexData[2] = { { 0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 右下
-	vertexData[3] = { {-0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 左上
-	vertexData[4] = { { 0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 右上
-	vertexData[5] = { { 0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 右下
+	vertexData[0] = { {-1.0f, -1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 左下
+	vertexData[1] = { {-1.0f,  1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 左上
+	vertexData[2] = { { 1.0f, -1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 右下
+	vertexData[3] = { {-1.0f,  1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 左上
+	vertexData[4] = { { 1.0f,  1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // 右上
+	vertexData[5] = { { 1.0f, -1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // 右下
 
 	// 頂点バッファビュー（VBV）の設定
 	vbv_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
