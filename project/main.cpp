@@ -147,7 +147,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	std::array<std::string, 2> spriteFile;
 
-	spriteFile[0] = "resources/circle2.png";
+	spriteFile[0] = "resources/uvChecker.png";
 	spriteFile[1] = "resources/monsterBall.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
@@ -181,11 +181,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
 	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
+	TextureManager::GetInstance()->LoadTexture("Resources/gradationLine.png");
 
 	// 2. これが「何枚目に読み込んだ画像か」で番号を直接決める
 	// (例: 他に2枚読み込んでいて、これが3枚目の画像なら、0から数えて「2」になります)
-	uint32_t particleTexIndex = 1; // ★環境に合わせて 1 や 2 などに変えてみてください
-
+	uint32_t particleTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/circle2.png"); // ★環境に合わせて 1 や 2 などに変えてみてください
+	uint32_t particleRingTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/gradationLine.png");
 	// ★ここに追加：パーティクルグループの作成とエミッターの生成
 	// ※ 第2引数のSRVインデックスは、本来は TextureManager で読み込んだパーティクル用画像の番号を入れます。
 	// 今回は仮に 0 を入れています。
@@ -195,14 +196,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	//ヒットエフェクト
 	ParticleManager::GetInstance()->CreateGroup("Hit", particleTexIndex);
 	ParticleManager::GetInstance()->CreateGroup("spark", particleTexIndex);
+	ParticleManager::GetInstance()->CreateGroup("ring", particleRingTexIndex, true);
 
+
+	// scale rotate translate
 	Transform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	Transform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	Transform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	Transform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
 
 	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
 	ParticleEmitter* particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
 	ParticleEmitter* particleEmitterHitEffect = new ParticleEmitter("Hit", particleHitEffectTransform, 10, 2.0f);
-	ParticleEmitter* particleEmitterSparkEffect = new ParticleEmitter("spark", particleHitEffectTransform, 20, 2.0f);
+	ParticleEmitter* particleEmitterSparkEffect = new ParticleEmitter("spark", particlesSparkEffectTransform, 20, 2.0f);
+	ParticleEmitter* particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
 
 	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -273,6 +280,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			if (input->TriggerKey(DIK_3))
 			{
 				particleEmitterSparkEffect->InputSprakEffect();
+			}
+			if (input->TriggerKey(DIK_4))
+			{
+				particleEmitterRingEffect->InputHitEffect();
 			}
 
 			float pos = 0.0f;
@@ -378,6 +389,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete particleEmitterEffect;
 	delete particleEmitterHitEffect;
 	delete particleEmitterSparkEffect;
+	delete particleEmitterRingEffect;
 
 	delete spriteCommon;
 	delete object3dCommon;

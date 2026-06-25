@@ -25,6 +25,7 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 	CreateRootSignature();
 	CreateGraphicsPipeline();
 	CreateParticleVertexData();
+	CreateRingVertexData();
 
 	// 1. マテリアル (0番)
 	materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
@@ -56,7 +57,7 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 }
 
 // ★新しくパーティクルのグループ（枠）を作る関数
-void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex)
+void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing)
 {
 	// すでに同じ名前のグループがあったらスキップ
 	if (particleGroups_.find(groupName) != particleGroups_.end()) return;
@@ -64,8 +65,9 @@ void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvInde
 	ParticleGroup newGroup;
 	newGroup.name = groupName;
 	newGroup.srvIndex = srvIndex; // 使うテクスチャの番号を記録
+	newGroup.isRing = isRing;
 
-	particleGroups_[groupName] = newGroup;
+	particleGroups_[groupName] = newGroup;	
 }
 
 // ★スライド5枚目：パーティクル発生（Emit）の実装
@@ -234,7 +236,7 @@ void ParticleManager::Draw()
 
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->SetPipelineState(pipelineState_.Get());
-	commandList->IASetVertexBuffers(0, 1, &vbv_);
+	
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// 共通データのセット
@@ -283,7 +285,17 @@ void ParticleManager::Draw()
 			commandList->SetGraphicsRootConstantBufferView(1, wvpAddress); // [1] WVP行列
 
 			// 描画
-			commandList->DrawInstanced(6, 1, 0, 0);
+			if (group.isRing)
+			{
+				commandList->IASetVertexBuffers(0, 1, &ringVbv_);
+				commandList->DrawInstanced(192, 1, 0, 0);
+			}
+			else
+			{
+				commandList->IASetVertexBuffers(0, 1, &vbv_);
+				commandList->DrawInstanced(6, 1, 0, 0);
+			}
+			
 
 			particleIndex++; // 次のパーティクルへ
 		}
@@ -343,7 +355,7 @@ void ParticleManager::CreateRootSignature()
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
@@ -464,4 +476,66 @@ void ParticleManager::CreateParticleVertexData()
 	vbv_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
 	vbv_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
 	vbv_.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::CreateRingVertexData()
+{
+	// 頂点データの構造体
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+		Vector3 normal;
+	};
+
+	// --- 資料に基づいたリングの設定 ---
+	const uint32_t kRingDivide = 32;
+	const float kOuterRadius = 1.0f;
+	const float kInnerRadius = 0.2f;
+	const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+	// 1分割につき四角形1つ(2ポリゴン=6頂点)なので、全体で kRingDivide * 6 の頂点が必要
+	const uint32_t vertexCount = kRingDivide * 6;
+	size_t vertexBufferSize = sizeof(VertexData) * vertexCount;
+	vertexResource_ = dxCommon_->CreateBufferResource(vertexBufferSize);
+
+	VertexData* vertexData = nullptr;
+	vertexResource_.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+
+	// --- 資料のforループを使って頂点を計算 ---
+	for (uint32_t index = 0; index < kRingDivide; ++index) {
+		float sin = std::sin(index * radianPerDivide);
+		float cos = std::cos(index * radianPerDivide);
+		float sinNext = std::sin((index + 1) * radianPerDivide);
+		float cosNext = std::cos((index + 1) * radianPerDivide);
+		float u = float(index) / float(kRingDivide);
+		float uNext = float(index + 1) / float(kRingDivide);
+
+		// 配列のどこに書き込むかのインデックス（1ループにつき6個進む）
+		uint32_t vIndex = index * 6;
+
+		// ① 外側の頂点
+		VertexData v1 = { {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f}, {u, 0.0f}, {0.0f, 0.0f, -1.0f} };
+		// ② 外側の次の頂点
+		VertexData v2 = { {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f}, {uNext, 0.0f}, {0.0f, 0.0f, -1.0f} };
+		// ③ 内側の頂点
+		VertexData v3 = { {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f}, {u, 1.0f}, {0.0f, 0.0f, -1.0f} };
+		// ④ 内側の次の頂点
+		VertexData v4 = { {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f}, {uNext, 1.0f}, {0.0f, 0.0f, -1.0f} };
+
+		// 時計回りに2つの三角形を構築して四角形を作る
+		// 1つ目の三角形 (③ -> ① -> ②)
+		vertexData[vIndex + 0] = v3;
+		vertexData[vIndex + 1] = v1;
+		vertexData[vIndex + 2] = v2;
+
+		// 2つ目の三角形 (③ -> ② -> ④)
+		vertexData[vIndex + 3] = v3;
+		vertexData[vIndex + 4] = v2;
+		vertexData[vIndex + 5] = v4;
+	}
+
+	// 頂点バッファビュー（VBV）の設定
+	ringVbv_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
+	ringVbv_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
+	ringVbv_.StrideInBytes = sizeof(VertexData);
 }
