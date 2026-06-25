@@ -197,19 +197,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ParticleManager::GetInstance()->CreateGroup("Hit", particleTexIndex);
 	ParticleManager::GetInstance()->CreateGroup("spark", particleTexIndex);
 	ParticleManager::GetInstance()->CreateGroup("ring", particleRingTexIndex, true);
-
+	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex,false,true);
 
 	// scale rotate translate
 	Transform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	Transform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	Transform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	Transform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
+	Transform particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 
 	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
 	ParticleEmitter* particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
 	ParticleEmitter* particleEmitterHitEffect = new ParticleEmitter("Hit", particleHitEffectTransform, 10, 2.0f);
 	ParticleEmitter* particleEmitterSparkEffect = new ParticleEmitter("spark", particlesSparkEffectTransform, 20, 2.0f);
 	ParticleEmitter* particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
+	ParticleEmitter* particleEmitterCylinderEffect = new ParticleEmitter("cylinder", particleCylinderTransform, 1, 0.0f);
+
 
 	// spr用
 	Vector3 position = {0.0f,0.0f,0.0f};
@@ -285,6 +288,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			{
 				particleEmitterRingEffect->InputHitEffect();
 			}
+			
+			particleEmitterCylinderEffect->UpdateCylinderEffect();
+			
 
 			float pos = 0.0f;
 			camera->Update();
@@ -390,6 +396,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete particleEmitterHitEffect;
 	delete particleEmitterSparkEffect;
 	delete particleEmitterRingEffect;
+	delete particleEmitterCylinderEffect;
 
 	delete spriteCommon;
 	delete object3dCommon;

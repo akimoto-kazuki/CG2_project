@@ -23,6 +23,9 @@ public:
 	// 火花のようなエフェクト
 	void UpdateSprakEffect();
 	void InputSprakEffect();
+	// cylinder
+	void UpdateCylinderEffect();
+	void InputCylinderEffect();
 
 private:
 	std::string groupName_;     // 発生させるパーティクルグループの名前

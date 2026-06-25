@@ -1,5 +1,8 @@
 #include "ParticleManager.h"
 #include <cassert>
+#include "MyMath.h"
+
+using namespace MyMath;
 
 ParticleManager* ParticleManager::GetInstance()
 {
@@ -26,6 +29,7 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 	CreateGraphicsPipeline();
 	CreateParticleVertexData();
 	CreateRingVertexData();
+	CreateCylinderVertexDate();
 
 	// 1. マテリアル (0番)
 	materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
@@ -57,7 +61,7 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 }
 
 // ★新しくパーティクルのグループ（枠）を作る関数
-void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing)
+void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing,bool isCylinder)
 {
 	// すでに同じ名前のグループがあったらスキップ
 	if (particleGroups_.find(groupName) != particleGroups_.end()) return;
@@ -66,6 +70,7 @@ void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvInde
 	newGroup.name = groupName;
 	newGroup.srvIndex = srvIndex; // 使うテクスチャの番号を記録
 	newGroup.isRing = isRing;
+	newGroup.isCylinder = isCylinder;
 
 	particleGroups_[groupName] = newGroup;	
 }
@@ -176,12 +181,51 @@ void ParticleManager::EmitSparkEffect(const std::string& groupName, const Transf
 	}
 }
 
+void ParticleManager::EmitCylinderEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+{
+	// 指定されたグループが存在するかチェック
+	auto it = particleGroups_.find(groupName);
+	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
+	// すでにシリンダーが存在する場合は、新しく作らずに位置だけを更新（追従）させる
+	if (!it->second.particles.empty())
+	{
+		for (auto& particle : it->second.particles)
+		{
+			// 位置を最新のエミッターの場所に合わせる
+			particle.position = transform.translate;
+			particle.transform.translate = transform.translate;
+
+			// 寿命をリセットしてフェードアウトしないようにする
+			particle.currentLifeTime = 0.0f;
+		}
+		// 新規作成はせずにここで処理を終わる！
+		return;
+	}
+	for (uint32_t i = 0; i < 1; ++i)
+	{
+		Particle newParticle;
+
+		newParticle.position = transform.translate;
+		// 速度をランダムに決定
+		newParticle.velocity = { 0.0f,0.0f,0.0f };
+		newParticle.color = { 1.0f, 1.0f, 1.0f, 1.0f };				// 初期の色（白）
+		newParticle.transform.scale = { transform.scale };			// 初期サイズ
+		newParticle.transform.rotate = { transform.rotate.x,transform.rotate.y,transform.rotate.z };        // 初期回転
+		newParticle.transform.translate = transform.translate;      // 初期位置
+		newParticle.lifeTime = 1.0f;								// 寿命固定
+		newParticle.currentLifeTime = 0.0f;							// 経過時間は0からスタート
+		newParticle.useGravity = false;
+
+		// グループのリストに新しく作ったパーティクルを追加
+		it->second.particles.push_back(newParticle);
+	}
+}
+
 // ★スライド6枚目：更新処理（移動と寿命チェック）
 void ParticleManager::Update()
 {
 	// 本来は毎フレームの経過時間（DeltaTime）を取得しますが、ここでは仮に 1/60秒 とします
 	const float kDeltaTime = 1.0f / 60.0f;
-
 	// すべてのパーティクルグループをループ
 	for (auto& pair : particleGroups_)
 	{
@@ -214,6 +258,14 @@ void ParticleManager::Update()
 				it->position.z += it->velocity.z * kDeltaTime;
 
 				it->transform.translate = it->position;
+				
+				if (group.isCylinder)
+				{
+					// 回転スピード（例: std::numbers::pi_v<float> で1秒間に半回転）
+					// 好みに合わせて掛け率を変えてスピード調整してください
+					const float kRotationSpeed = std::numbers::pi_v<float> * 0.5f; // これだと1秒間に1回転
+					it->transform.rotate.y += kRotationSpeed * kDeltaTime;
+				}
 
 				// ★追加：フェードアウト処理 (0.0 〜 1.0 の範囲)
 				float alpha = 1.0f - (it->currentLifeTime / it->lifeTime);
@@ -288,6 +340,11 @@ void ParticleManager::Draw()
 			if (group.isRing)
 			{
 				commandList->IASetVertexBuffers(0, 1, &ringVbv_);
+				commandList->DrawInstanced(192, 1, 0, 0);
+			}
+			else if (group.isCylinder)
+			{
+				commandList->IASetVertexBuffers(0, 1, &cylinderVbv_);
 				commandList->DrawInstanced(192, 1, 0, 0);
 			}
 			else
@@ -538,4 +595,84 @@ void ParticleManager::CreateRingVertexData()
 	ringVbv_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
 	ringVbv_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
 	ringVbv_.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::CreateCylinderVertexDate()
+{
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+		Vector3 normal;
+	};
+
+	// --- 円柱の設定 ---
+	const uint32_t kSubdivision = 32; // 分割数
+	const float kRadius = 1.0f;       // 半径
+	const float kHeight = 2.0f;       // 高さ
+	const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kSubdivision);
+
+	// 1分割につき四角形1つ(2ポリゴン=6頂点)
+	const uint32_t vertexCount = kSubdivision * 6;
+	size_t vertexBufferSize = sizeof(VertexData) * vertexCount;
+
+	// ※別途 cylinderVertexResource_ と cylinderVbv_ をヘッダで定義しておく必要があります
+	cylinderVertexResource_ = dxCommon_->CreateBufferResource(vertexBufferSize);
+
+	VertexData* vertexData = nullptr;
+	cylinderVertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+
+	// --- 頂点の計算 ---
+	for (uint32_t index = 0; index < kSubdivision; ++index) {
+		// 現在の角度と次の角度
+		float theta = index * radianPerDivide;
+		float nextTheta = (index + 1) * radianPerDivide;
+
+		// XZ平面の円の計算 (標準的なcosがX, sinがZの配置)
+		float cos = std::cos(theta);
+		float sin = std::sin(theta);
+		float nextCos = std::cos(nextTheta);
+		float nextSin = std::sin(nextTheta);
+
+		// UV座標のU (横方向)
+		float u = float(index) / float(kSubdivision);
+		float uNext = float(index + 1) / float(kSubdivision);
+
+		uint32_t vIndex = index * 6;
+
+		// 高さの半分 (原点を中心にするため)
+		float topY = kHeight; // 上端
+		float bottomY = 0.0f; // 下端
+
+		// ① 左上 (現在角度・上側)
+		// 【Flip】 0.0f だった部分を 1.0f に変更
+		VertexData v1 = { {cos * kRadius, topY, sin * kRadius, 1.0f}, {u, 1.0f}, {cos, 0.0f, sin} };
+
+		// ② 右上 (次角度・上側)
+		// 【Flip】 0.0f だった部分を 1.0f に変更
+		VertexData v2 = { {nextCos * kRadius, topY, nextSin * kRadius, 1.0f}, {uNext, 1.0f}, {nextCos, 0.0f, nextSin} };
+
+		// ③ 左下 (現在角度・下側)
+		// 【Flip】 1.0f だった部分を 0.0f に変更
+		VertexData v3 = { {cos * kRadius, bottomY, sin * kRadius, 1.0f}, {u, 0.0f}, {cos, 0.0f, sin} };
+
+		// ④ 右下 (次角度・下側)
+		// 【Flip】 1.0f だった部分を 0.0f に変更
+		VertexData v4 = { {nextCos * kRadius, bottomY, nextSin * kRadius, 1.0f}, {uNext, 0.0f}, {nextCos, 0.0f, nextSin} };
+
+		// ポリゴンの構築 (時計回りで表面になるように結ぶ)
+		// 1つ目の三角形 (左下 -> 左上 -> 右上)
+		vertexData[vIndex + 0] = v3;
+		vertexData[vIndex + 1] = v1;
+		vertexData[vIndex + 2] = v2;
+
+		// 2つ目の三角形 (左下 -> 右上 -> 右下)
+		vertexData[vIndex + 3] = v3;
+		vertexData[vIndex + 4] = v2;
+		vertexData[vIndex + 5] = v4;
+	}
+
+	// 頂点バッファビュー（VBV）の設定
+	cylinderVbv_.BufferLocation = cylinderVertexResource_->GetGPUVirtualAddress();
+	cylinderVbv_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
+	cylinderVbv_.StrideInBytes = sizeof(VertexData);
 }
