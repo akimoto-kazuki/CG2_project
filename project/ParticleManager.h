@@ -67,6 +67,8 @@ public:
 		std::string name;               // グループ名
 		std::list<Particle> particles;  // 所属するパーティクル一覧
 		uint32_t srvIndex;              // 使用するテクスチャのSRVインデックス
+
+		bool isRing = false; // 使うエフェクトがリングかリングじゃないのか
 	};
 
 private:
@@ -98,7 +100,7 @@ public:
 	void EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count);
 
 	// ★新しくグループを作って登録する関数
-	void CreateGroup(const std::string& groupName, uint32_t srvIndex);
+	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false);
 
 	// set
 	void SetDefaultCamera(Camera* camera) { this->defaultCamera = camera; }
@@ -113,6 +115,7 @@ private:
 	void CreateRootSignature();
 	void CreateGraphicsPipeline();
 	void CreateParticleVertexData();
+	void CreateRingVertexData();
 
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
@@ -131,6 +134,10 @@ private:
 	// 頂点バッファ（VBV）まわり
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW vbv_{};
+
+	// リング用
+	Microsoft::WRL::ComPtr<ID3D12Resource> ringVertexResource_;
+	D3D12_VERTEX_BUFFER_VIEW ringVbv_{};
 
 	// --- クラスの下の方に追加：定数バッファ用のリソース変数 ---
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
