@@ -85,3 +85,15 @@ void ParticleEmitter::InputSprakEffect()
 	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
 	ParticleManager::GetInstance()->EmitSparkEffect(groupName_, transform_, count_);
 }
+
+void ParticleEmitter::UpdateCylinderEffect()
+{
+	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
+	ParticleManager::GetInstance()->EmitCylinderEffect(groupName_, transform_, count_);	
+}
+
+void ParticleEmitter::InputCylinderEffect()
+{
+	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
+	ParticleManager::GetInstance()->EmitCylinderEffect(groupName_, transform_, count_);
+}

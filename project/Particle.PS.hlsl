@@ -39,12 +39,19 @@ PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
     
-    float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
+    // ★追加・変更：UV座標にuvTransform行列を掛け算して、動くUV座標を作る
+    // UVは2D(X,Y)なので、行列計算のために一時的に4次元(X,Y,0,1)にします
+    float4 transformedUV = mul(float4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
     
-    if (textureColor.a <= 0.5f)
-    {
-        discard;
-    }
+    // 変換したUV座標（.xy）を使ってテクスチャを読み込む
+    float4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
+    
+    //float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
+    
+    //if (textureColor.a <= 0.5f)
+    //{
+    //    discard;
+    //}
     if (textureColor.a == 0.0f)
     {
         discard;

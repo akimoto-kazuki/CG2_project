@@ -69,6 +69,7 @@ public:
 		uint32_t srvIndex;              // 使用するテクスチャのSRVインデックス
 
 		bool isRing = false; // 使うエフェクトがリングかリングじゃないのか
+		bool isCylinder = false;
 	};
 
 private:
@@ -99,8 +100,10 @@ public:
 
 	void EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count);
 
+	void EmitCylinderEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+
 	// ★新しくグループを作って登録する関数
-	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false);
+	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false,bool isCylinder = false);
 
 	// set
 	void SetDefaultCamera(Camera* camera) { this->defaultCamera = camera; }
@@ -116,6 +119,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateParticleVertexData();
 	void CreateRingVertexData();
+	void CreateCylinderVertexDate();
 
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
@@ -138,6 +142,10 @@ private:
 	// リング用
 	Microsoft::WRL::ComPtr<ID3D12Resource> ringVertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW ringVbv_{};
+
+	// 円柱(サークル)用
+	Microsoft::WRL::ComPtr<ID3D12Resource> cylinderVertexResource_;
+	D3D12_VERTEX_BUFFER_VIEW cylinderVbv_{};
 
 	// --- クラスの下の方に追加：定数バッファ用のリソース変数 ---
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
