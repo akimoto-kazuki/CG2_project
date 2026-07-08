@@ -623,6 +623,11 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreatTextureResource(const
 	return resource;
 }
 
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreatRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const MyMath::Vector4& clearColor)
+{
+	return Microsoft::WRL::ComPtr<ID3D12Resource>();
+}
+
 [[nodiscard]]
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, ID3D12Device* device, ID3D12GraphicsCommandList* commandList)
 {
