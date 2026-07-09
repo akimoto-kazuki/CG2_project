@@ -23,6 +23,7 @@
 #include "WinApp.h"
 // DirectX
 #include "DirectXCommon.h"
+#include "PostEffect.h"
 // スプライト
 #include "Sprite.h"
 #include "SpriteCommon.h"
@@ -96,6 +97,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	WinApp* winApp = nullptr;
 	// DirectX
 	DirectXCommon* dxCommon = nullptr;
+	PostEffect* postEffect = nullptr;
 	// オブジェクト
 	Object3dCommon* object3dCommon = nullptr;
 	Object3d* object3d = nullptr;
@@ -121,6 +123,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// SRV初期化
 	srvManager = SrvManager::GetInstance();
 	srvManager->Initialize(dxCommon);
+
+	postEffect = new PostEffect();
+	postEffect->Initialize(dxCommon);
 	// ImGui
 	imGuiManeger = new ImGuiManager;
 	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
@@ -349,7 +354,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			// ImGuiの設定 終
 			imGuiManeger->ImGuiEnd();
 
-			dxCommon->PreDraw();
+			postEffect->PreDraw();
 
 			srvManager->PreDraw();
 
@@ -371,6 +376,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 				sprite->Draw();
 			}
 			*/
+
+			postEffect->PostDraw();
+
+			dxCommon->PreDraw();
+
+			postEffect->Draw();
+
 			// ImGuiの描画
 			imGuiManeger->ImGuiDraw();
 		}

@@ -79,6 +79,9 @@
     <Filter Include="Engine\ヘッダー ファイル\3d\Particle">
       <UniqueIdentifier>{106d5f83-fb9e-4daf-a07b-6e5f87c489ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\hlsl\CopyImage">
+      <UniqueIdentifier>{51b78379-4875-4f5e-8d2b-be6f913f2447}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -150,6 +153,9 @@
     <ClCompile Include="ParticleEmitter.cpp">
       <Filter>Engine\ソース ファイル\3d\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="PostEffect.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -175,6 +181,12 @@
     </FxCompile>
     <FxCompile Include="Particle.VS.hlsl">
       <Filter>リソース ファイル\hlsl\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="FullScreen.PS.hlsl">
+      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
+    </FxCompile>
+    <FxCompile Include="FullScreen.VS.hlsl">
+      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -226,9 +238,6 @@
     <ClInclude Include="Camera.h">
       <Filter>Engine\ヘッダー ファイル\3d</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
-      <Filter>Engine\ヘッダー ファイル\2d</Filter>
-    </ClInclude>
     <ClInclude Include="SrvManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
@@ -247,6 +256,12 @@
     <ClInclude Include="ParticleEmitter.h">
       <Filter>Engine\ヘッダー ファイル\3d\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Engine\ヘッダー ファイル\2d\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="PostEffect.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Sprite.hlsli">
@@ -260,6 +275,9 @@
     </None>
     <None Include="Particle.hlsli">
       <Filter>リソース ファイル\hlsl\Particle</Filter>
+    </None>
+    <None Include="FullScreen.hlsli">
+      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

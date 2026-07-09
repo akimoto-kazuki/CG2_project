@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "StringUtility.h"
 #include "WinApp.h"
+#include "MyMath.h"
 //DirectX12のinclude
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -80,6 +81,8 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreatTextureResource(const DirectX::TexMetadata& metadata);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreatRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device>device,uint32_t width,uint32_t height, DXGI_FORMAT format, const MyMath::Vector4& clearColor);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList);
