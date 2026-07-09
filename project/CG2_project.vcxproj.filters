@@ -153,6 +153,9 @@
     <ClCompile Include="ParticleEmitter.cpp">
       <Filter>Engine\ソース ファイル\3d\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="PostEffect.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -179,10 +182,10 @@
     <FxCompile Include="Particle.VS.hlsl">
       <Filter>リソース ファイル\hlsl\Particle</Filter>
     </FxCompile>
-    <FxCompile Include="CopyImage.PS.hlsl">
+    <FxCompile Include="FullScreen.PS.hlsl">
       <Filter>リソース ファイル\hlsl\CopyImage</Filter>
     </FxCompile>
-    <FxCompile Include="CopyImage.VS.hlsl">
+    <FxCompile Include="FullScreen.VS.hlsl">
       <Filter>リソース ファイル\hlsl\CopyImage</Filter>
     </FxCompile>
   </ItemGroup>
@@ -256,6 +259,9 @@
     <ClInclude Include="TextureManager.h">
       <Filter>Engine\ヘッダー ファイル\2d\Sprite</Filter>
     </ClInclude>
+    <ClInclude Include="PostEffect.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\Sprite.hlsli">
@@ -270,7 +276,7 @@
     <None Include="Particle.hlsli">
       <Filter>リソース ファイル\hlsl\Particle</Filter>
     </None>
-    <None Include="CopyImage.hlsli">
+    <None Include="FullScreen.hlsli">
       <Filter>リソース ファイル\hlsl\CopyImage</Filter>
     </None>
   </ItemGroup>
