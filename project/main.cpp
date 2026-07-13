@@ -124,8 +124,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	srvManager = SrvManager::GetInstance();
 	srvManager->Initialize(dxCommon);
 
-	postEffect = new PostEffect();
-	postEffect->Initialize(dxCommon);
+	
 	// ImGui
 	imGuiManeger = new ImGuiManager;
 	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
@@ -152,7 +151,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	std::array<std::string, 2> spriteFile;
 
-	spriteFile[0] = "resources/uvChecker.png";
+	spriteFile[0] = "resources/grass.png";
 	spriteFile[1] = "resources/monsterBall.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
@@ -162,10 +161,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("terrain.obj");
 
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
+
+	postEffect = new PostEffect();
+	postEffect->Initialize(dxCommon);
 
 	// obj用
 	Vector3 objPosition = { -2.0f,0.0f,10.0f };
@@ -173,7 +175,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("axis.obj");
+	object3d->SetModel("terrain.obj");
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	skyBox = new SkyBox();
