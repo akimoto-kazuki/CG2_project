@@ -52,7 +52,6 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // DEBUG
 
-#include<fstream>
 #include<sstream>
 
 //libのリンク
@@ -124,7 +123,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	srvManager = SrvManager::GetInstance();
 	srvManager->Initialize(dxCommon);
 
-	
 	// ImGui
 	imGuiManeger = new ImGuiManager;
 	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
@@ -298,7 +296,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			
 			particleEmitterCylinderEffect->UpdateCylinderEffect();
 			
-
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
@@ -394,7 +391,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	OutputDebugStringA("Hello,DirectX!\n");
 
 	CloseHandle(fenceEvent);
-
 	
 	// WindowsAPIの終了処理
 	winApp->Finalize();
@@ -429,7 +425,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// DirectXの解放
 	delete dxCommon;
 
-
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	// こういうもんである。初期化を逆順に行う
 	imGuiManeger->Finalize();
@@ -442,8 +437,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
 	}
-
-	
 
 	return 0;
 }

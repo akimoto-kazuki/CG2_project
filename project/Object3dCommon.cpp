@@ -100,7 +100,6 @@ void Object3dCommon::RootSignature()
 	}
 
 	// バイナリを元に生成
-	//Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignatureObj = nullptr;
 	hr = dxCommon_->GetDevice()->CreateRootSignature(
 		0,
 		signatureBlobObj->GetBufferPointer(), signatureBlobObj->GetBufferSize(),

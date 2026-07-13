@@ -60,8 +60,6 @@ public:
 	void ScissoringInitialize();
 	// DXCコンパイラの生成
 	void DxcCompilerInitialize();
-	// ImGuiの初期化
-	void ImGuiInitialize();
 	// 描画前処理
 	void PreDraw();
 	// 描画後処理
@@ -80,7 +78,7 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreatTextureResource(const DirectX::TexMetadata& metadata);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreatRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device>device,uint32_t width,uint32_t height, DXGI_FORMAT format, const MyMath::Vector4& clearColor);
 

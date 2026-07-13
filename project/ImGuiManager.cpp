@@ -90,12 +90,12 @@ void ImGuiManager::ImGuiDraw()
 {
 #ifdef USE_IMGUI
 
-	ID3D12GraphicsCommandList* comamandList = dxCommon_->GetCommandList();
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	// デスクリプタヒープの配列をセットするコマンド
 	ID3D12DescriptorHeap* ppHeaps[] = { srvHeap };
-	comamandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	// 描画コマンドを発行
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), comamandList);
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
 #endif // USE_IMGUI
 }

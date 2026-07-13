@@ -67,7 +67,7 @@ void TextureManager::LoadTexture(const std::string& filePath)
 
 	// CG2にあるものを探したり、Commonにある読み込みを入れる
 	textureData.metadata = mipImages.GetMetadata();
-	textureData.resource = dxCommon_->CreatTextureResource(textureData.metadata);
+	textureData.resource = dxCommon_->CreateTextureResource(textureData.metadata);
 
 	uint32_t srvIndex = static_cast<uint32_t>(textureDatas.size() - 1) + kSRVIndexTop;
 	textureData.srvIndex = srvManager->Allocate();

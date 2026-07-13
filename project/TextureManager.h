@@ -20,8 +20,6 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU;
 	};
 
-	
-
 public:
 	// シングルトンインスタンスの取得
 	static TextureManager* GetInstance();

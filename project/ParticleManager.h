@@ -119,7 +119,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateParticleVertexData();
 	void CreateRingVertexData();
-	void CreateCylinderVertexDate();
+	void CreateCylinderVertexData();
 
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
