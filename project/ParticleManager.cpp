@@ -29,7 +29,7 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 	CreateGraphicsPipeline();
 	CreateParticleVertexData();
 	CreateRingVertexData();
-	CreateCylinderVertexDate();
+	CreateCylinderVertexData();
 
 	// 1. マテリアル (0番)
 	materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
@@ -597,7 +597,7 @@ void ParticleManager::CreateRingVertexData()
 	ringVbv_.StrideInBytes = sizeof(VertexData);
 }
 
-void ParticleManager::CreateCylinderVertexDate()
+void ParticleManager::CreateCylinderVertexData()
 {
 	struct VertexData {
 		Vector4 position;
