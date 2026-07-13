@@ -126,12 +126,12 @@ void PostEffect::Initialize(DirectXCommon* dxCommon) {
     Microsoft::WRL::ComPtr<ID3DBlob> psBlob = nullptr;
 
     // ユーザーが作成したポストエフェクト用シェーダーをコンパイルして読み込み
-    hr = D3DCompileFromFile(L"FullScreen.VS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+    hr = D3DCompileFromFile(L"GrayScale.VS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
     if (FAILED(hr)) {
         OutputDebugStringA((char*)errorBlob->GetBufferPointer());
         assert(false);
     }
-    hr = D3DCompileFromFile(L"FullScreen.PS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+    hr = D3DCompileFromFile(L"GrayScale.PS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
     if (FAILED(hr)) {
         OutputDebugStringA((char*)errorBlob->GetBufferPointer());
         assert(false);

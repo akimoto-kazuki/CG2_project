@@ -359,12 +359,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			srvManager->PreDraw();
 
 			object3dCommon->DrawCommon();
-
-			//object3d->Draw();
+			object3d->Draw();
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-			//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 
 			// ★ここに追加：パーティクルの描画
 			ParticleManager::GetInstance()->Draw();
@@ -418,6 +417,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	TextureManager::GetInstance()->Finalize();
 	ModelManager::GetInstance()->Finalize();
 
+	delete postEffect;
 	delete srvManager;
 
 	// ウィンドウ解放

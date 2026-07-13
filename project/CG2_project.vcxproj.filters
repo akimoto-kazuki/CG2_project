@@ -79,8 +79,14 @@
     <Filter Include="Engine\ヘッダー ファイル\3d\Particle">
       <UniqueIdentifier>{106d5f83-fb9e-4daf-a07b-6e5f87c489ef}</UniqueIdentifier>
     </Filter>
-    <Filter Include="リソース ファイル\hlsl\CopyImage">
+    <Filter Include="リソース ファイル\hlsl\PostEffect">
       <UniqueIdentifier>{51b78379-4875-4f5e-8d2b-be6f913f2447}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl\PostEffect\FullScreen">
+      <UniqueIdentifier>{bf7f1e26-e535-498c-8e80-05fb0c884edf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\hlsl\PostEffect\GrayScale">
+      <UniqueIdentifier>{37d8ca12-4b6c-470a-bdef-c1ee6ddb0f36}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -183,10 +189,16 @@
       <Filter>リソース ファイル\hlsl\Particle</Filter>
     </FxCompile>
     <FxCompile Include="FullScreen.PS.hlsl">
-      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
+      <Filter>リソース ファイル\hlsl\PostEffect\FullScreen</Filter>
     </FxCompile>
     <FxCompile Include="FullScreen.VS.hlsl">
-      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
+      <Filter>リソース ファイル\hlsl\PostEffect\FullScreen</Filter>
+    </FxCompile>
+    <FxCompile Include="GrayScale.PS.hlsl">
+      <Filter>リソース ファイル\hlsl\PostEffect\GrayScale</Filter>
+    </FxCompile>
+    <FxCompile Include="GrayScale.VS.hlsl">
+      <Filter>リソース ファイル\hlsl\PostEffect\GrayScale</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -277,7 +289,10 @@
       <Filter>リソース ファイル\hlsl\Particle</Filter>
     </None>
     <None Include="FullScreen.hlsli">
-      <Filter>リソース ファイル\hlsl\CopyImage</Filter>
+      <Filter>リソース ファイル\hlsl\PostEffect\FullScreen</Filter>
+    </None>
+    <None Include="GrayScale.hlsli">
+      <Filter>リソース ファイル\hlsl\PostEffect\GrayScale</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
