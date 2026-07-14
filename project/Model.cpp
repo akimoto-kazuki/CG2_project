@@ -159,90 +159,47 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const std::string& filename)
 {
 	ModelData modelData;
-	std::string fullPath = directoryPath + "/" + filename;
 
-	// 1. Assimpのインポーターを作成
 	Assimp::Importer importer;
+	std::string filePath = directoryPath + "/" + filename;
+	const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
+	assert(scene->HasMaterials());
 
-	// 2. ファイルを読み込む
-	// コントロールフラグでDX12（左手系）に合わせた変換を自動で行わせるのが便利です
-	const aiScene* scene = importer.ReadFile(fullPath,
-		aiProcess_Triangulate |           // 四角形ポリゴンなどをすべて三角形に変換
-		aiProcess_FlipUVs |               // UV座標のY軸を反転 (今の実装の texcoord.y = 1.0f - texcoord.y に相当)
-		aiProcess_ConvertToLeftHanded |   // 左手系 (DirectX標準) に変換 (X軸反転などに相当)
-		aiProcess_CalcTangentSpace        // 法線や接ベクトルを計算
-	);
-
-	// 読み込み失敗時のチェック
-	assert(scene && scene->mRootNode && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE));
-
-	// 3. メッシュデータの解析 (今回はシンプルに最初のメッシュ [0] を読み込む例)
-	// ※実際のゲームエンジンでは、scene->mNumMeshes をループして複数メッシュに対応させます
-	if (scene->mNumMeshes > 0)
+	for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
 	{
-		aiMesh* mesh = scene->mMeshes[0];
-
-		// 頂点データの取得
-		for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
+		aiMesh* mesh = scene->mMeshes[meshIndex];
+		assert(mesh->HasNormals());
+		assert(mesh->HasTextureCoords(0));
+		for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
 		{
-			VertexData vertex{};
-
-			// 位置 (Position)
-			vertex.position.x = mesh->mVertices[i].x;
-			vertex.position.y = mesh->mVertices[i].y;
-			vertex.position.z = mesh->mVertices[i].z;
-			vertex.position.w = 1.0f;
-
-			// 法線 (Normal)
-			if (mesh->HasNormals())
+			aiFace& face = mesh->mFaces[faceIndex];
+			assert(face.mNumIndices == 3);
+			for (uint32_t element = 0; element < face.mNumIndices; ++element)
 			{
-				vertex.normal.x = mesh->mNormals[i].x;
-				vertex.normal.y = mesh->mNormals[i].y;
-				vertex.normal.z = mesh->mNormals[i].z;
-			}
+				uint32_t vertexIndex = face.mIndices[element];
+				aiVector3D& position = mesh->mVertices[vertexIndex];
+				aiVector3D& normal = mesh->mNormals[vertexIndex];
+				aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
+				VertexData vertex;
+				vertex.position = { position.x,position.y,position.z,1.0f };
+				vertex.normal = { normal.x,normal.y,normal.z };
+				vertex.texcoord = { texcoord.x,texcoord.y };
 
-			// テクスチャ座標 (Texcoord) - Assimpは最大8つのUVチャンネルを持てるが、通常は [0] を使う
-			if (mesh->HasTextureCoords(0))
-			{
-				vertex.texcoord.x = mesh->mTextureCoords[0][i].x;
-				vertex.texcoord.y = mesh->mTextureCoords[0][i].y;
-			}
-			else
-			{
-				vertex.texcoord = { 0.0f, 0.0f };
-			}
-
-			modelData.vertices.push_back(vertex);
-		}
-
-		// インデックスデータの取得 (今回は drawInstanced で直列に描画しているため、頂点配列に展開する例)
-		// ※今後インデックスバッファ(IBV)を本格的に使う場合は、ここを index配列に push_back します
-		std::vector<VertexData> triangulatedVertices;
-		for (uint32_t i = 0; i < mesh->mNumFaces; ++i)
-		{
-			aiFace face = mesh->mFaces[i];
-			// aiProcess_Triangulate を指定しているので、必ず3頂点(三角形)になります
-			for (uint32_t j = 0; j < face.mNumIndices; ++j)
-			{
-				uint32_t index = face.mIndices[j];
-				triangulatedVertices.push_back(modelData.vertices[index]);
+				vertex.position.x *= -1.0f;
+				vertex.normal.x *= -1.0f;
+				modelData.vertices.push_back(vertex);
 			}
 		}
-		modelData.vertices = std::move(triangulatedVertices);
+	}
 
-		// 4. マテリアル（テクスチャパス）の取得
-		if (mesh->mMaterialIndex >= 0)
+	for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex)
+	{
+		aiMaterial* material = scene->mMaterials[materialIndex];
+		if (material->GetTextureCount(aiTextureType_DIFFUSE) != 0)
 		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			aiString texturePath;
-
-			// ディフューズ（ベースカラー）テクスチャのパスを取得
-			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
-			{
-				// ファイル名だけを取り出してパスを結合するなどの処理
-				std::filesystem::path path(texturePath.C_Str());
-				modelData.material.textureFilePath = directoryPath + "/" + path.filename().string();
-			}
+			aiString textureFilePath;
+			material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
+			modelData.material.textureFilePath = directoryPath + "/" + textureFilePath.C_Str();
 		}
 	}
 
