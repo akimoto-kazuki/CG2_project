@@ -50,6 +50,8 @@ public:
 
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
+	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+
 	Material* GetMaterialData() { return materialData; }
 
 private:
