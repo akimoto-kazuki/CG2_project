@@ -54,8 +54,8 @@ void Object3d::Update()
 		}
 	}
 
-	transformationMatrixData->WVP = worldViewProjectionMatrix;
-	transformationMatrixData->World = worldMatrix;
+	transformationMatrixData->WVP = Multiply(model_->GetModelData().rootNode.localMatrix, worldViewProjectionMatrix);
+	transformationMatrixData->World = Multiply(model_->GetModelData().rootNode.localMatrix, worldMatrix);
 }
 
 void Object3d::Draw()

@@ -5,10 +5,6 @@
 //ファイルに書いたり読んだりするライブラリ
 #include<fstream>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 using namespace MyMath;
 
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
@@ -203,7 +199,28 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		}
 	}
 
+	modelData.rootNode = ReadNode(scene->mRootNode);
+
 	return modelData;
+}
+
+Model::Node Model::ReadNode(aiNode* node)
+{
+	Node result;
+	aiMatrix4x4 aiLocalMatrix = node->mTransformation;
+	aiLocalMatrix.Transpose();
+	result.localMatrix.m[0][0] = aiLocalMatrix[0][0]; result.localMatrix.m[0][1] = aiLocalMatrix[0][1]; result.localMatrix.m[0][2] = aiLocalMatrix[0][2]; result.localMatrix.m[0][3] = aiLocalMatrix[0][3];
+	result.localMatrix.m[1][0] = aiLocalMatrix[1][0]; result.localMatrix.m[1][1] = aiLocalMatrix[1][1]; result.localMatrix.m[1][2] = aiLocalMatrix[1][2]; result.localMatrix.m[1][3] = aiLocalMatrix[1][3];
+	result.localMatrix.m[2][0] = aiLocalMatrix[2][0]; result.localMatrix.m[2][1] = aiLocalMatrix[2][1]; result.localMatrix.m[2][2] = aiLocalMatrix[2][2]; result.localMatrix.m[2][3] = aiLocalMatrix[2][3];
+	result.localMatrix.m[3][0] = aiLocalMatrix[3][0]; result.localMatrix.m[3][1] = aiLocalMatrix[3][1]; result.localMatrix.m[3][2] = aiLocalMatrix[3][2]; result.localMatrix.m[3][3] = aiLocalMatrix[3][3];
+
+	result.name = node->mName.C_Str();
+	result.children.resize(node->mNumChildren);
+	for (uint32_t childIndex = 0; childIndex < node->mNumChildren; childIndex++)
+	{
+		result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+	}
+	return result;
 }
 
 void Model ::Draw()
