@@ -7,6 +7,10 @@
 
 #include <stdint.h>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 using namespace MyMath;
 
 class Model
@@ -24,10 +28,18 @@ class Model
 		uint32_t textureIndex = 0;
 	};
 
+	struct Node
+	{
+		Matrix4x4 localMatrix;
+		std::string name;
+		std::vector<Node> children;
+	};
+
 	struct ModelData
 	{
 		std::vector<VertexData> vertices;
 		MaterialData material;
+		Node rootNode;
 	};
 
 	struct Material
@@ -50,7 +62,13 @@ public:
 
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
+	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+
 	Material* GetMaterialData() { return materialData; }
+
+	ModelData GetModelData() { return modelData; }
+
+	static Node ReadNode(aiNode* node);
 
 private:
 
