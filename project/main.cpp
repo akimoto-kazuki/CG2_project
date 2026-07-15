@@ -143,9 +143,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	camera->SetTranslate({ 0.0f,0.0f,0.0f });
 	object3dCommon->SetDefaultCamera(camera);
 	skyBoxCommon->SetDefaultCamera(camera);
+
 	// カメラの用
 	Vector3 rotate = {0.0f,0.0f,0.0f};
 	Vector3 translate = {0.0f,0.0f,0.0f};
+
+	// obj用
+	Vector3 objPosition = { -2.0f,0.0f,10.0f };
+	Vector3 objRotate = { 0.0f,3.0f,0.0f };
+
+	// spr用
+	Vector3 position = { 0.0f,0.0f,0.0f };
+	float rotation = 0.0f;
+	Vector4 color = { 1.0f,1.0f,1.0f,1.0f };
+	Vector2 size = { 1.0f,1.0f };
 
 	std::array<std::string, 2> spriteFile;
 
@@ -159,7 +170,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->LoadModel("plane.gltf");
 
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
@@ -167,13 +178,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	postEffect = new PostEffect();
 	postEffect->Initialize(dxCommon);
 
-	// obj用
-	Vector3 objPosition = { -2.0f,0.0f,10.0f };
-	Vector3 objRotate = { 0.0f,3.0f,0.0f };
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("terrain.obj");
+	object3d->SetModel("plane.gltf");
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	skyBox = new SkyBox();
@@ -217,13 +225,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ParticleEmitter* particleEmitterSparkEffect = new ParticleEmitter("spark", particlesSparkEffectTransform, 20, 2.0f);
 	ParticleEmitter* particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
 	ParticleEmitter* particleEmitterCylinderEffect = new ParticleEmitter("cylinder", particleCylinderTransform, 1, 0.0f);
-
-
-	// spr用
-	Vector3 position = {0.0f,0.0f,0.0f};
-	float rotation = 0.0f;
-	Vector4 color = {1.0f,1.0f,1.0f,1.0f};
-	Vector2 size = {1.0f,1.0f};
 
 	// spr初期化
 	std::vector<Sprite*> sprites_;
