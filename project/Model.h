@@ -6,6 +6,7 @@
 #include "TextureManager.h"
 
 #include <stdint.h>
+#include <map>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -15,11 +16,36 @@ using namespace MyMath;
 
 class Model
 {
+
+public:
+
+	template <typename tValue>
+	struct Keyframe {
+		float time;
+		tValue value;
+	};
+
+	using KeyframeVector3 = Keyframe<Vector3>;
+	using KeyframeQuaternion = Keyframe<Quaternion>;
+
+	struct NodeAnimation
+	{
+		std::vector<KeyframeVector3> translate;
+		std::vector<KeyframeQuaternion> rotate;
+		std::vector<KeyframeVector3> scale;
+	};
+
 	struct VertexData
 	{
 		Vector4 position;
 		Vector2 texcoord;
 		Vector3 normal;
+	};
+
+	struct Animation
+	{
+		float duration;
+		std::map<std::string, NodeAnimation> nodeAnimations;
 	};
 
 	struct MaterialData
@@ -52,8 +78,6 @@ class Model
 		float environmentCoefficient;
 	};
 
-public:
-
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 
 	void Draw();
@@ -64,11 +88,17 @@ public:
 
 	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
 
+	static Animation LoadAnimationFile(const std::string& directoryPath, const std::string& filename);
+
 	Material* GetMaterialData() { return materialData; }
 
 	ModelData GetModelData() { return modelData; }
 
 	static Node ReadNode(aiNode* node);
+
+	static Vector3 CalculateValueVector3(const std::vector<Model::KeyframeVector3>& keyframes, float time);
+
+	static Quaternion CalculateValueQuaternion(const std::vector<Model::KeyframeQuaternion>& keyframes, float time);
 
 private:
 

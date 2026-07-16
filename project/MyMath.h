@@ -33,6 +33,14 @@ namespace MyMath
 		Vector3 translate;
 	};
 
+	struct Quaternion
+	{
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
 	Vector3 Add(const Vector3& v1, const Vector3& v2);
 
 	Matrix4x4 MakeIdentity4x4();
@@ -41,9 +49,13 @@ namespace MyMath
 
 	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 
+	Matrix4x4 MakeAffineMatrixQuaternion(const Vector3& scale, const Quaternion& rotate, const Vector3& translate);
+
 	Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip);
 
 	Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
+
+	Vector3 MultiplyVector3(float scalar, const Vector3& v);
 
 	Matrix4x4 Inverse(const Matrix4x4& m);
 
@@ -56,4 +68,10 @@ namespace MyMath
 	float Length(const Vector3& v);
 
 	Vector3 Normalize(const Vector3& v);
+
+	float Dot(const Quaternion& q1, const Quaternion& q2);
+
+	Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
+
+	Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
 }

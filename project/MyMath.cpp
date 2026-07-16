@@ -54,6 +54,15 @@ namespace MyMath
 
 	}
 
+	Vector3 MultiplyVector3(float scalar, const Vector3& v)
+	{
+		Vector3 result;
+		result.x = scalar * v.x;
+		result.y = scalar * v.y;
+		result.z = scalar * v.z;
+		return result;
+	}
+
 	Matrix4x4 MakeRotateXMatrix(float radian)
 	{
 		Matrix4x4 result;
@@ -103,6 +112,47 @@ namespace MyMath
 		result.m[1][0] = scale.y * XYZ.m[1][0]; result.m[1][1] = scale.y * XYZ.m[1][1]; result.m[1][2] = scale.y * XYZ.m[1][2]; result.m[1][3] = 0.0f;
 		result.m[2][0] = scale.z * XYZ.m[2][0]; result.m[2][1] = scale.z * XYZ.m[2][1]; result.m[2][2] = scale.z * XYZ.m[2][2]; result.m[2][3] = 0.0f;
 		result.m[3][0] = translate.x; result.m[3][1] = translate.y; result.m[3][2] = translate.z; result.m[3][3] = 1.0f;
+
+		return result;
+	}
+
+	Matrix4x4 MakeAffineMatrixQuaternion(const Vector3& scale, const Quaternion& rotate, const Vector3& translate)
+	{
+		Matrix4x4 result;
+
+		// クォータニオンから回転行列を計算するための要素を準備
+		float xx = rotate.x * rotate.x;
+		float yy = rotate.y * rotate.y;
+		float zz = rotate.z * rotate.z;
+		float xy = rotate.x * rotate.y;
+		float xz = rotate.x * rotate.z;
+		float yz = rotate.y * rotate.z;
+		float wx = rotate.w * rotate.x;
+		float wy = rotate.w * rotate.y;
+		float wz = rotate.w * rotate.z;
+
+		// 回転行列の各要素を計算しつつ、スケール（scale）を掛け算する
+		// （既存の MakeAffineMatrix と同じように 1行目にscale.x、2行目にscale.y、3行目にscale.zを掛けています）
+		result.m[0][0] = scale.x * (1.0f - 2.0f * (yy + zz));
+		result.m[0][1] = scale.x * (2.0f * (xy + wz));
+		result.m[0][2] = scale.x * (2.0f * (xz - wy));
+		result.m[0][3] = 0.0f;
+
+		result.m[1][0] = scale.y * (2.0f * (xy - wz));
+		result.m[1][1] = scale.y * (1.0f - 2.0f * (xx + zz));
+		result.m[1][2] = scale.y * (2.0f * (yz + wx));
+		result.m[1][3] = 0.0f;
+
+		result.m[2][0] = scale.z * (2.0f * (xz + wy));
+		result.m[2][1] = scale.z * (2.0f * (yz - wx));
+		result.m[2][2] = scale.z * (1.0f - 2.0f * (xx + yy));
+		result.m[2][3] = 0.0f;
+
+		// 平行移動（translate）の設定（既存の MakeAffineMatrix と全く同じです）
+		result.m[3][0] = translate.x;
+		result.m[3][1] = translate.y;
+		result.m[3][2] = translate.z;
+		result.m[3][3] = 1.0f;
 
 		return result;
 	}
@@ -263,6 +313,46 @@ namespace MyMath
 		result.y = v.y / static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
 		result.z = v.z / static_cast<float>(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
 		return result;
+	}
+
+	float Dot(const Quaternion& q1, const Quaternion& q2)
+	{
+		float result;
+		result = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
+		return result;
+	}
+
+	Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t)
+	{
+		return Add(MultiplyVector3(t, v1), MultiplyVector3((1.0f - t), v2));
+	}
+
+	Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t)
+	{
+		Quaternion resalt;
+		float dot = Dot(q0, q1);
+		Quaternion q2 = q0;
+		if (dot < 0)
+		{
+			q2.x = -q2.x;
+			q2.y = -q2.y;
+			q2.z = -q2.z;
+			q2.w = -q2.w;
+			dot = -dot;
+		}
+
+		float theta = std::acos(dot);
+
+		float scale0 = sinf((1 - t) * theta) / sinf(theta);
+		float scale1 = sinf(t * theta) / sinf(theta);
+
+		resalt.x = scale0 * q2.x + scale1 * q1.x;
+		resalt.y = scale0 * q2.y + scale1 * q1.y;
+		resalt.z = scale0 * q2.z + scale1 * q1.z;
+		resalt.w = scale0 * q2.w + scale1 * q1.w;
+
+		return resalt;
+
 	}
 
 }
