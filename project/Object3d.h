@@ -66,6 +66,9 @@ public:
 	const Vector3& GetRotate()const { transform.rotate; }
 	const Vector3& GetTranslate()const { transform.translate; }
 
+	// ★追加：アニメーションを読み込んでセットする関数
+	void SetAnimation(const std::string& directoryPath, const std::string& filename);
+
 private:
 
 	Object3dCommon* object3dCommon_ = nullptr;
@@ -93,6 +96,9 @@ private:
 	uint32_t environmentTextureIndex_ = 0;
 
 	float environmentCoefficient_ = 0.3f;
+
+	Model::Animation animation_;  // 読み込んだアニメーションデータ
+	float animationTime_ = 0.0f;  // 再生中の時刻（秒）
 
 };
 
