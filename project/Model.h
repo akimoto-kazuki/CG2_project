@@ -56,6 +56,7 @@ public:
 
 	struct Node
 	{
+		QuaternionTransform transform;
 		Matrix4x4 localMatrix;
 		std::string name;
 		std::vector<Node> children;
@@ -77,6 +78,8 @@ public:
 		float shininess;                  // 4バイト
 		float environmentCoefficient;
 	};
+
+public:
 
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 

@@ -34,7 +34,6 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 void Object3d::Update()
 {
-
 	animationTime_ += 1.0f / 60.0f;
 	animationTime_ = std::fmod(animationTime_, animation_.duration);
 	Model::NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[model_->GetModelData().rootNode.name];
@@ -58,8 +57,10 @@ void Object3d::Update()
 		worldViewProjectionMatrix = worldMatrix;
 	}
 
-	if (model_) {
-		if (model_->GetMaterialData()) {
+	if (model_) 
+	{
+		if (model_->GetMaterialData()) 
+		{
 			model_->GetMaterialData()->environmentCoefficient = environmentCoefficient_;
 		}
 	}

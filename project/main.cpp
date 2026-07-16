@@ -149,7 +149,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	Vector3 translate = {0.0f,0.0f,0.0f};
 
 	// obj用
-	Vector3 objPosition = { -2.0f,0.0f,10.0f };
+	Vector3 objPosition = { 0.0f,0.0f,10.0f };
 	Vector3 objRotate = { 0.0f,3.0f,0.0f };
 
 	// spr用
@@ -214,11 +214,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex,false,true);
 
 	// scale rotate translate
-	Transform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 
 	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
 	ParticleEmitter* particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);

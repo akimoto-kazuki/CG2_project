@@ -90,7 +90,7 @@ void Sprite::Update()
 	indexData[3] = 1; indexData[4] = 3; indexData[5] = 2;
 
 
-	Transform transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	EulerTransform transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	transform.rotate = { 0.0f,0.0f,rotation };
 	transform.scale = { size.x,size.y,1.0f };
 	transform.translate = { position_.x,position_.y,0.0f };

@@ -52,7 +52,7 @@ public:
 		Vector3 position;       // 座標
 		Vector3 velocity;       // 速度
 		Vector4 color;          // 色
-		Transform transform;
+		EulerTransform transform;
 		float lifeTime;         // 生存可能時間（寿命）
 		float currentLifeTime;  // 現在の経過時間
 
@@ -94,13 +94,13 @@ public:
 
 	// ★スライド5枚目：パーティクル発生関数
 	// どこから、何個のパーティクルを出すかを指定して発生させます
-	void EmitEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+	void EmitEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
-	void EmitHitEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+	void EmitHitEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
-	void EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+	void EmitSparkEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
-	void EmitCylinderEffect(const std::string& groupName, const Transform& transform, uint32_t count);
+	void EmitCylinderEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
 	// ★新しくグループを作って登録する関数
 	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false,bool isCylinder = false);
@@ -157,6 +157,6 @@ private:
 	Camera* camera_ = nullptr;
 	CameraForGPU* cameraData = nullptr;
 
-	Transform cameraTransform;
+	EulerTransform cameraTransform;
 };
 

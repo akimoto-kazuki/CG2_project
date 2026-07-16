@@ -8,7 +8,7 @@ class Camera
 {
 private:
 
-	Transform transform;
+	EulerTransform transform;
 	Matrix4x4 worldMatrix;
 	Matrix4x4 viewMatrix;
 

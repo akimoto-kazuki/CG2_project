@@ -80,9 +80,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
 	DirectionalLight* directionalLightData = nullptr;
 
-	MyMath::Transform transform;
+	MyMath::EulerTransform transform;
 
-	MyMath::Transform cameraTransform;
+	MyMath::EulerTransform cameraTransform;
 
 	uint32_t textureIndex = 0;
 
