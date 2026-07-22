@@ -160,8 +160,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	std::array<std::string, 2> spriteFile;
 
-	spriteFile[0] = "resources/AnimatedCube_BaseColor.png";
-	spriteFile[1] = "resources/AnimatedCube_BaseColor.png";
+	spriteFile[0] = "resources/white.png";
+	spriteFile[1] = "resources/white.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -170,8 +170,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("AnimatedCube.gltf");
-
+	ModelManager::GetInstance()->LoadModel("sneakWalk.gltf");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -181,8 +180,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("AnimatedCube.gltf");
-	object3d->SetAnimation("resources", "AnimatedCube.gltf");
+	object3d->SetModel("sneakWalk.gltf");
+	object3d->SetAnimation("resources", "sneakWalk.gltf");
+
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	skyBox = new SkyBox();
@@ -364,10 +364,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+			//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 
 			// ★ここに追加：パーティクルの描画
-			ParticleManager::GetInstance()->Draw();
+			//ParticleManager::GetInstance()->Draw();
 
 			/*spriteCommon->DrawCommon();
 

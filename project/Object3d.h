@@ -101,5 +101,6 @@ private:
 	AnimationClass::Animation animation_;  // 読み込んだアニメーションデータ
 	float animationTime_ = 0.0f;  // 再生中の時刻（秒）
 
+	AnimationClass::Skeleton skeleton_;
 };
 

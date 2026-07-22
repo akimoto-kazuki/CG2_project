@@ -95,3 +95,62 @@ Quaternion AnimationClass::CalculateValueQuaternion(const std::vector<AnimationC
 	}
 	return keyframes.back().value;
 }
+
+AnimationClass::Skeleton AnimationClass::CreateSkeleton(const Model::Node& rootNode)
+{
+	Skeleton skeleton;
+	skeleton.root = CreateJoint(rootNode,{},skeleton.joints);
+	for (const Joint& joint : skeleton.joints)
+	{
+		skeleton.jointMap.emplace(joint.name, joint.index);
+	}
+	return skeleton;
+}
+
+int32_t AnimationClass::CreateJoint(const Model::Node& node, const std::optional<int32_t>& parent, std::vector<Joint>& joints)
+{
+	Joint joint;
+	joint.name = node.name;
+	joint.localMatrix = node.localMatrix;
+	joint.skeletonSpaceMatrix = MakeIdentity4x4();
+	joint.transform = node.transform;
+	joint.index = int32_t(joints.size());
+	joint.parent = parent;
+	joints.push_back(joint);
+	for (const Model::Node& child : node.children)
+	{
+		int32_t childIndex = CreateJoint(child, joint.index, joints);
+		joints[joint.index].children.push_back(childIndex);
+	}
+	return joint.index;
+}
+
+void AnimationClass::Update(Skeleton& skeleton)
+{
+	for (Joint& joint : skeleton.joints)
+	{
+		joint.localMatrix = MakeAffineMatrixQuaternion(joint.transform.scale, joint.transform.rotate, joint.transform.translate);
+		if (joint.parent)
+		{
+			joint.skeletonSpaceMatrix = Multiply(joint.localMatrix,skeleton.joints[*joint.parent].skeletonSpaceMatrix);
+		}
+		else
+		{
+			joint.skeletonSpaceMatrix = joint.localMatrix;
+		}
+	}
+}
+
+void AnimationClass::ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime)
+{
+	for (Joint& joint : skeleton.joints)
+	{
+		if (auto it = animation.nodeAnimations.find(joint.name); it != animation.nodeAnimations.end())
+		{
+			const NodeAnimation& rootNodeAnimation = (*it).second;
+			joint.transform.translate = CalculateValueVector3(rootNodeAnimation.translate, animationTime);
+			joint.transform.rotate = CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime);
+			joint.transform.scale = CalculateValueVector3(rootNodeAnimation.scale, animationTime);
+		}
+	}
+}

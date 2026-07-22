@@ -36,13 +36,9 @@ void Object3d::Update()
 {
 	animationTime_ += 1.0f / 60.0f;
 	animationTime_ = std::fmod(animationTime_, animation_.duration);
-	AnimationClass::NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[model_->GetModelData().rootNode.name];
-	Vector3 translate = AnimationClass::CalculateValueVector3(rootNodeAnimation.translate, animationTime_);
-	Quaternion rotate = AnimationClass::CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime_);
-	Vector3 scale = AnimationClass::CalculateValueVector3(rootNodeAnimation.scale, animationTime_);
 
-	// アニメーション適用後の localMatrix を作成
-	Matrix4x4 localMatrix = MakeAffineMatrixQuaternion(scale, rotate, translate);
+	AnimationClass::ApplyAnimation(skeleton_, animation_, animationTime_);
+	AnimationClass::Update(skeleton_);
 
 	cameraData->worldPosition = camera->GetTranslate();
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
@@ -64,6 +60,8 @@ void Object3d::Update()
 			model_->GetMaterialData()->environmentCoefficient = environmentCoefficient_;
 		}
 	}
+
+	Matrix4x4 localMatrix = MakeIdentity4x4();
 
 	transformationMatrixData->WVP = Multiply(localMatrix, worldViewProjectionMatrix);
 	transformationMatrixData->World = Multiply(localMatrix, worldMatrix);
@@ -98,6 +96,11 @@ void Object3d::Draw()
 void Object3d::SetModel(const std::string& filePath)
 {
 	model_ = ModelManager::GetInstance()->FindModel(filePath);
+
+	if (model_)
+	{
+		skeleton_ = AnimationClass::CreateSkeleton(model_->GetModelData().rootNode);
+	}
 }
 
 void Object3d::SetAnimation(const std::string& directoryPath, const std::string& filename)

@@ -11,6 +11,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 {
 	modelCommon_ = modelCommon;
 	modelData = LoadModelFile(directorypath, filename);
+
 	// リソース制作
 	vertexResource = modelCommon_->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * modelData.vertices.size());
 
