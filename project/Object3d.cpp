@@ -36,10 +36,10 @@ void Object3d::Update()
 {
 	animationTime_ += 1.0f / 60.0f;
 	animationTime_ = std::fmod(animationTime_, animation_.duration);
-	Model::NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[model_->GetModelData().rootNode.name];
-	Vector3 translate = Model::CalculateValueVector3(rootNodeAnimation.translate, animationTime_);
-	Quaternion rotate = Model::CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime_);
-	Vector3 scale = Model::CalculateValueVector3(rootNodeAnimation.scale, animationTime_);
+	AnimationClass::NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[model_->GetModelData().rootNode.name];
+	Vector3 translate = AnimationClass::CalculateValueVector3(rootNodeAnimation.translate, animationTime_);
+	Quaternion rotate = AnimationClass::CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime_);
+	Vector3 scale = AnimationClass::CalculateValueVector3(rootNodeAnimation.scale, animationTime_);
 
 	// アニメーション適用後の localMatrix を作成
 	Matrix4x4 localMatrix = MakeAffineMatrixQuaternion(scale, rotate, translate);
@@ -103,7 +103,7 @@ void Object3d::SetModel(const std::string& filePath)
 void Object3d::SetAnimation(const std::string& directoryPath, const std::string& filename)
 {
 	// 指定されたファイルからアニメーションデータを読み込んで保持する
-	animation_ = Model::LoadAnimationFile(directoryPath, filename);
+	animation_ = AnimationClass::LoadAnimationFile(directoryPath, filename);
 	// 時間を0にリセット
 	animationTime_ = 0.0f;
 }

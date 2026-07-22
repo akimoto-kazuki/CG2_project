@@ -162,6 +162,9 @@
     <ClCompile Include="PostEffect.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="AnimationClass.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -272,6 +275,9 @@
       <Filter>Engine\ヘッダー ファイル\2d\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="PostEffect.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationClass.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

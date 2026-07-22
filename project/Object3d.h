@@ -5,6 +5,7 @@
 #include "ModelManager.h"
 #include "Model.h"
 #include "Camera.h"
+#include "AnimationClass.h"
 
 class Object3dCommon;
 class Camera;
@@ -97,7 +98,7 @@ private:
 
 	float environmentCoefficient_ = 0.3f;
 
-	Model::Animation animation_;  // 読み込んだアニメーションデータ
+	AnimationClass::Animation animation_;  // 読み込んだアニメーションデータ
 	float animationTime_ = 0.0f;  // 再生中の時刻（秒）
 
 };
