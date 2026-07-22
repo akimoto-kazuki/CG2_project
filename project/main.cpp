@@ -48,6 +48,9 @@
 // ★ここに追加：パーティクル
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
+
+#include "LineRenderer.h"
+
 #ifdef USE_IMGUI	
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // DEBUG
@@ -110,6 +113,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	SrvManager* srvManager = nullptr;
 	// ImGui
 	ImGuiManager* imGuiManeger = nullptr;
+	// LineRendererの初期化
+	LineRenderer* lineRenderer = nullptr;
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -170,7 +175,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("sneakWalk.gltf");
+	ModelManager::GetInstance()->LoadModel("walk.gltf");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -180,10 +185,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("sneakWalk.gltf");
-	object3d->SetAnimation("resources", "sneakWalk.gltf");
+	object3d->SetModel("walk.gltf");
+	object3d->SetAnimation("resources", "walk.gltf");
 
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
+
+	lineRenderer = new LineRenderer();
+	lineRenderer->Initialize(dxCommon);
 
 	skyBox = new SkyBox();
 	skyBox->Initialize(skyBoxCommon);
@@ -301,6 +309,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
+
+			object3d->DrawSkeleton(lineRenderer);
+
 			object3d->SetRotate(objRotate);
 			object3d->SetTranslate(objPosition);
 
@@ -365,7 +376,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
 			//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
-
+			lineRenderer->Draw(dxCommon, camera);
 			// ★ここに追加：パーティクルの描画
 			//ParticleManager::GetInstance()->Draw();
 
@@ -401,6 +412,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete object3d;
 	delete skyBox;
 	delete camera;
+	delete lineRenderer;
 	// ★ここに追加：エミッターの削除
 	// (ParticleManagerはシングルトンなのでdelete不要です)
 	delete particleEmitterEffect;

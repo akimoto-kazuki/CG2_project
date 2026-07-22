@@ -18,7 +18,7 @@ AnimationClass::Animation AnimationClass::LoadAnimationFile(const std::string& d
 			aiVectorKey& keyAssimp = nodeAnimationAssimp->mPositionKeys[keyIndex];
 			KeyframeVector3 keyframe;
 			keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond);
-			keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };
+			keyframe.value = { -keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };
 			nodeAnimation.translate.push_back(keyframe);
 		}
 

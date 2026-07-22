@@ -8,6 +8,7 @@
 #include "AnimationClass.h"
 
 class Object3dCommon;
+class LineRenderer;
 class Camera;
 
 class Object3d
@@ -47,6 +48,8 @@ public:
 	void Update();
 
 	void Draw();
+
+	void DrawSkeleton(LineRenderer* lineRenderer);
 
 	void SetModel(const std::string& filePath);
 
