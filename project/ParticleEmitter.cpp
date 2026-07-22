@@ -1,6 +1,6 @@
 #include "ParticleEmitter.h"
 // コンストラクタ：必要な初期値をメンバ変数に保存する
-ParticleEmitter::ParticleEmitter(const std::string& groupName, const Transform& transform, uint32_t count, float frequency)
+ParticleEmitter::ParticleEmitter(const std::string& groupName, const EulerTransform& transform, uint32_t count, float frequency)
 	: groupName_(groupName)
 	, transform_(transform)
 	, count_(count)

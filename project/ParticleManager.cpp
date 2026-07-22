@@ -76,7 +76,7 @@ void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvInde
 }
 
 // ★スライド5枚目：パーティクル発生（Emit）の実装
-void ParticleManager::EmitEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+void ParticleManager::EmitEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count)
 {
 	// 指定されたグループが存在するかチェック
 	auto it = particleGroups_.find(groupName);
@@ -108,7 +108,7 @@ void ParticleManager::EmitEffect(const std::string& groupName, const Transform& 
 	}
 }
 
-void ParticleManager::EmitHitEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+void ParticleManager::EmitHitEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count)
 {
 	// 指定されたグループが存在するかチェック
 	auto it = particleGroups_.find(groupName);
@@ -135,7 +135,7 @@ void ParticleManager::EmitHitEffect(const std::string& groupName, const Transfor
 	}
 }
 
-void ParticleManager::EmitSparkEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+void ParticleManager::EmitSparkEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count)
 {
 	auto it = particleGroups_.find(groupName);
 	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
@@ -181,7 +181,7 @@ void ParticleManager::EmitSparkEffect(const std::string& groupName, const Transf
 	}
 }
 
-void ParticleManager::EmitCylinderEffect(const std::string& groupName, const Transform& transform, uint32_t count)
+void ParticleManager::EmitCylinderEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count)
 {
 	// 指定されたグループが存在するかチェック
 	auto it = particleGroups_.find(groupName);

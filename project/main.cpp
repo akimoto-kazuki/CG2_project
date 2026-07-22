@@ -48,6 +48,9 @@
 // ★ここに追加：パーティクル
 #include "ParticleManager.h"
 #include "ParticleEmitter.h"
+
+#include "LineRenderer.h"
+
 #ifdef USE_IMGUI	
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // DEBUG
@@ -110,6 +113,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	SrvManager* srvManager = nullptr;
 	// ImGui
 	ImGuiManager* imGuiManeger = nullptr;
+	// LineRendererの初期化
+	LineRenderer* lineRenderer = nullptr;
 	// ウィンドウ
 	winApp = new WinApp();
 	winApp->Initialize();
@@ -149,7 +154,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	Vector3 translate = {0.0f,0.0f,0.0f};
 
 	// obj用
-	Vector3 objPosition = { -2.0f,0.0f,10.0f };
+	Vector3 objPosition = { 0.0f,0.0f,10.0f };
 	Vector3 objRotate = { 0.0f,3.0f,0.0f };
 
 	// spr用
@@ -160,8 +165,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	std::array<std::string, 2> spriteFile;
 
-	spriteFile[0] = "resources/AnimatedCube_BaseColor.png";
-	spriteFile[1] = "resources/AnimatedCube_BaseColor.png";
+	spriteFile[0] = "resources/white.png";
+	spriteFile[1] = "resources/white.png";
 
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -170,8 +175,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("AnimatedCube.gltf");
-
+	ModelManager::GetInstance()->LoadModel("walk.gltf");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -181,9 +185,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj初期化
 	object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-	object3d->SetModel("AnimatedCube.gltf");
-	object3d->SetAnimation("resources", "AnimatedCube.gltf");
+	object3d->SetModel("walk.gltf");
+	object3d->SetAnimation("resources", "walk.gltf");
+
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
+
+	lineRenderer = new LineRenderer();
+	lineRenderer->Initialize(dxCommon);
 
 	skyBox = new SkyBox();
 	skyBox->Initialize(skyBoxCommon);
@@ -214,11 +222,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex,false,true);
 
 	// scale rotate translate
-	Transform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
-	Transform particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
+	EulerTransform particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 
 	// "magic" グループのパーティクルを、座標(0,0,0)から、1粒ずつ、0.1秒間隔で発生させるエミッターを作る
 	ParticleEmitter* particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
@@ -301,6 +309,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
+
+			object3d->DrawSkeleton(lineRenderer);
+
 			object3d->SetRotate(objRotate);
 			object3d->SetTranslate(objPosition);
 
@@ -364,10 +375,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-			skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
-
+			//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+			lineRenderer->Draw(dxCommon, camera);
 			// ★ここに追加：パーティクルの描画
-			ParticleManager::GetInstance()->Draw();
+			//ParticleManager::GetInstance()->Draw();
 
 			/*spriteCommon->DrawCommon();
 
@@ -401,6 +412,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	delete object3d;
 	delete skyBox;
 	delete camera;
+	delete lineRenderer;
 	// ★ここに追加：エミッターの削除
 	// (ParticleManagerはシングルトンなのでdelete不要です)
 	delete particleEmitterEffect;

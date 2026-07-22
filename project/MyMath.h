@@ -26,7 +26,7 @@ namespace MyMath
 		float y;
 	};
 
-	struct Transform
+	struct EulerTransform
 	{
 		Vector3 scale;
 		Vector3 rotate;
@@ -39,6 +39,13 @@ namespace MyMath
 		float y;
 		float z;
 		float w;
+	};
+
+	struct QuaternionTransform
+	{
+		Vector3 scale;
+		Quaternion rotate;
+		Vector3 translate;
 	};
 
 	Vector3 Add(const Vector3& v1, const Vector3& v2);

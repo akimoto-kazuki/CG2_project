@@ -56,6 +56,7 @@ public:
 
 	struct Node
 	{
+		QuaternionTransform transform;
 		Matrix4x4 localMatrix;
 		std::string name;
 		std::vector<Node> children;
@@ -78,6 +79,8 @@ public:
 		float environmentCoefficient;
 	};
 
+public:
+
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 
 	void Draw();
@@ -88,17 +91,11 @@ public:
 
 	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
 
-	static Animation LoadAnimationFile(const std::string& directoryPath, const std::string& filename);
-
 	Material* GetMaterialData() { return materialData; }
 
 	ModelData GetModelData() { return modelData; }
 
 	static Node ReadNode(aiNode* node);
-
-	static Vector3 CalculateValueVector3(const std::vector<Model::KeyframeVector3>& keyframes, float time);
-
-	static Quaternion CalculateValueQuaternion(const std::vector<Model::KeyframeQuaternion>& keyframes, float time);
 
 private:
 

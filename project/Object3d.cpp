@@ -1,5 +1,6 @@
 #include "Object3d.h"
 #include "Object3dCommon.h"
+#include "LineRenderer.h"
 
 using namespace MyMath;
 
@@ -34,16 +35,11 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 void Object3d::Update()
 {
-
 	animationTime_ += 1.0f / 60.0f;
 	animationTime_ = std::fmod(animationTime_, animation_.duration);
-	Model::NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[model_->GetModelData().rootNode.name];
-	Vector3 translate = Model::CalculateValueVector3(rootNodeAnimation.translate, animationTime_);
-	Quaternion rotate = Model::CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime_);
-	Vector3 scale = Model::CalculateValueVector3(rootNodeAnimation.scale, animationTime_);
 
-	// アニメーション適用後の localMatrix を作成
-	Matrix4x4 localMatrix = MakeAffineMatrixQuaternion(scale, rotate, translate);
+	AnimationClass::ApplyAnimation(skeleton_, animation_, animationTime_);
+	AnimationClass::Update(skeleton_);
 
 	cameraData->worldPosition = camera->GetTranslate();
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
@@ -58,11 +54,15 @@ void Object3d::Update()
 		worldViewProjectionMatrix = worldMatrix;
 	}
 
-	if (model_) {
-		if (model_->GetMaterialData()) {
+	if (model_) 
+	{
+		if (model_->GetMaterialData()) 
+		{
 			model_->GetMaterialData()->environmentCoefficient = environmentCoefficient_;
 		}
 	}
+
+	Matrix4x4 localMatrix = MakeIdentity4x4();
 
 	transformationMatrixData->WVP = Multiply(localMatrix, worldViewProjectionMatrix);
 	transformationMatrixData->World = Multiply(localMatrix, worldMatrix);
@@ -94,15 +94,59 @@ void Object3d::Draw()
 	}
 }
 
+void Object3d::DrawSkeleton(LineRenderer* lineRenderer)
+{
+	if (!lineRenderer || skeleton_.joints.empty()) return;
+
+	// オブジェクト自体のワールド行列を計算
+	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+
+	// 全てのJointをループ処理
+	for (const auto& joint : skeleton_.joints)
+	{
+		// 1. 関節のワールド行列を計算 (Jointのモデル空間行列 × オブジェクトのワールド行列)
+		Matrix4x4 jointWorldMatrix = Multiply(joint.skeletonSpaceMatrix, worldMatrix);
+
+		// 関節のワールド座標を抽出 (行列の4行目/3列分)
+		Vector3 jointPos = { jointWorldMatrix.m[3][0], jointWorldMatrix.m[3][1], jointWorldMatrix.m[3][2] };
+
+		// 2. 親Jointが存在すれば、親から自分へ線を引く
+		if (joint.parent.has_value())
+		{
+			int32_t parentIndex = joint.parent.value();
+			const auto& parentJoint = skeleton_.joints[parentIndex];
+
+			// 親関節のワールド行列と座標を計算
+			Matrix4x4 parentWorldMatrix = Multiply(parentJoint.skeletonSpaceMatrix, worldMatrix);
+			Vector3 parentPos = { parentWorldMatrix.m[3][0], parentWorldMatrix.m[3][1], parentWorldMatrix.m[3][2] };
+
+			// 親 Joint と 子 Joint を白い線で繋ぐ
+			lineRenderer->AddLine(parentPos, jointPos, { 1.0f, 1.0f, 1.0f, 1.0f });
+		}
+
+		// 3. 関節の位置を分かりやすくするために「小さなXYZ軸」を描画
+		float sphereRadius = 0.005f; // モデルのサイズに合わせて半径を調整してください
+		Vector4 sphereColor = { 0.2f, 0.8f, 1.0f, 1.0f }; // 水色
+		uint32_t division = 6; // 分割数（大きくすると滑らかな球になりますが頂点数が増えます）
+
+		lineRenderer->AddSphere(jointPos, sphereRadius, sphereColor, division);
+	}
+}
+
 void Object3d::SetModel(const std::string& filePath)
 {
 	model_ = ModelManager::GetInstance()->FindModel(filePath);
+
+	if (model_)
+	{
+		skeleton_ = AnimationClass::CreateSkeleton(model_->GetModelData().rootNode);
+	}
 }
 
 void Object3d::SetAnimation(const std::string& directoryPath, const std::string& filename)
 {
 	// 指定されたファイルからアニメーションデータを読み込んで保持する
-	animation_ = Model::LoadAnimationFile(directoryPath, filename);
+	animation_ = AnimationClass::LoadAnimationFile(directoryPath, filename);
 	// 時間を0にリセット
 	animationTime_ = 0.0f;
 }

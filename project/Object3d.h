@@ -5,8 +5,10 @@
 #include "ModelManager.h"
 #include "Model.h"
 #include "Camera.h"
+#include "AnimationClass.h"
 
 class Object3dCommon;
+class LineRenderer;
 class Camera;
 
 class Object3d
@@ -47,6 +49,8 @@ public:
 
 	void Draw();
 
+	void DrawSkeleton(LineRenderer* lineRenderer);
+
 	void SetModel(const std::string& filePath);
 
 	void SetScale(const Vector3& scale) { transform.scale = scale; }
@@ -80,9 +84,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
 	DirectionalLight* directionalLightData = nullptr;
 
-	MyMath::Transform transform;
+	MyMath::EulerTransform transform;
 
-	MyMath::Transform cameraTransform;
+	MyMath::EulerTransform cameraTransform;
 
 	uint32_t textureIndex = 0;
 
@@ -97,8 +101,9 @@ private:
 
 	float environmentCoefficient_ = 0.3f;
 
-	Model::Animation animation_;  // 読み込んだアニメーションデータ
+	AnimationClass::Animation animation_;  // 読み込んだアニメーションデータ
 	float animationTime_ = 0.0f;  // 再生中の時刻（秒）
 
+	AnimationClass::Skeleton skeleton_;
 };
 
