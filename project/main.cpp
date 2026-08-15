@@ -156,6 +156,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj用
 	Vector3 objPosition = { 0.0f,0.0f,10.0f };
 	Vector3 objRotate = { 0.0f,3.0f,0.0f };
+	float objJump = 0.0f;
+	int jumpFlag = false;
+	int jumpUpFlag = false;
+	int jumpDownFlag = false;
 
 	// spr用
 	Vector3 position = { 0.0f,0.0f,0.0f };
@@ -304,6 +308,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 				particleEmitterRingEffect->InputHitEffect();
 			}
 			
+			if (input->PushKey(DIK_D))
+			{
+				objPosition.x += 0.1f;
+			}
+			if (input->PushKey(DIK_A))
+			{
+				objPosition.x -= 0.1f;
+			}
+
 			particleEmitterCylinderEffect->UpdateCylinderEffect();
 			
 			float pos = 0.0f;
