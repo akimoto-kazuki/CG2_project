@@ -156,6 +156,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// obj用
 	Vector3 objPosition = { 0.0f,0.0f,10.0f };
 	Vector3 objRotate = { 0.0f,3.0f,0.0f };
+	float velocityY = 0.0f;        // Y軸方向の現在の速度
+	float gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
+	float jumpPower = 0.3f;        // ジャンプ力（上に飛び上がる初速）
+	bool isJumping = false;        // 現在ジャンプ中かどうかのフラグ
 
 	// spr用
 	Vector3 position = { 0.0f,0.0f,0.0f };
@@ -304,6 +308,38 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 				particleEmitterRingEffect->InputHitEffect();
 			}
 			
+			if (input->PushKey(DIK_D))
+			{
+				objPosition.x += 0.1f;
+			}
+			if (input->PushKey(DIK_A))
+			{
+				objPosition.x -= 0.1f;
+			}
+
+			if (input->TriggerKey(DIK_SPACE) && !isJumping)
+			{
+				velocityY = jumpPower; // 上方向への初速を与える
+				isJumping = true;      // ジャンプ状態をオンにする
+			}
+
+			if (isJumping)
+			{
+				// 1. 座標に現在の速度を足す
+				objPosition.y += velocityY;
+
+				// 2. 速度に重力をかけて減速させる（下方向の力を加える）
+				velocityY += gravity;
+
+				// 3. 着地判定（とりあえず Y=0.0f を地面の高さとします）
+				if (objPosition.y <= 0.0f)
+				{
+					objPosition.y = 0.0f; // 地面にめり込まないように補正
+					velocityY = 0.0f;     // 速度をリセット
+					isJumping = false;    // ジャンプ状態を解除
+				}
+			}
+
 			particleEmitterCylinderEffect->UpdateCylinderEffect();
 			
 			float pos = 0.0f;
