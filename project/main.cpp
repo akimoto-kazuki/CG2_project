@@ -103,6 +103,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// オブジェクト
 	Object3dCommon* object3dCommon = nullptr;
 	Object3d* object3d = nullptr;
+	Object3d* enemy3d = nullptr;
 	// スプライト
 	SpriteCommon* spriteCommon = nullptr;
 	Sprite* sprite = nullptr;
@@ -154,12 +155,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	Vector3 translate = {0.0f,0.0f,0.0f};
 
 	// obj用
-	Vector3 objPosition = { 0.0f,0.0f,10.0f };
-	Vector3 objRotate = { 0.0f,3.0f,0.0f };
+	Vector3 playerPosition = { 0.0f,0.0f,10.0f };
+	Vector3 playerjRotate = { 0.0f,3.0f,0.0f };
 	float velocityY = 0.0f;        // Y軸方向の現在の速度
 	float gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	float jumpPower = 0.3f;        // ジャンプ力（上に飛び上がる初速）
 	bool isJumping = false;        // 現在ジャンプ中かどうかのフラグ
+
+	Vector3 enemyPosition = { 0.0f,0.0f,10.0f };
+	Vector3 enemyjRotate = { 0.0f,3.0f,0.0f };
 
 	// spr用
 	Vector3 position = { 0.0f,0.0f,0.0f };
@@ -193,6 +197,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	object3d->SetAnimation("resources", "walk.gltf");
 
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
+
+	enemy3d = new Object3d();
+	enemy3d->Initialize(object3dCommon);
+	enemy3d->SetModel("walk.gltf");
+	enemy3d->SetAnimation("resources", "walk.gltf");
+
+	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	lineRenderer = new LineRenderer();
 	lineRenderer->Initialize(dxCommon);
@@ -310,11 +321,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			
 			if (input->PushKey(DIK_D))
 			{
-				objPosition.x += 0.1f;
+				playerPosition.x += 0.1f;
 			}
 			if (input->PushKey(DIK_A))
 			{
-				objPosition.x -= 0.1f;
+				playerPosition.x -= 0.1f;
 			}
 
 			if (input->TriggerKey(DIK_SPACE) && !isJumping)
@@ -326,15 +337,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			if (isJumping)
 			{
 				// 1. 座標に現在の速度を足す
-				objPosition.y += velocityY;
+				playerPosition.y += velocityY;
 
 				// 2. 速度に重力をかけて減速させる（下方向の力を加える）
 				velocityY += gravity;
 
 				// 3. 着地判定（とりあえず Y=0.0f を地面の高さとします）
-				if (objPosition.y <= 0.0f)
+				if (playerPosition.y <= 0.0f)
 				{
-					objPosition.y = 0.0f; // 地面にめり込まないように補正
+					playerPosition.y = 0.0f; // 地面にめり込まないように補正
 					velocityY = 0.0f;     // 速度をリセット
 					isJumping = false;    // ジャンプ状態を解除
 				}
@@ -345,11 +356,50 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			float pos = 0.0f;
 			camera->Update();
 			object3d->Update();
+			enemy3d->Update();
+
+			Vector3 diff = 
+			{
+				playerPosition.x - enemyPosition.x,
+				playerPosition.y - enemyPosition.y,
+				playerPosition.z - enemyPosition.z
+			};
+
+			// 2. プレイヤーと敵の距離を計算する
+			float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+
+			// 敵の移動スピード（好みの速さに調整してください）
+			float enemySpeed = 0.05f;
+
+			// 3. プレイヤーと敵が少し離れている場合のみ移動処理を行う（完全に重なるのを防ぐため）
+			if (distance > 0.1f)
+			{
+				// ベクトルを正規化（長さを1にする）して方向だけを取り出す
+				Vector3 direction = {
+					diff.x / distance,
+					diff.y / distance,
+					diff.z / distance
+				};
+
+				// 4. 敵の座標に「方向 × スピード」を足して移動させる
+				enemyPosition.x += direction.x * enemySpeed;
+				// 空を飛ばせたくない場合は Y 軸の追従をコメントアウトするか、重力処理を別途入れてください
+				enemyPosition.y += direction.y * enemySpeed;
+				enemyPosition.z += direction.z * enemySpeed;
+
+				// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
+				// atan2を使ってXとZの向きから角度を算出します
+				enemyjRotate.y = std::atan2(direction.x, direction.z);
+			}
 
 			object3d->DrawSkeleton(lineRenderer);
+			enemy3d->DrawSkeleton(lineRenderer);
 
-			object3d->SetRotate(objRotate);
-			object3d->SetTranslate(objPosition);
+			object3d->SetRotate(playerjRotate);
+			object3d->SetTranslate(playerPosition);
+
+			enemy3d->SetRotate(enemyjRotate);
+			enemy3d->SetTranslate(enemyPosition);
 
 			// 3. 更新
 			skyBox->Update();
@@ -386,8 +436,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			ImGui::DragFloat4("SpriteColor", &color.x, 0.1f);
 			ImGui::DragFloat2("SpriteSize", &size.x, 0.1f);
 			ImGui::Text("object3D");
-			ImGui::DragFloat3("ObjectPosition", &objPosition.x, 0.1f);
-			ImGui::DragFloat3("ObjectRotation", &objRotate.x, 0.1f);
+			ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
+			ImGui::DragFloat3("ObjectRotation", &playerjRotate.x, 0.1f);
 			// 1. 現在の数値を Object3d から取得してローカル変数に入れる
 			float envCoef = object3d->GetEnvironmentCoefficient();
 
@@ -408,6 +458,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			object3dCommon->DrawCommon();
 			object3d->Draw();
+			enemy3d->Draw();
 
 			// 4. 描画
 			skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
@@ -446,6 +497,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	delete sprite;
 	delete object3d;
+	delete enemy3d;
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
