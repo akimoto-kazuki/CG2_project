@@ -152,7 +152,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	// カメラの用
 	Vector3 rotate = {0.0f,0.0f,0.0f};
-	Vector3 translate = {0.0f,0.0f,0.0f};
+	Vector3 translate = {0.0f,0.0f,-10.0f};
 
 	// obj用
 	Vector3 playerPosition = { 0.0f,0.0f,10.0f };
