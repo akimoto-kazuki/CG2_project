@@ -17,6 +17,8 @@ public:
 	// namespace省略
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 public:
+
+
 	// 初期化
 	void Initialize(WinApp* winApp);
 	// 更新

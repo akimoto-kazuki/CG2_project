@@ -42,8 +42,10 @@ class Object3d
 
 public:
 	
+	static Object3d* Create();
+
 	// 初期化
-	void Initialize(Object3dCommon* object3dCommon);
+	void Initialize();
 
 	void Update();
 
@@ -75,7 +77,6 @@ public:
 
 private:
 
-	Object3dCommon* object3dCommon_ = nullptr;
 	Camera* camera = nullptr;
 	
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;

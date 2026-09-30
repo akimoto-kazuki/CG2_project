@@ -18,7 +18,7 @@ class ImGuiManager
 public:
 
 	// 初期化
-	void Initialize(WinApp* winApp, DirectXCommon* dxCommon, SrvManager* srvManager);
+	void Initialize(WinApp* winApp, SrvManager* srvManager);
 	// 後始末
 	void Finalize();
 
@@ -41,7 +41,6 @@ private:
 
 	// ウィンドウ
 	WinApp* winApp_ = nullptr;
-	DirectXCommon* dxCommon_ = nullptr;
 
 	ID3D12DescriptorHeap* srvHeap;
 };

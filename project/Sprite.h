@@ -40,7 +40,7 @@ class Sprite
 public:
 
 	// 初期化
-	void Initialize(SpriteCommon* spriteCommon, std::string textureFilePath);
+	void Initialize(std::string textureFilePath);
 
 	void Update();
 
@@ -77,7 +77,6 @@ private:
 	/// <summary>
 	/// ポインタ
 	/// </summary>
-	SpriteCommon* spriteCommon_ = nullptr;
 	VertexData* vertexData = nullptr;
 	uint32_t* indexData = nullptr;
 	TransformationMatrix* transformationMatrixData = nullptr;

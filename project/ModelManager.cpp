@@ -18,10 +18,10 @@ void ModelManager::Finalize()
 	instance = nullptr;
 }
 
-void ModelManager::Initialize(DirectXCommon* dxCommon)
+void ModelManager::Initialize()
 {
 	modelCommon = new ModelCommon;
-	modelCommon->Initialize(dxCommon);
+	modelCommon->Initialize();
 }
 
 void ModelManager::LoadModel(const std::string& filePath)

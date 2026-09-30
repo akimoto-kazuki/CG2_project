@@ -28,7 +28,7 @@ public:
 
 public:
     // 初期化（PSOやバッファの作成）
-    void Initialize(DirectXCommon* dxCommon);
+    void Initialize();
 
     // 毎フレーム、線を登録する関数
     void AddLine(const Vector3& start, const Vector3& end, const Vector4& color);
@@ -36,7 +36,7 @@ public:
     void AddSphere(const Vector3& center, float radius, const Vector4& color, uint32_t division = 12);
 
     // 描画（溜まった線を一気に描画して、リストをクリアする）
-    void Draw(DirectXCommon* dxCommon, Camera* camera);
+    void Draw(Camera* camera);
 
 private:
     // 描画待ちの頂点データ
@@ -53,6 +53,4 @@ private:
     // PSOとルートシグネチャ（必要に応じて実装）
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-
-    DirectXCommon* dxCommon_;
 };

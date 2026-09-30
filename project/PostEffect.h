@@ -9,7 +9,7 @@ public:
     /// <summary>
     /// 初期化処理
     /// </summary>
-    void Initialize(DirectXCommon* dxCommon);
+    void Initialize();
 
     /// <summary>
     /// 描画前処理（レンダーテクスチャへの描き込み開始）
@@ -37,8 +37,6 @@ private:
         DirectX::XMFLOAT4 pos; // 画面座標 (x, y, z, w)
         DirectX::XMFLOAT2 uv;  // テクスチャ座標 (u, v)
     };
-
-    DirectXCommon* dxCommon_ = nullptr;
 
     // レンダーテクスチャ（描画先）リソースとビュー関連
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource_ = nullptr;

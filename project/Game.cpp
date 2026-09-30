@@ -64,8 +64,8 @@ void Game::Initialiaze()
 	camera = new Camera();
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
 	camera->SetTranslate({ 0.0f,0.0f,0.0f });
-	object3dCommon->SetDefaultCamera(camera);
-	skyBoxCommon->SetDefaultCamera(camera);
+	Object3dCommon::GetInstance()->SetDefaultCamera(camera);
+	SkyBoxCommon::GetInstance()->SetDefaultCamera(camera);
 
 	// カメラの用
 	rotate = { 0.0f,0.0f,0.0f };
@@ -99,28 +99,28 @@ void Game::Initialiaze()
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
 	postEffect = new PostEffect();
-	postEffect->Initialize(dxCommon);
+	postEffect->Initialize();
 
 	// obj初期化
 	object3d = new Object3d();
-	object3d->Initialize(object3dCommon);
+	object3d->Initialize();
 	object3d->SetModel("walk.gltf");
 	object3d->SetAnimation("resources", "walk.gltf");
 
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	enemy3d = new Object3d();
-	enemy3d->Initialize(object3dCommon);
+	enemy3d->Initialize();
 	enemy3d->SetModel("walk.gltf");
 	enemy3d->SetAnimation("resources", "walk.gltf");
 
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex); // ★ここで渡す！
 
 	lineRenderer = new LineRenderer();
-	lineRenderer->Initialize(dxCommon);
+	lineRenderer->Initialize();
 
 	skyBox = new SkyBox();
-	skyBox->Initialize(skyBoxCommon);
+	skyBox->Initialize();
 	// 3. 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
 
@@ -162,7 +162,7 @@ void Game::Initialiaze()
 	for (uint32_t i = 0; i < 5; ++i)
 	{
 		Sprite* sprite = new Sprite();
-		sprite->Initialize(spriteCommon, spriteFile[i % 2]);
+		sprite->Initialize(spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
 }
@@ -398,7 +398,7 @@ void Game::Draw()
 
 	srvManager->PreDraw();
 
-	object3dCommon->DrawCommon();
+	Object3dCommon::GetInstance()->DrawCommon();
 	object3d->Draw();
 	if (isEnemyAlive)
 	{
@@ -406,13 +406,13 @@ void Game::Draw()
 	}
 
 	// 4. 描画
-	skyBoxCommon->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
+	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
-	lineRenderer->Draw(dxCommon, camera);
+	lineRenderer->Draw(camera);
 	// ★ここに追加：パーティクルの描画
 	ParticleManager::GetInstance()->Draw(camera);
 
-	spriteCommon->DrawCommon();
+	SpriteCommon::GetInstance()->DrawCommon();
 
 	for (Sprite* sprite : sprites_)
 	{
@@ -422,12 +422,12 @@ void Game::Draw()
 
 	postEffect->PostDraw();
 
-	dxCommon->PreDraw();
+	DirectXCommon::GetInstance()->PreDraw();
 
 	postEffect->Draw();
 
 	// ImGuiの描画
 	imGuiManeger->ImGuiDraw();
 
-	dxCommon->PostDraw();
+	DirectXCommon::GetInstance()->PostDraw();
 }

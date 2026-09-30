@@ -84,7 +84,7 @@ public:
 	static ParticleManager* GetInstance();
 
 	// 初期化（引数にSrvManagerを追加）
-	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
+	void Initialize(SrvManager* srvManager);
 
 	// 更新処理
 	void Update(float deltaTime = 1.0f / 60.0f);
@@ -114,7 +114,6 @@ private:
 	void CreateRingVertexData();
 	void CreateCylinderVertexData();
 
-	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
 
 	// ランダム生成用

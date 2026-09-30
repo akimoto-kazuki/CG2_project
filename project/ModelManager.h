@@ -28,7 +28,7 @@ public:
 	void Finalize();
 	std::map<std::string, std::unique_ptr<Model>>models;
 	// 初期化
-	void Initialize(DirectXCommon* dxCommon);
+	void Initialize();
 
 	void LoadModel(const std::string& filePath);
 

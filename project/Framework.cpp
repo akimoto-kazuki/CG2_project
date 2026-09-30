@@ -9,30 +9,26 @@ void Framework::Initialiaze()
 	input_ = new Input();
 	input_->Initialize(winApp);
 	// DirectX
-	dxCommon = new DirectXCommon();
-	dxCommon->Initialize(winApp);
+	DirectXCommon::GetInstance()->Initialize(winApp);
 	// SRV初期化
 	srvManager = SrvManager::GetInstance();
-	srvManager->Initialize(dxCommon);
+	srvManager->Initialize();
 	// ImGui
 	imGuiManeger = new ImGuiManager;
-	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
+	imGuiManeger->Initialize(winApp, srvManager);
 
 	// Common
 	// object3d
-	object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
+	Object3dCommon::GetInstance()->Initialize();
 	// sprite
-	spriteCommon = new SpriteCommon;
-	spriteCommon->Initialize(dxCommon);
+	SpriteCommon::GetInstance()->Initialize();
 	// SkyBox
-	skyBoxCommon = new SkyBoxCommon();
-	skyBoxCommon->Initialize(dxCommon);
+	SkyBoxCommon::GetInstance()->Initialize();
 
-	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ModelManager::GetInstance()->Initialize(dxCommon);
+	TextureManager::GetInstance()->Initialize(srvManager);
+	ModelManager::GetInstance()->Initialize();
 	//パーティクルマネージャの初期化
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
+	ParticleManager::GetInstance()->Initialize(srvManager);
 
 	//FenceのSignalを待つためのイベントを作成する
 	fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -71,14 +67,8 @@ void Framework::Finalize()
 	TextureManager::GetInstance()->Finalize();
 	ModelManager::GetInstance()->Finalize();
 
-	delete spriteCommon;
-	delete object3dCommon;
-	delete skyBoxCommon;
-
 	// 入力解放
 	delete input_;
-	// DirectXの解放
-	delete dxCommon;
 
 	// WindowsAPIの終了処理
 	winApp->Finalize();

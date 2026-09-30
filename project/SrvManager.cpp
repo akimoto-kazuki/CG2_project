@@ -14,13 +14,12 @@ SrvManager* SrvManager::GetInstance()
 	return instance;
 }
 
-void SrvManager::Initialize(DirectXCommon* dxCommon)
+void SrvManager::Initialize()
 {
-	this->directXCommon = dxCommon;
 	// デスクリプタヒープの生成
-	descriptorHeap = directXCommon->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount, true);
+	descriptorHeap = DirectXCommon::GetInstance()->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount, true);
 	// デスクリプタ1個分のサイズを取得して記録
-	descriptorSize = directXCommon->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descriptorSize = DirectXCommon::GetInstance()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 uint32_t SrvManager::Allocate()
@@ -59,7 +58,7 @@ void SrvManager::CreateSRVforTexture2D(uint32_t srvIndex, ID3D12Resource* pResou
 	srvDesc.Texture2D.MipLevels = MipLevels; // 引数で受け取ったミップレベル
 
 	// 2. デバイスを使ってSRVを生成
-	directXCommon->GetDevice()->CreateShaderResourceView(
+	DirectXCommon::GetInstance()->GetDevice()->CreateShaderResourceView(
 		pResource,
 		&srvDesc,
 		GetCPUDescriptorHandle(srvIndex) // 管理しているヒープから指定インデックスのCPUハンドルを取得
@@ -79,7 +78,7 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 	// 2. デバイスを使ってSRVを生成
-	directXCommon->GetDevice()->CreateShaderResourceView(
+	DirectXCommon::GetInstance()->GetDevice()->CreateShaderResourceView(
 		pResource,
 		&srvDesc,
 		GetCPUDescriptorHandle(srvIndex)
@@ -107,7 +106,7 @@ void SrvManager::CreateSRVforCubeBox(uint32_t srvIndex, ID3D12Resource* pResourc
 	}
 
 	// デバイスを使ってSRVを生成
-	directXCommon->GetDevice()->CreateShaderResourceView(
+	DirectXCommon::GetInstance()->GetDevice()->CreateShaderResourceView(
 		pResource,
 		&srvDesc,
 		GetCPUDescriptorHandle(srvIndex)
@@ -118,10 +117,10 @@ void SrvManager::PreDraw()
 {
 	// 描画用のDescriptorHeapの設定
 	ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap.Get() };
-	directXCommon->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+	DirectXCommon::GetInstance()->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
 }
 
 void SrvManager::SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_t srvIndex)
 {
-	directXCommon->GetCommandList()->SetGraphicsRootDescriptorTable(RootParameterIndex, GetGPUDescriptorHandle(srvIndex));
+	DirectXCommon::GetInstance()->GetCommandList()->SetGraphicsRootDescriptorTable(RootParameterIndex, GetGPUDescriptorHandle(srvIndex));
 }

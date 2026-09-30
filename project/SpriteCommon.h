@@ -6,16 +6,26 @@
 class SpriteCommon
 {
 public:
-	void Initialize(DirectXCommon* dxCommon);
+
+	// ★ Singleton インスタンス取得
+	static SpriteCommon* GetInstance();
+
+	// ★ コピー・代入の禁止
+	SpriteCommon(const SpriteCommon&) = delete;
+	SpriteCommon& operator=(const SpriteCommon&) = delete;
+
+	void Initialize();
 	// 共通描画設定
 	void DrawCommon();
-	DirectXCommon* GetDxCommon()const { return dxCommon_; }
 private:
+
+	// ★ コンストラクタを private へ移動
+	SpriteCommon() = default;
+	~SpriteCommon() = default;
 	// ルートシグネチャの作成
 	void RootSignature();
 	// グラフィックスパイプラインの生成
 	void GraphicsPipelineState();
-	DirectXCommon* dxCommon_;
 	// ルートシグネチャ
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
 
