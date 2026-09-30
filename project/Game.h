@@ -3,53 +3,25 @@
 #include <cstdint>
 #include <string>
 #include <format>
-//ファイルやディレクトリに関する操作を行うライブラリ
-#include <filesystem>
-//ファイルに書いたり読んだりするライブラリ
-#include<fstream>
-//時間を扱うライブラリ
-#include<chrono>
-//DirectX12のinclude
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
-#include <dxgidebug.h>
-#include <dxcapi.h>
-// DirectXを使うため
-#include "externals/DirectXTex/DirectXTex.h"
-// 入力デバイス
-#include "Input.h"
-//WindowsAPI
-#include "WinApp.h"
-// DirectX
-#include "DirectXCommon.h"
+
 #include "PostEffect.h"
 // スプライト
 #include "Sprite.h"
-#include "SpriteCommon.h"
+
 // オブジェクト
 #include "Object3d.h"
-#include "Object3dCommon.h"
-// マネージャ
-#include "TextureManager.h"
-#include "ModelManager.h"
 //カメラ
 #include "Camera.h"
 //
-#include "SrvManager.h"
-//
 #include "MyMath.h"
-// ImGuiManager
-#include "ImGuiManager.h"
 // スカイボックス
 #include "SkyBox.h"
-#include "SkyBoxCommon.h"
-
-// ★ここに追加：パーティクル
-#include "ParticleManager.h"
+// パーティクル
 #include "ParticleEmitter.h"
 
 #include "LineRenderer.h"
+
+#include "Framework.h"
 
 #include<sstream>
 
@@ -59,46 +31,30 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
-class Game
+class Game : public Framework
 {
 public:
 
 	// 初期化
-	void Initialiaze();
+	void Initialiaze() override;
 	// 終了
-	void Finalize();
+	void Finalize() override;
 	// 毎フレーム更新
-	void Update();
+	void Update() override;
 	// 描画
-	void Draw();
-
-	// 終了フラグのチェック
-	bool IsEndRequst() { return endRequst_; }
+	void Draw() override;
 
 private:
 
-	// ポインタ
-	// 入力
-	Input* input_ = nullptr;
-	// ウィンドウ
-	WinApp* winApp = nullptr;
-	// DirectX
-	DirectXCommon* dxCommon = nullptr;
 	PostEffect* postEffect = nullptr;
-	// オブジェクト
-	Object3dCommon* object3dCommon = nullptr;
+	
 	Object3d* object3d = nullptr;
 	Object3d* enemy3d = nullptr;
-	// スプライト
-	SpriteCommon* spriteCommon = nullptr;
+	
 	Sprite* sprite = nullptr;
-	// スカイボックス
-	SkyBoxCommon* skyBoxCommon = nullptr;
+	
 	SkyBox* skyBox = nullptr;
-	// SRV
-	SrvManager* srvManager = nullptr;
-	// ImGui
-	ImGuiManager* imGuiManeger = nullptr;
+	
 	// LineRendererの初期化
 	LineRenderer* lineRenderer = nullptr;
 
@@ -144,8 +100,6 @@ private:
 	ParticleEmitter* particleEmitterRingEffect;
 	ParticleEmitter* particleEmitterCylinderEffect;
 
-	HANDLE fenceEvent;
-
-	bool endRequst_ = false;
+	
 };
 

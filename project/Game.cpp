@@ -18,6 +18,7 @@
 #include "externals/DirectXTex/DirectXTex.h"
 
 #include "Game.h"
+#include "Framework.h"
 
 #include<sstream>
 
@@ -57,33 +58,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 void Game::Initialiaze()
 {
-	// ウィンドウ
-	winApp = new WinApp();
-	winApp->Initialize();
-	// キーの初期化
-	input_ = new Input();
-	input_->Initialize(winApp);
-	// DirectX
-	dxCommon = new DirectXCommon();
-	dxCommon->Initialize(winApp);
-	// SRV初期化
-	srvManager = SrvManager::GetInstance();
-	srvManager->Initialize(dxCommon);
-
-	// ImGui
-	imGuiManeger = new ImGuiManager;
-	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
-	// Common
-	// object3d
-	object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
-	// sprite
-	spriteCommon = new SpriteCommon;
-	spriteCommon->Initialize(dxCommon);
-	// SkyBox
-	skyBoxCommon = new SkyBoxCommon();
-	skyBoxCommon->Initialize(dxCommon);
-
+	
+	Framework::Initialiaze();
 	// カメラ
 	camera = new Camera();
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
@@ -113,9 +89,6 @@ void Game::Initialiaze()
 
 	spriteFile[0] = "resources/white.png";
 	spriteFile[1] = "resources/white.png";
-
-	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ModelManager::GetInstance()->Initialize(dxCommon);
 
 	for (int i = 0; i < spriteFile.size(); i++)
 	{
@@ -150,9 +123,6 @@ void Game::Initialiaze()
 	skyBox->Initialize(skyBoxCommon);
 	// 3. 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
-
-	// ★ここに追加：パーティクルマネージャの初期化
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager, camera);
 
 	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
 	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
@@ -195,37 +165,11 @@ void Game::Initialiaze()
 		sprite->Initialize(spriteCommon, spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
-
-	//FenceのSignalを待つためのイベントを作成する
-	fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-	assert(fenceEvent != nullptr);
-
-	//ログのディレクトリを用意する
-	std::filesystem::create_directory("logs");
-	//現在時刻を取得する(UTC時刻)
-	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	//ログファイルの名前にコンマ何秒はいらないので、削って秒にする
-	std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
-		nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
-	//日本時間(PCの設定時間)に変換
-	std::chrono::zoned_time localTime{ std::chrono::current_zone(),nowSeconds };
-	//formatを使って年月日_時分秒の文字列に変換
-	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
-	//時刻を使ってファイル名を決定
-	std::string logFilePath = std::string("logs/") + dateString + ".log";
-	//ファイルを作って書き込み準備
-	std::ofstream logStream(logFilePath);
-
-	//ウィンドウを表示する
-	ShowWindow(winApp->GetHwnd(), SW_SHOW);
 }
 
 void Game::Finalize()
 {
-	// WindowsAPIの終了処理
-	winApp->Finalize();
-
+	
 	delete sprite;
 	delete object3d;
 	delete enemy3d;
@@ -240,50 +184,19 @@ void Game::Finalize()
 	delete particleEmitterRingEffect;
 	delete particleEmitterCylinderEffect;
 
-	delete spriteCommon;
-	delete object3dCommon;
-	delete skyBoxCommon;
-	delete imGuiManeger;
-
-	TextureManager::GetInstance()->Finalize();
-	ModelManager::GetInstance()->Finalize();
-
 	delete postEffect;
-	delete srvManager;
 
-	// ウィンドウ解放
-	delete winApp;
-	// 入力解放
-	delete input_;
-	// DirectXの解放
-	delete dxCommon;
-
-	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
-	// こういうもんである。初期化を逆順に行う
-	imGuiManeger->Finalize();
+	Framework::Finalize();
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
-
-	CloseHandle(fenceEvent);
-
-	//リソースリークチェック
-	IDXGIDebug1* debug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
-		debug->Release();
-	}
 }
 
 void Game::Update()
 {
 
-	if (winApp->ProcessMessage())
-	{
-		endRequst_ = true;
-	}
+	Framework::Update();
+	
 	// ImGuiの設定 始
 	imGuiManeger->ImGuiBegin();
 
@@ -497,15 +410,15 @@ void Game::Draw()
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	lineRenderer->Draw(dxCommon, camera);
 	// ★ここに追加：パーティクルの描画
-	//ParticleManager::GetInstance()->Draw();
+	ParticleManager::GetInstance()->Draw(camera);
 
-	/*spriteCommon->DrawCommon();
+	spriteCommon->DrawCommon();
 
 	for (Sprite* sprite : sprites_)
 	{
 		sprite->Draw();
 	}
-	*/
+	
 
 	postEffect->PostDraw();
 

@@ -84,13 +84,13 @@ public:
 	static ParticleManager* GetInstance();
 
 	// 初期化（引数にSrvManagerを追加）
-	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager, Camera* camera);
+	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
 
 	// 更新処理
-	void Update();
+	void Update(float deltaTime = 1.0f / 60.0f);
 
 	// 描画処理
-	void Draw();
+	void Draw(Camera* camera);
 
 	// ★スライド5枚目：パーティクル発生関数
 	// どこから、何個のパーティクルを出すかを指定して発生させます
@@ -104,13 +104,6 @@ public:
 
 	// ★新しくグループを作って登録する関数
 	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false,bool isCylinder = false);
-
-	// set
-	void SetDefaultCamera(Camera* camera) { this->defaultCamera = camera; }
-	// get
-	Camera* GetDefaultCamera()const { return defaultCamera; }
-
-	void SetCamera(Camera* camera) { this->camera_ = camera; }
 
 private:
 
@@ -153,8 +146,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
 
-	Camera* defaultCamera = nullptr;
-	Camera* camera_ = nullptr;
 	CameraForGPU* cameraData = nullptr;
 
 	EulerTransform cameraTransform;
