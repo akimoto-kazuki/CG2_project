@@ -1,5 +1,10 @@
 #include "ImGuiManager.h"
 
+ImGuiManager* ImGuiManager::GetInstance()
+{
+	static ImGuiManager instance;
+	return &instance;
+}
 
 void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] SrvManager* srvManager)
 {

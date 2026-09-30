@@ -146,11 +146,244 @@ void GamePlayScene::Finalize()
 
 void GamePlayScene::Update()
 {
-	//auto input = Input::GetInstance();
-	//auto imGuiManager = ImGuiManager::GetInstance();
+	auto input = Input::GetInstance();
+	auto imGuiManager = ImGuiManager::GetInstance();
+
+	// ImGuiの設定 始
+	imGuiManager->ImGuiBegin();
+
+	// キー入力 始
+	input->Update();
+	if (input->PushKey(DIK_0))
+	{
+		OutputDebugStringA("Hit 0\n");
+	}
+
+	if (input->TriggerKey(DIK_1))
+	{
+		particleEmitterEffect->InputEffect();
+	}
+	if (input->TriggerKey(DIK_2))
+	{
+		particleEmitterHitEffect->InputHitEffect();
+	}
+	if (input->TriggerKey(DIK_3))
+	{
+		particleEmitterSparkEffect->InputSprakEffect();
+	}
+	if (input->TriggerKey(DIK_4))
+	{
+		particleEmitterRingEffect->InputHitEffect();
+	}
+
+	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
+
+	if (input->PushKey(DIK_D))
+	{
+		playerMove.x += 0.1f;
+	}
+	if (input->PushKey(DIK_A))
+	{
+		playerMove.x -= 0.1f;
+	}
+
+	if (input->TriggerKey(DIK_SPACE) && !isJumping)
+	{
+		velocityY = jumpPower; // 上方向への初速を与える
+		isJumping = true;      // ジャンプ状態をオンにする
+	}
+
+	if (playerMove.x != 0.0f || playerMove.z != 0.0f)
+	{
+		float playerSpeed = 0.1f;
+
+		// 斜め移動時に移動速度が速くならないよう正規化
+		float length = std::sqrt(playerMove.x * playerMove.x + playerMove.z * playerMove.z);
+		playerMove.x /= length;
+		playerMove.z /= length;
+
+		// 1. 移動処理
+		playerPosition.x += playerMove.x * playerSpeed;
+		playerPosition.z += playerMove.z * playerSpeed;
+
+		// 2. 移動方向を向くように回転（敵の処理と同じatan2を使用）
+		playerjRotate.y = std::atan2(playerMove.x, playerMove.z);
+	}
+
+	if (isJumping)
+	{
+		// 1. 座標に現在の速度を足す
+		playerPosition.y += velocityY;
+
+		// 2. 速度に重力をかけて減速させる（下方向の力を加える）
+		velocityY += gravity;
+
+		// 3. 着地判定（とりあえず Y=0.0f を地面の高さとします）
+		if (playerPosition.y <= 0.0f)
+		{
+			playerPosition.y = 0.0f; // 地面にめり込まないように補正
+			velocityY = 0.0f;     // 速度をリセット
+			isJumping = false;    // ジャンプ状態を解除
+		}
+	}
+
+	particleEmitterCylinderEffect->UpdateCylinderEffect();
+
+	float pos = 0.0f;
+	camera->Update();
+	object3d->Update();
+	if (isEnemyAlive)
+	{
+		enemy3d->Update();
+		enemy3d->SetRotate(enemyjRotate);
+		enemy3d->SetTranslate(enemyPosition);
+	}
+
+	Vector3 diff =
+	{
+		playerPosition.x - enemyPosition.x,
+		playerPosition.y - enemyPosition.y,
+		playerPosition.z - enemyPosition.z
+	};
+
+	// 2. プレイヤーと敵の距離を計算する
+	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+
+	if (input->TriggerKey(DIK_RETURN))
+	{
+		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
+		if (distance < 2.0f && isEnemyAlive)
+		{
+			isEnemyAlive = false; // 敵を消す
+			particleEmitterHitEffect->InputHitEffect(); // ヒットエフェクトを出す
+		}
+	}
+
+	// 敵の移動スピード（好みの速さに調整してください）
+	float enemySpeed = 0.05f;
+
+	// 3. プレイヤーと敵が少し離れている場合のみ移動処理を行う（完全に重なるのを防ぐため）
+	if (distance > 0.1f)
+	{
+		// ベクトルを正規化（長さを1にする）して方向だけを取り出す
+		Vector3 direction = {
+			diff.x / distance,
+			diff.y / distance,
+			diff.z / distance
+		};
+
+		// 4. 敵の座標に「方向 × スピード」を足して移動させる
+		enemyPosition.x += direction.x * enemySpeed;
+		// 空を飛ばせたくない場合は Y 軸の追従をコメントアウトするか、重力処理を別途入れてください
+		enemyPosition.y += direction.y * enemySpeed;
+		enemyPosition.z += direction.z * enemySpeed;
+
+		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
+		// atan2を使ってXとZの向きから角度を算出します
+		enemyjRotate.y = std::atan2(direction.x, direction.z);
+	}
+
+	object3d->DrawSkeleton(lineRenderer);
+	if (isEnemyAlive)
+	{
+		enemy3d->DrawSkeleton(lineRenderer);
+	}
+
+	object3d->SetRotate(playerjRotate);
+	object3d->SetTranslate(playerPosition);
+
+	// 3. 更新
+	skyBox->Update();
+
+	// ★ここに追加：パーティクルの更新
+	ParticleManager::GetInstance()->Update();	   // 発生した全パーティクルの移動と寿命チェック
+
+	for (Sprite* sprite : sprites_)
+	{
+		Vector3 changePos = { pos,0.0f,0.0f };
+		pos += 200.0f;
+		sprite->SetRotation(spriteRotation);
+		sprite->SetSize(spriteSize);
+		sprite->SetPosition(Add(spritePosition, changePos));
+		sprite->SetColor(spriteColor);
+		sprite->Update();
+	}
+
+	camera->SetRotate(rotate);
+	camera->SetTranslate(translate);
+
+	// ImGui
+#ifdef USE_IMGUI			
+
+	ImGui::ShowDemoWindow();
+
+	ImGui::Text("Camera");
+	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
+	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
+	ImGui::Text("Sprite");
+	ImGui::DragFloat2("SpritePosition", &spritePosition.x, 0.1f);
+	ImGui::DragFloat("SpriteRotation", &spriteRotation, 0.1f);
+	ImGui::DragFloat4("SpriteColor", &spriteColor.x, 0.1f);
+	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
+	ImGui::Text("object3D");
+	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
+	ImGui::DragFloat3("ObjectRotation", &playerjRotate.x, 0.1f);
+	// 1. 現在の数値を Object3d から取得してローカル変数に入れる
+	float envCoef = object3d->GetEnvironmentCoefficient();
+
+	// 2. ImGuiのスライダーでローカル変数の値をいじる
+	if (ImGui::SliderFloat("Environment Rate", &envCoef, 0.0f, 1.0f))
+	{
+		// 3. スライダーが動いて値が変わったら、新しい数値を Object3d にセットする
+		object3d->SetEnvironmentCoefficient(envCoef);
+	}
+
+#endif // USE_IMGUI
+
+	// ImGuiの設定 終
+	imGuiManager->ImGuiEnd();
 }
 
 void GamePlayScene::Draw()
 {
+	auto dxCommon = DirectXCommon::GetInstance();
+	auto srvManager = SrvManager::GetInstance();
+	auto imGuiManager = ImGuiManager::GetInstance();
 
+	postEffect->PreDraw();
+
+	srvManager->PreDraw();
+
+	Object3dCommon::GetInstance()->DrawCommon();
+	object3d->Draw();
+	if (isEnemyAlive)
+	{
+		enemy3d->Draw();
+	}
+
+	// 4. 描画
+	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
+	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+	lineRenderer->Draw(camera);
+	// ★ここに追加：パーティクルの描画
+	ParticleManager::GetInstance()->Draw(camera);
+
+	SpriteCommon::GetInstance()->DrawCommon();
+
+	for (Sprite* sprite : sprites_)
+	{
+		sprite->Draw();
+	}
+
+
+	postEffect->PostDraw();
+
+	DirectXCommon::GetInstance()->PreDraw();
+
+	postEffect->Draw();
+
+	// ImGuiの描画
+	imGuiManager->ImGuiDraw();
+
+	DirectXCommon::GetInstance()->PostDraw();
 }

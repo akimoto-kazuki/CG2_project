@@ -17,6 +17,12 @@ class ImGuiManager
 {
 public:
 
+	// インスタンス取得
+	static ImGuiManager* GetInstance();
+
+	// ★ コピー・代入の禁止
+	ImGuiManager(const ImGuiManager&) = delete;
+	ImGuiManager& operator=(const ImGuiManager&) = delete;
 	// 初期化
 	void Initialize(WinApp* winApp, SrvManager* srvManager);
 	// 後始末
@@ -38,6 +44,10 @@ public:
 	void ImGuiDraw();
 
 private:
+
+	// ★ コンストラクタを private へ移動
+	ImGuiManager() = default;
+	~ImGuiManager() = default;
 
 	// ウィンドウ
 	WinApp* winApp_ = nullptr;
