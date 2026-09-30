@@ -7,27 +7,16 @@
 #include "PostEffect.h"
 // スプライト
 #include "Sprite.h"
-#include "SpriteCommon.h"
+
 // オブジェクト
 #include "Object3d.h"
-#include "Object3dCommon.h"
-// マネージャ
-#include "TextureManager.h"
-#include "ModelManager.h"
 //カメラ
 #include "Camera.h"
 //
-#include "SrvManager.h"
-//
 #include "MyMath.h"
-// ImGuiManager
-#include "ImGuiManager.h"
 // スカイボックス
 #include "SkyBox.h"
-#include "SkyBoxCommon.h"
-
-// ★ここに追加：パーティクル
-#include "ParticleManager.h"
+// パーティクル
 #include "ParticleEmitter.h"
 
 #include "LineRenderer.h"
@@ -58,20 +47,14 @@ public:
 private:
 
 	PostEffect* postEffect = nullptr;
-	// オブジェクト
-	Object3dCommon* object3dCommon = nullptr;
+	
 	Object3d* object3d = nullptr;
 	Object3d* enemy3d = nullptr;
-	// スプライト
-	SpriteCommon* spriteCommon = nullptr;
+	
 	Sprite* sprite = nullptr;
-	// スカイボックス
-	SkyBoxCommon* skyBoxCommon = nullptr;
+	
 	SkyBox* skyBox = nullptr;
-	// SRV
-	SrvManager* srvManager = nullptr;
-	// ImGui
-	ImGuiManager* imGuiManeger = nullptr;
+	
 	// LineRendererの初期化
 	LineRenderer* lineRenderer = nullptr;
 

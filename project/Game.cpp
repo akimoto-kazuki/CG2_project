@@ -60,25 +60,6 @@ void Game::Initialiaze()
 {
 	
 	Framework::Initialiaze();
-
-	// SRV初期化
-	srvManager = SrvManager::GetInstance();
-	srvManager->Initialize(dxCommon);
-
-	// ImGui
-	imGuiManeger = new ImGuiManager;
-	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
-	// Common
-	// object3d
-	object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
-	// sprite
-	spriteCommon = new SpriteCommon;
-	spriteCommon->Initialize(dxCommon);
-	// SkyBox
-	skyBoxCommon = new SkyBoxCommon();
-	skyBoxCommon->Initialize(dxCommon);
-
 	// カメラ
 	camera = new Camera();
 	camera->SetRotate({ 0.0f,0.0f,0.0f });
@@ -108,9 +89,6 @@ void Game::Initialiaze()
 
 	spriteFile[0] = "resources/white.png";
 	spriteFile[1] = "resources/white.png";
-
-	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ModelManager::GetInstance()->Initialize(dxCommon);
 
 	for (int i = 0; i < spriteFile.size(); i++)
 	{
@@ -145,9 +123,6 @@ void Game::Initialiaze()
 	skyBox->Initialize(skyBoxCommon);
 	// 3. 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
-
-	// ★ここに追加：パーティクルマネージャの初期化
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager, camera);
 
 	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
 	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
@@ -190,8 +165,6 @@ void Game::Initialiaze()
 		sprite->Initialize(spriteCommon, spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
-
-	
 }
 
 void Game::Finalize()
@@ -211,36 +184,12 @@ void Game::Finalize()
 	delete particleEmitterRingEffect;
 	delete particleEmitterCylinderEffect;
 
-	delete spriteCommon;
-	delete object3dCommon;
-	delete skyBoxCommon;
-	delete imGuiManeger;
-
-	TextureManager::GetInstance()->Finalize();
-	ModelManager::GetInstance()->Finalize();
-
 	delete postEffect;
-	delete srvManager;
 
 	Framework::Finalize();
 
-	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
-	// こういうもんである。初期化を逆順に行う
-	imGuiManeger->Finalize();
-
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
-
-	CloseHandle(fenceEvent);
-
-	//リソースリークチェック
-	IDXGIDebug1* debug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
-		debug->Release();
-	}
 }
 
 void Game::Update()
@@ -461,7 +410,7 @@ void Game::Draw()
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	lineRenderer->Draw(dxCommon, camera);
 	// ★ここに追加：パーティクルの描画
-	//ParticleManager::GetInstance()->Draw();
+	ParticleManager::GetInstance()->Draw(camera);
 
 	spriteCommon->DrawCommon();
 

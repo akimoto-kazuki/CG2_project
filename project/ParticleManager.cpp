@@ -10,12 +10,11 @@ ParticleManager* ParticleManager::GetInstance()
 	return &instance;
 }
 
-void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager,Camera* camera)
+void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
 {
 	// スライド2枚目の処理
 	this->dxCommon_ = dxCommon;
 	this->srvManager_ = srvManager;
-	this->camera_ = camera;
 
 	// ランダムエンジンの初期化
 	randomEngine_.seed(seedGenerator_());
@@ -222,10 +221,10 @@ void ParticleManager::EmitCylinderEffect(const std::string& groupName, const Eul
 }
 
 // ★スライド6枚目：更新処理（移動と寿命チェック）
-void ParticleManager::Update()
+void ParticleManager::Update(float deltaTime)
 {
 	// 本来は毎フレームの経過時間（DeltaTime）を取得しますが、ここでは仮に 1/60秒 とします
-	const float kDeltaTime = 1.0f / 60.0f;
+	const float kDeltaTime = deltaTime;
 	// すべてのパーティクルグループをループ
 	for (auto& pair : particleGroups_)
 	{
@@ -279,8 +278,9 @@ void ParticleManager::Update()
 }
 
 // ★スライド7・8枚目：描画処理
-void ParticleManager::Draw()
+void ParticleManager::Draw(Camera* camera)
 {
+	assert(camera != nullptr && "カメラがセットされていません！");
 	assert(rootSignature_ != nullptr && "ルートシグネチャが作られていません！");
 	assert(pipelineState_ != nullptr && "パイプラインが作られていません！");
 
@@ -302,7 +302,7 @@ void ParticleManager::Draw()
 
 	size_t particleIndex = 0; // 何個目のパーティクルか数えるカウンター
 
-	cameraData->worldPosition = camera_->GetTranslate();
+	cameraData->worldPosition = camera->GetTranslate();
 	for (const auto& pair : particleGroups_)
 	{
 		const ParticleGroup& group = pair.second;
@@ -318,9 +318,9 @@ void ParticleManager::Draw()
 			// ① パーティクルの現在位置からワールド行列を作る
 			MyMath::Matrix4x4 worldMatrix = MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
 			Matrix4x4 worldViewProjectionMatrix;
-			if (camera_)
+			if (camera)
 			{
-				const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+				const Matrix4x4& viewProjectionMatrix = camera->GetViewProjectionMatrix();
 				worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
 			}
 			else

@@ -5,6 +5,23 @@
 #include "WinApp.h"
 // DirectX
 #include "DirectXCommon.h"
+// SrvManager
+#include "SrvManager.h"
+// ImGuiManager
+#include "ImGuiManager.h"
+// 
+#include "SpriteCommon.h"
+//
+#include "Object3dCommon.h"
+//
+#include "SkyBoxCommon.h"
+// マネージャ
+// テキスト
+#include "TextureManager.h"
+// モデル
+#include "ModelManager.h"
+// パーティクル
+#include "ParticleManager.h"
 
 //ファイルやディレクトリに関する操作を行うライブラリ
 #include <filesystem>
@@ -48,7 +65,18 @@ public:
 	WinApp* winApp = nullptr;
 	// DirectX
 	DirectXCommon* dxCommon = nullptr;
-	
+	// SRV
+	SrvManager* srvManager = nullptr;
+	// ImGui
+	ImGuiManager* imGuiManeger = nullptr;
+
+	// オブジェクト
+	Object3dCommon* object3dCommon = nullptr;
+	// スプライト
+	SpriteCommon* spriteCommon = nullptr;
+	// スカイボックス
+	SkyBoxCommon* skyBoxCommon = nullptr;
+
 	HANDLE fenceEvent;
 
 	bool endRequst_ = false;

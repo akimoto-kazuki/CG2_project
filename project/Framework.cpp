@@ -11,6 +11,28 @@ void Framework::Initialiaze()
 	// DirectX
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
+	// SRV初期化
+	srvManager = SrvManager::GetInstance();
+	srvManager->Initialize(dxCommon);
+	// ImGui
+	imGuiManeger = new ImGuiManager;
+	imGuiManeger->Initialize(winApp, dxCommon, srvManager);
+
+	// Common
+	// object3d
+	object3dCommon = new Object3dCommon();
+	object3dCommon->Initialize(dxCommon);
+	// sprite
+	spriteCommon = new SpriteCommon;
+	spriteCommon->Initialize(dxCommon);
+	// SkyBox
+	skyBoxCommon = new SkyBoxCommon();
+	skyBoxCommon->Initialize(dxCommon);
+
+	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
+	ModelManager::GetInstance()->Initialize(dxCommon);
+	//パーティクルマネージャの初期化
+	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
 
 	//FenceのSignalを待つためのイベントを作成する
 	fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -39,15 +61,40 @@ void Framework::Initialiaze()
 
 void Framework::Finalize()
 {
-	// WindowsAPIの終了処理
-	winApp->Finalize();
+	CloseHandle(fenceEvent);
 
-	// ウィンドウ解放
-	delete winApp;
+	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
+	// こういうもんである。初期化を逆順に行う
+	imGuiManeger->Finalize();
+	delete imGuiManeger;
+
+	TextureManager::GetInstance()->Finalize();
+	ModelManager::GetInstance()->Finalize();
+
+	delete spriteCommon;
+	delete object3dCommon;
+	delete skyBoxCommon;
+
 	// 入力解放
 	delete input_;
 	// DirectXの解放
 	delete dxCommon;
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
+	// ウィンドウ解放
+	delete winApp;
+	// 
+	delete srvManager;
+
+	//リソースリークチェック
+	IDXGIDebug1* debug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
+		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
+		debug->Release();
+	}
 }
 
 void Framework::Update()
@@ -56,6 +103,8 @@ void Framework::Update()
 	{
 		endRequst_ = true;
 	}
+
+
 }
 
 void Framework::Run()
