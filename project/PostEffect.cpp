@@ -6,10 +6,9 @@
 
 #pragma comment(lib, "d3dcompiler.lib")
 
-void PostEffect::Initialize(DirectXCommon* dxCommon) {
-    assert(dxCommon);
-    dxCommon_ = dxCommon;
-    auto device = dxCommon_->GetDevice();
+void PostEffect::Initialize() {
+    
+    auto device = DirectXCommon::GetInstance()->GetDevice();
 
     // =========================================================================
     // 1. RenderTexture（描画先テクスチャ）リソースの作成（資料3〜4枚目仕様）
@@ -214,7 +213,7 @@ void PostEffect::Initialize(DirectXCommon* dxCommon) {
 }
 
 void PostEffect::PreDraw() {
-    auto commandList = dxCommon_->GetCommandList();
+    auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
     // 1. RenderTextureの状態を「レンダーターゲット（書き込み先）」に遷移（資料7枚目）
     D3D12_RESOURCE_BARRIER barrier{};
@@ -226,7 +225,7 @@ void PostEffect::PreDraw() {
 
     // 2. 描画先を RenderTexture に、深度バッファを通常のものに設定
     // ※DSVは既存のゲッター、もしくはdsvのハンドルを渡してください
-    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = DirectXCommon::GetInstance()->GetDSVCPUDescriptorHandle(0);
     commandList->OMSetRenderTargets(1, &rtvHandle_, FALSE, &dsvHandle);
 
     // 3. レンダーターゲットと深度バッファのクリア
@@ -242,7 +241,7 @@ void PostEffect::PreDraw() {
 }
 
 void PostEffect::PostDraw() {
-    auto commandList = dxCommon_->GetCommandList();
+    auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
     // 5. RenderTextureの状態を「ピクセルシェーダーリソース（読み込み元）」に安全に遷移（資料8枚目）
     D3D12_RESOURCE_BARRIER barrier{};
@@ -254,7 +253,7 @@ void PostEffect::PostDraw() {
 }
 
 void PostEffect::Draw() {
-    auto commandList = dxCommon_->GetCommandList();
+    auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
     // 1. パイプラインとルートシグネチャをポストエフェクト用に切り替え
     commandList->SetPipelineState(pipelineState_.Get());

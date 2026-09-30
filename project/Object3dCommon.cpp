@@ -1,19 +1,23 @@
 #include "Object3dCommon.h"
 
-void Object3dCommon::Initialize(DirectXCommon* dxCommon)
+Object3dCommon* Object3dCommon::GetInstance()
 {
-	dxCommon_ = dxCommon;
+	static Object3dCommon instance;
+	return &instance;
+}
 
+void Object3dCommon::Initialize()
+{
 	GraphicsPipelineState();
 }
 
 void Object3dCommon::DrawCommon()
 {
 	// RootSignatureを設定。PSOに設定しているけど別途設定が必要
-	dxCommon_->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
-	dxCommon_->GetCommandList()->SetPipelineState(graphicsPipelineState.Get()); // PSOを設定
+	DirectXCommon::GetInstance()->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
+	DirectXCommon::GetInstance()->GetCommandList()->SetPipelineState(graphicsPipelineState.Get()); // PSOを設定
 	// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DirectXCommon::GetInstance()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void Object3dCommon::RootSignature()
@@ -100,7 +104,7 @@ void Object3dCommon::RootSignature()
 	}
 
 	// バイナリを元に生成
-	hr = dxCommon_->GetDevice()->CreateRootSignature(
+	hr = DirectXCommon::GetInstance()->GetDevice()->CreateRootSignature(
 		0,
 		signatureBlobObj->GetBufferPointer(), signatureBlobObj->GetBufferSize(),
 		IID_PPV_ARGS(&rootSignature));
@@ -141,9 +145,9 @@ void Object3dCommon::GraphicsPipelineState()
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 	// Shaderをコンパイルする
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlobObj = dxCommon_->CompileShader(L"Object3D.VS.hlsl", L"vs_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"Object3D.VS.hlsl", L"vs_6_0");
 	assert(vertexShaderBlobObj != nullptr);
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlobObj = dxCommon_->CompileShader(L"Object3D.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"Object3D.PS.hlsl", L"ps_6_0");
 	assert(pixelShaderBlobObj != nullptr);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDescObj{};
@@ -178,6 +182,6 @@ void Object3dCommon::GraphicsPipelineState()
 	graphicsPipelineStateDescObj.DepthStencilState = depthStencilDescObj;
 	graphicsPipelineStateDescObj.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-	HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDescObj, IID_PPV_ARGS(&graphicsPipelineState));
+	HRESULT hr = DirectXCommon::GetInstance()->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDescObj, IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 }

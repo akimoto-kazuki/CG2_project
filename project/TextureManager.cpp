@@ -19,9 +19,8 @@ void TextureManager::Finalize()
 	instance = nullptr;
 }
 
-void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* SrvManeger)
+void TextureManager::Initialize(SrvManager* SrvManeger)
 {
-	dxCommon_ = dxCommon;
 	srvManager = SrvManeger;
 	textureDatas.reserve(SrvManager::kMaxSRVCount);
 }
@@ -67,7 +66,7 @@ void TextureManager::LoadTexture(const std::string& filePath)
 
 	// CG2にあるものを探したり、Commonにある読み込みを入れる
 	textureData.metadata = mipImages.GetMetadata();
-	textureData.resource = dxCommon_->CreateTextureResource(textureData.metadata);
+	textureData.resource = DirectXCommon::GetInstance()->CreateTextureResource(textureData.metadata);
 
 	uint32_t srvIndex = static_cast<uint32_t>(textureDatas.size() - 1) + kSRVIndexTop;
 	textureData.srvIndex = srvManager->Allocate();
@@ -83,9 +82,9 @@ void TextureManager::LoadTexture(const std::string& filePath)
 		srvManager->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metadata.format, UINT(textureData.metadata.mipLevels));
 	}
 	// DepthStencilTextureをウィンドウのサイズで作成
-	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = dxCommon_->CreateDepthStencilTextureResource(dxCommon_->GetDevice(), WinApp::kClientWidth, WinApp::kClientHeight);
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = DirectXCommon::GetInstance()->CreateDepthStencilTextureResource(DirectXCommon::GetInstance()->GetDevice(), WinApp::kClientWidth, WinApp::kClientHeight);
 
-	dxCommon_->UploadTextureData(textureData.resource.Get(), mipImages,dxCommon_->GetDevice(),dxCommon_->GetCommandList());
+	DirectXCommon::GetInstance()->UploadTextureData(textureData.resource.Get(), mipImages, DirectXCommon::GetInstance()->GetDevice(), DirectXCommon::GetInstance()->GetCommandList());
 	
 }
 

@@ -2,11 +2,11 @@
 #include <cmath>
 #include <numbers>
 
-void LineRenderer::Initialize(DirectXCommon* dxCommon)
+void LineRenderer::Initialize()
 {
-    dxCommon_ = dxCommon;
+    
 
-    vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(LineVertex) * kMaxVertexCount);
+    vertexBuffer_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(LineVertex) * kMaxVertexCount);
 
     vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
     vertexBufferView_.SizeInBytes = sizeof(LineVertex) * kMaxVertexCount;
@@ -16,7 +16,7 @@ void LineRenderer::Initialize(DirectXCommon* dxCommon)
     vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedVertexData_));
 
     // 2. 定数バッファ（カメラ用）の作成
-    constBuffer_ = dxCommon->CreateBufferResource(sizeof(ConstBufferData));
+    constBuffer_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(ConstBufferData));
     constBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedConstData_));
 
     // ※ここにルートシグネチャとPSOの作成処理が入ります（後述）
@@ -37,7 +37,7 @@ void LineRenderer::Initialize(DirectXCommon* dxCommon)
     Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
     D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
-    dxCommon->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+    DirectXCommon::GetInstance()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 
 
     // ==========================================
@@ -55,8 +55,8 @@ void LineRenderer::Initialize(DirectXCommon* dxCommon)
     // 3. PSO（グラフィックスパイプラインステート）の作成
     // ==========================================
     // ※エンジンの関数を使ってVSとPSをコンパイルしてください
-    Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon_->CompileShader(L"Line.VS.hlsl", L"vs_6_0");
-    Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(L"Line.PS.hlsl", L"ps_6_0");
+    Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = DirectXCommon::GetInstance()->CompileShader(L"Line.VS.hlsl", L"vs_6_0");
+    Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = DirectXCommon::GetInstance()->CompileShader(L"Line.PS.hlsl", L"ps_6_0");
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = rootSignature_.Get();
@@ -84,7 +84,7 @@ void LineRenderer::Initialize(DirectXCommon* dxCommon)
     psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
     psoDesc.SampleDesc.Count = 1;
 
-    dxCommon->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState_));
+    DirectXCommon::GetInstance()->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState_));
 }
 
 void LineRenderer::AddLine(const Vector3& start, const Vector3& end, const Vector4& color)
@@ -127,7 +127,7 @@ void LineRenderer::AddSphere(const Vector3& center, float radius, const Vector4&
     }
 }
 
-void LineRenderer::Draw(DirectXCommon* dxCommon, Camera* camera)
+void LineRenderer::Draw(Camera* camera)
 {
     if (vertices_.empty() || !camera) return;
 
@@ -138,7 +138,7 @@ void LineRenderer::Draw(DirectXCommon* dxCommon, Camera* camera)
     std::memcpy(mappedVertexData_, vertices_.data(), sizeof(LineVertex) * vertices_.size());
 
     // 3. 描画コマンドの積む
-    auto commandList = dxCommon->GetCommandList();
+    auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
     commandList->SetPipelineState(pipelineState_.Get());
     commandList->SetGraphicsRootSignature(rootSignature_.Get());

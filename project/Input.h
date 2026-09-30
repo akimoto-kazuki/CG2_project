@@ -17,6 +17,14 @@ public:
 	// namespace省略
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 public:
+
+	// インスタンス取得
+	static Input* GetInstance();
+
+	// ★ コピー・代入の禁止
+	Input(const Input&) = delete;
+	Input& operator=(const Input&) = delete;
+
 	// 初期化
 	void Initialize(WinApp* winApp);
 	// 更新
@@ -38,6 +46,10 @@ public:
 	bool TriggerKey(BYTE keyNumber);
 
 private:
+
+	// ★ コンストラクタを private へ移動
+	Input() = default;
+	~Input() = default;
 
 	IDirectInput8* directInput = nullptr;
 	// キーボードのデバイス

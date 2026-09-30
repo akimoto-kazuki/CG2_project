@@ -39,7 +39,7 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(SkyBoxCommon* skyboxCommon);
+	void Initialize();
 
 	/// <summary>
 	/// 更新
@@ -55,7 +55,7 @@ public:
 	void SetTextureIndex(uint32_t textureIndex) { textureIndex_ = textureIndex; }
 
 private:
-	SkyBoxCommon* skyboxCommon_ = nullptr;
+	
 	Camera* camera = nullptr;
 
 	// 行列用のリソース（Object3dと同じ）

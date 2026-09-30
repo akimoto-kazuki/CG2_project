@@ -1,12 +1,16 @@
 #include "ImGuiManager.h"
 
+ImGuiManager* ImGuiManager::GetInstance()
+{
+	static ImGuiManager instance;
+	return &instance;
+}
 
-void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] DirectXCommon* dxCommon, [[maybe_unused]] SrvManager* srvManager)
+void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] SrvManager* srvManager)
 {
 #ifdef USE_IMGUI
 
 	this->winApp_ = winApp;
-	this->dxCommon_ = dxCommon;
 
 	IMGUI_CHECKVERSION();
 	// ImGuiのコンテキストを生成
@@ -18,11 +22,11 @@ void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] D
 	ImGui_ImplDX12_InitInfo initInfo = {};
 
 	// DirectX12用初期化情報の構築
-	initInfo.Device = dxCommon_->GetDevice();
-	initInfo.CommandQueue = dxCommon_->GetCommandQueue();
+	initInfo.Device = DirectXCommon::GetInstance()->GetDevice();
+	initInfo.CommandQueue = DirectXCommon::GetInstance()->GetCommandQueue();
 	initInfo.NumFramesInFlight = 2;
-	initInfo.RTVFormat = dxCommon_->GetBackBufferFormat();
-	initInfo.DSVFormat = dxCommon_->GetDepthBufferFormat();
+	initInfo.RTVFormat = DirectXCommon::GetInstance()->GetBackBufferFormat();
+	initInfo.DSVFormat = DirectXCommon::GetInstance()->GetDepthBufferFormat();
 
 	// SRV用デスクリプタヒープの設定
 	// SrvManagerが管理しているヒープを取得して渡す
@@ -90,7 +94,7 @@ void ImGuiManager::ImGuiDraw()
 {
 #ifdef USE_IMGUI
 
-	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+	ID3D12GraphicsCommandList* commandList = DirectXCommon::GetInstance()->GetCommandList();
 	// デスクリプタヒープの配列をセットするコマンド
 	ID3D12DescriptorHeap* ppHeaps[] = { srvHeap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);

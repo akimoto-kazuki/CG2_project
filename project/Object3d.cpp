@@ -4,19 +4,29 @@
 
 using namespace MyMath;
 
-void Object3d::Initialize(Object3dCommon* object3dCommon)
+Object3d* Object3d::Create()
 {
-	this->object3dCommon_ = object3dCommon;
-	this->camera = object3dCommon->GetDefaultCamera();
+	Object3d* object3d = new Object3d();
+
+	// 引数で渡さず、Singleton から Object3dCommon を取得して初期化する
+	object3d->Initialize();
+
+	return object3d;
+}
+
+void Object3d::Initialize()
+{
+	this->camera = Object3dCommon::GetInstance()->GetDefaultCamera();
+	auto dxCommon = DirectXCommon::GetInstance();
 
 	//トランスフォーム
-	transformationMatrixResource = object3dCommon_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+	transformationMatrixResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
 	transformationMatrixResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	transformationMatrixData->WVP = MakeIdentity4x4();
 	transformationMatrixData->World = MakeIdentity4x4();
 
 	//ライティング
-	directionalLightResource = object3dCommon_->GetDxCommon()->CreateBufferResource(sizeof(DirectionalLight));
+	directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
 	directionalLightResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
 	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
@@ -26,7 +36,7 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 	environmentCoefficient_ = 0.0f;
 	// Initialize 内に追加
-	cameraResource = object3dCommon_->GetDxCommon()->CreateBufferResource(sizeof(CameraForGPU));
+	cameraResource = dxCommon->CreateBufferResource(sizeof(CameraForGPU));
 	cameraResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
 	// カメラの座標を設定 (とりあえず cameraTransform の位置など)
 	cameraData->worldPosition = cameraTransform.translate;
@@ -70,7 +80,7 @@ void Object3d::Update()
 
 void Object3d::Draw()
 {
-	auto commandList = object3dCommon_->GetDxCommon()->GetCommandList();
+	auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
 	// wvp用のCBufferの場所を設定]
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());

@@ -26,7 +26,7 @@ public:
 	// 終了
 	void Finalize();
 
-	void Initialize(DirectXCommon* dxCommon,SrvManager* SrvManeger);
+	void Initialize(SrvManager* SrvManeger);
 	std::unordered_map<std::string,TextureData> textureDatas;
 
 	/// <summary>
@@ -46,8 +46,6 @@ private:
 	static TextureManager* instance;
 
 	SrvManager* srvManager = nullptr;
-
-	DirectXCommon* dxCommon_ = nullptr;
 
 	TextureManager() = default;
 	~TextureManager() = default;

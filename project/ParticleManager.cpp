@@ -10,10 +10,10 @@ ParticleManager* ParticleManager::GetInstance()
 	return &instance;
 }
 
-void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
+void ParticleManager::Initialize(SrvManager* srvManager)
 {
 	// スライド2枚目の処理
-	this->dxCommon_ = dxCommon;
+	auto dxCommon_ = DirectXCommon::GetInstance();
 	this->srvManager_ = srvManager;
 
 	// ランダムエンジンの初期化
@@ -284,7 +284,7 @@ void ParticleManager::Draw(Camera* camera)
 	assert(rootSignature_ != nullptr && "ルートシグネチャが作られていません！");
 	assert(pipelineState_ != nullptr && "パイプラインが作られていません！");
 
-	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+	ID3D12GraphicsCommandList* commandList = DirectXCommon::GetInstance()->GetCommandList();
 
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->SetPipelineState(pipelineState_.Get());
@@ -366,7 +366,7 @@ void ParticleManager::Draw(Camera* camera)
 // -------------------------------------------------------------------------
 void ParticleManager::CreateRootSignature()
 {
-	ID3D12Device* device = dxCommon_->GetDevice();
+	ID3D12Device* device = DirectXCommon::GetInstance()->GetDevice();
 
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 	descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -438,11 +438,11 @@ void ParticleManager::CreateRootSignature()
 // -------------------------------------------------------------------------
 void ParticleManager::CreateGraphicsPipeline()
 {
-	ID3D12Device* device = dxCommon_->GetDevice();
+	ID3D12Device* device = DirectXCommon::GetInstance()->GetDevice();
 
 	// シェーダーのコンパイル (※お使いの環境のコンパイル関数名に合わせてください)
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon_->CompileShader(L"Particle.VS.hlsl", L"vs_6_0");
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(L"Particle.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = DirectXCommon::GetInstance()->CompileShader(L"Particle.VS.hlsl", L"vs_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = DirectXCommon::GetInstance()->CompileShader(L"Particle.PS.hlsl", L"ps_6_0");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
 	psoDesc.pRootSignature = rootSignature_.Get();
@@ -516,7 +516,7 @@ void ParticleManager::CreateParticleVertexData()
 	};
 
 	size_t vertexBufferSize = sizeof(VertexData) * 6;
-	vertexResource_ = dxCommon_->CreateBufferResource(vertexBufferSize);
+	vertexResource_ = DirectXCommon::GetInstance()->CreateBufferResource(vertexBufferSize);
 
 	VertexData* vertexData = nullptr;
 	vertexResource_.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
@@ -553,7 +553,7 @@ void ParticleManager::CreateRingVertexData()
 	// 1分割につき四角形1つ(2ポリゴン=6頂点)なので、全体で kRingDivide * 6 の頂点が必要
 	const uint32_t vertexCount = kRingDivide * 6;
 	size_t vertexBufferSize = sizeof(VertexData) * vertexCount;
-	vertexResource_ = dxCommon_->CreateBufferResource(vertexBufferSize);
+	vertexResource_ = DirectXCommon::GetInstance()->CreateBufferResource(vertexBufferSize);
 
 	VertexData* vertexData = nullptr;
 	vertexResource_.Get()->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
@@ -616,7 +616,7 @@ void ParticleManager::CreateCylinderVertexData()
 	size_t vertexBufferSize = sizeof(VertexData) * vertexCount;
 
 	// ※別途 cylinderVertexResource_ と cylinderVbv_ をヘッダで定義しておく必要があります
-	cylinderVertexResource_ = dxCommon_->CreateBufferResource(vertexBufferSize);
+	cylinderVertexResource_ = DirectXCommon::GetInstance()->CreateBufferResource(vertexBufferSize);
 
 	VertexData* vertexData = nullptr;
 	cylinderVertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));

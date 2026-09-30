@@ -5,15 +5,13 @@
 
 using namespace MyMath;
 
-void SkyBox::Initialize(SkyBoxCommon* skyboxCommon)
+void SkyBox::Initialize()
 {
-	assert(skyboxCommon);
-	this->skyboxCommon_ = skyboxCommon;
 
 	// Object3dCommonと同様に、初期化時点でデフォルトカメラがあればセットしておく
-	this->camera = skyboxCommon_->GetDefaultCamera();
+	this->camera = SkyBoxCommon::GetInstance()->GetDefaultCamera();
 
-	auto dxCommon = skyboxCommon_->GetDxCommon();
+	auto dxCommon = DirectXCommon::GetInstance();
 
 	// 1. WVP行列用の定数バッファ作成 (Object3d.cpp からの移植)
 	transformationMatrixResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
@@ -105,7 +103,7 @@ void SkyBox::Update()
 
 void SkyBox::Draw()
 {
-	auto commandList = skyboxCommon_->GetDxCommon()->GetCommandList();
+	auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 	commandList->IASetIndexBuffer(&indexBufferView); // インデックスバッファの設定

@@ -34,6 +34,14 @@
 class DirectXCommon
 {
 public:
+
+	// ★ Singleton インスタンス取得
+	static DirectXCommon* GetInstance();
+
+	// ★ コピー・代入の禁止
+	DirectXCommon(const DirectXCommon&) = delete;
+	DirectXCommon& operator=(const DirectXCommon&) = delete;
+
 	// 最大SRV数 (最大テクスチャ枚数)
 	static const uint32_t kMaxSRVCount;
 	// 初期化
@@ -123,6 +131,10 @@ public:
 	size_t GetSwapChainResourcesNum()const { return swapChainResources.size(); }
 
 private:
+
+	// ★ コンストラクタを private へ移動
+	DirectXCommon() = default;
+	~DirectXCommon() = default;
 
 	// dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;

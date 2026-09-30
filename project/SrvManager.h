@@ -6,8 +6,6 @@ class SrvManager
 private:
 
 	static SrvManager* instance;
-
-	DirectXCommon* directXCommon = nullptr;
 	
 	// サイズ
 	uint32_t descriptorSize;
@@ -25,7 +23,7 @@ public:
 	static const uint32_t kMaxSRVCount;
 
 	// 初期化
-	void Initialize(DirectXCommon*dxCommon);
+	void Initialize();
 
 	uint32_t Allocate();
 
