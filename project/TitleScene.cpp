@@ -1,4 +1,4 @@
-#include "GamePlayScene.h"
+#include "TitleScene.h"
 // シングルトン
 #include "SpriteCommon.h"
 #include "Object3dCommon.h"
@@ -11,8 +11,7 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "DirectXCommon.h"
-
-void GamePlayScene::Initialiaze()
+void TitleScene::Initialiaze()
 {
 
 	auto dxCommon = DirectXCommon::GetInstance();
@@ -26,17 +25,17 @@ void GamePlayScene::Initialiaze()
 	camera->SetTranslate(translate);
 	Object3dCommon::GetInstance()->SetDefaultCamera(camera);
 	SkyBoxCommon::GetInstance()->SetDefaultCamera(camera);
-	
+
 	// --- 描画オブジェクトパラメータ設定 ---
 	// オブジェクト
 	//	プレイヤー
-	playerPosition = { 0.0f,0.0f,10.0f };
+	playerPosition = { -7.0f,-4.0f,10.0f };
 	playerjRotate = { 0.0f,3.0f,0.0f };
 	velocityY = 0.0f;         // Y軸方向の現在の速度
 	gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	jumpPower = 0.3f;         // ジャンプ力（上に飛び上がる初速）
 	//	敵
-	enemyPosition = { 0.0f,0.0f,10.0f };
+	enemyPosition = { -10.0f,-4.0f,10.0f };
 	enemyjRotate = { 0.0f,3.0f,0.0f };
 	// isEnemyAlive = true; bool型だから宣言しなくていい わかりやすくするために置いてる
 	//  スプライト
@@ -71,7 +70,7 @@ void GamePlayScene::Initialiaze()
 	object3d->Initialize();
 	object3d->SetModel("walk.gltf");
 	object3d->SetAnimation("resources", "walk.gltf");
-	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); 
+	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
 	//  敵
 	enemy3d = new Object3d();
 	enemy3d->Initialize();
@@ -109,8 +108,8 @@ void GamePlayScene::Initialiaze()
 	ParticleManager::GetInstance()->CreateGroup("ring", particleRingTexIndex, true);
 	particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
 	particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
-	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex, false, true);		
-	particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };	
+	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex, false, true);
+	particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	particleEmitterCylinderEffect = new ParticleEmitter("cylinder", particleCylinderTransform, 1, 0.0f);
 
 	// --- スプライト初期化 ---
@@ -122,7 +121,7 @@ void GamePlayScene::Initialiaze()
 	}
 }
 
-void GamePlayScene::Finalize()
+void TitleScene::Finalize()
 {
 	for (Sprite* sprite : sprites_)
 	{
@@ -144,7 +143,7 @@ void GamePlayScene::Finalize()
 	delete postEffect;
 }
 
-void GamePlayScene::Update()
+void TitleScene::Update()
 {
 	auto input = Input::GetInstance();
 	auto imGuiManager = ImGuiManager::GetInstance();
@@ -159,23 +158,6 @@ void GamePlayScene::Update()
 		OutputDebugStringA("Hit 0\n");
 	}
 
-	if (input->TriggerKey(DIK_1))
-	{
-		particleEmitterEffect->InputEffect();
-	}
-	if (input->TriggerKey(DIK_2))
-	{
-		particleEmitterHitEffect->InputHitEffect();
-	}
-	if (input->TriggerKey(DIK_3))
-	{
-		particleEmitterSparkEffect->InputSprakEffect();
-	}
-	if (input->TriggerKey(DIK_4))
-	{
-		particleEmitterRingEffect->InputHitEffect();
-	}
-
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
 
 	if (input->PushKey(DIK_D))
@@ -187,15 +169,9 @@ void GamePlayScene::Update()
 		playerMove.x -= 0.1f;
 	}
 
-	if (input->TriggerKey(DIK_SPACE) && !isJumping)
-	{
-		velocityY = jumpPower; // 上方向への初速を与える
-		isJumping = true;      // ジャンプ状態をオンにする
-	}
-
 	if (playerMove.x != 0.0f || playerMove.z != 0.0f)
 	{
-		float playerSpeed = 0.1f;
+		float playerSpeed = 0.05f;
 
 		// 斜め移動時に移動速度が速くならないよう正規化
 		float length = std::sqrt(playerMove.x * playerMove.x + playerMove.z * playerMove.z);
@@ -248,16 +224,6 @@ void GamePlayScene::Update()
 
 	// 2. プレイヤーと敵の距離を計算する
 	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
-
-	if (input->TriggerKey(DIK_RETURN))
-	{
-		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
-		if (distance < 2.0f && isEnemyAlive)
-		{
-			isEnemyAlive = false; // 敵を消す
-			particleEmitterHitEffect->InputHitEffect(); // ヒットエフェクトを出す
-		}
-	}
 
 	// 敵の移動スピード（好みの速さに調整してください）
 	float enemySpeed = 0.05f;
@@ -344,7 +310,7 @@ void GamePlayScene::Update()
 	imGuiManager->ImGuiEnd();
 }
 
-void GamePlayScene::Draw()
+void TitleScene::Draw()
 {
 	auto dxCommon = DirectXCommon::GetInstance();
 	auto srvManager = SrvManager::GetInstance();
@@ -366,7 +332,7 @@ void GamePlayScene::Draw()
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	lineRenderer->Draw(camera);
 	// ★ここに追加：パーティクルの描画
-	ParticleManager::GetInstance()->Draw(camera);
+	//ParticleManager::GetInstance()->Draw(camera);
 
 	SpriteCommon::GetInstance()->DrawCommon();
 
