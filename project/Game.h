@@ -3,26 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <format>
-//ファイルやディレクトリに関する操作を行うライブラリ
-#include <filesystem>
-//ファイルに書いたり読んだりするライブラリ
-#include<fstream>
-//時間を扱うライブラリ
-#include<chrono>
-//DirectX12のinclude
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
-#include <dxgidebug.h>
-#include <dxcapi.h>
-// DirectXを使うため
-#include "externals/DirectXTex/DirectXTex.h"
-// 入力デバイス
-#include "Input.h"
-//WindowsAPI
-#include "WinApp.h"
-// DirectX
-#include "DirectXCommon.h"
+
 #include "PostEffect.h"
 // スプライト
 #include "Sprite.h"
@@ -51,6 +32,8 @@
 
 #include "LineRenderer.h"
 
+#include "Framework.h"
+
 #include<sstream>
 
 //libのリンク
@@ -59,31 +42,21 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
-class Game
+class Game : public Framework
 {
 public:
 
 	// 初期化
-	void Initialiaze();
+	void Initialiaze() override;
 	// 終了
-	void Finalize();
+	void Finalize() override;
 	// 毎フレーム更新
-	void Update();
+	void Update() override;
 	// 描画
-	void Draw();
-
-	// 終了フラグのチェック
-	bool IsEndRequst() { return endRequst_; }
+	void Draw() override;
 
 private:
 
-	// ポインタ
-	// 入力
-	Input* input_ = nullptr;
-	// ウィンドウ
-	WinApp* winApp = nullptr;
-	// DirectX
-	DirectXCommon* dxCommon = nullptr;
 	PostEffect* postEffect = nullptr;
 	// オブジェクト
 	Object3dCommon* object3dCommon = nullptr;
@@ -144,8 +117,6 @@ private:
 	ParticleEmitter* particleEmitterRingEffect;
 	ParticleEmitter* particleEmitterCylinderEffect;
 
-	HANDLE fenceEvent;
-
-	bool endRequst_ = false;
+	
 };
 
