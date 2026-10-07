@@ -34,8 +34,6 @@ void TextureManager::LoadTexture(const std::string& filePath)
 		return;
 	}
 
-	uint32_t index = srvManager->Allocate();
-
 	DirectX::ScratchImage image{};
 	std::wstring filePathW = StringUtility::ConvertString(filePath);
 	HRESULT hr;
@@ -68,10 +66,11 @@ void TextureManager::LoadTexture(const std::string& filePath)
 	textureData.metadata = mipImages.GetMetadata();
 	textureData.resource = DirectXCommon::GetInstance()->CreateTextureResource(textureData.metadata);
 
-	uint32_t srvIndex = static_cast<uint32_t>(textureDatas.size() - 1) + kSRVIndexTop;
 	textureData.srvIndex = srvManager->Allocate();
-	textureData.srvHandleCPU = srvManager->GetCPUDescriptorHandle(srvIndex);
-	textureData.srvHandleGPU = srvManager->GetGPUDescriptorHandle(srvIndex);
+	textureData.srvHandleCPU =
+		srvManager->GetCPUDescriptorHandle(textureData.srvIndex);
+	textureData.srvHandleGPU =
+		srvManager->GetGPUDescriptorHandle(textureData.srvIndex);
 
 	if (textureData.metadata.IsCubemap()) {
 		// キューブマップ用

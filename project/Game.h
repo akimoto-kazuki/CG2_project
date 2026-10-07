@@ -2,6 +2,7 @@
 
 #include "Framework.h"
 #include "GamePlayScene.h"
+#include "TitleScene.h"
 
 class Game : public Framework
 {
@@ -18,6 +19,7 @@ public:
 
 private:
 
-	GamePlayScene* gamePlayScene_ = nullptr;
+	//GamePlayScene* scene_ = nullptr;
+	TitleScene* scene_ = nullptr;
 };
 

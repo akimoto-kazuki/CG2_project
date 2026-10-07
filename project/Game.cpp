@@ -32,15 +32,16 @@ void Game::Initialiaze()
 	Framework::Initialiaze();
 
 	// シーンの生成と初期化
-	gamePlayScene_ = new GamePlayScene();
-	gamePlayScene_->Initialiaze();
+	scene_ = new TitleScene();
+	//scene_ = new GamePlayScene();
+	scene_->Initialiaze();
 }
 
 void Game::Finalize()
 {	
-	gamePlayScene_->Finalize();
-	delete gamePlayScene_;
-	gamePlayScene_ = nullptr;
+	scene_->Finalize();
+	delete scene_;
+	scene_ = nullptr;
 	Framework::Finalize();
 
 	//出力ウィンドウへの文字出力
@@ -51,11 +52,11 @@ void Game::Update()
 {
 	Framework::Update();
 	// シーンの更新
-	gamePlayScene_->Update();
+	scene_->Update();
 }
 
 void Game::Draw()
 {
 	// シーンの描画
-	gamePlayScene_->Draw();
+	scene_->Draw();
 }
