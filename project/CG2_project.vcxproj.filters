@@ -189,6 +189,9 @@
     <ClCompile Include="TitleScene.cpp">
       <Filter>Engine\ソース ファイル\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="BaseScene.cpp">
+      <Filter>Engine\ソース ファイル\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -323,6 +326,9 @@
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
     </ClInclude>
     <ClInclude Include="TitleScene.h">
+      <Filter>Engine\ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseScene.h">
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
     </ClInclude>
   </ItemGroup>

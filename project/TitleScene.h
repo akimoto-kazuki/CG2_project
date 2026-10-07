@@ -55,6 +55,7 @@ private:
 	float gravity;				// 重力（毎フレーム下に向かって引っ張る力）
 	float jumpPower;			// ジャンプ力（上に飛び上がる初速）
 	bool isJumping = false;     // 現在ジャンプ中かどうかのフラグ
+	float playerMoveDirX = 1.0f;
 	// 敵
 	Vector3 enemyPosition;
 	Vector3 enemyjRotate;
@@ -68,17 +69,4 @@ private:
 	std::array<std::string, 2> spriteFile;
 	std::vector<Sprite*> sprites_;
 
-	// --- パーティクルエミッター ---
-	EulerTransform particleEffectTransform;
-	EulerTransform particleHitEffectTransform;
-	EulerTransform particlesSparkEffectTransform;
-	EulerTransform particleRingEffectTransform;
-	EulerTransform particleCylinderTransform;
-
-	ParticleEmitter* particleEmitterEffect = nullptr;
-	ParticleEmitter* particleEmitterHitEffect = nullptr;
-	ParticleEmitter* particleEmitterSparkEffect = nullptr;
-	ParticleEmitter* particleEmitterRingEffect = nullptr;
-	ParticleEmitter* particleEmitterCylinderEffect = nullptr;
 };
-

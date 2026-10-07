@@ -363,7 +363,7 @@ void GamePlayScene::Draw()
 
 	// 4. 描画
 	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+	skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	lineRenderer->Draw(camera);
 	// ★ここに追加：パーティクルの描画
 	ParticleManager::GetInstance()->Draw(camera);
@@ -374,6 +374,8 @@ void GamePlayScene::Draw()
 	{
 		sprite->Draw();
 	}
+
+	
 
 	postEffect->PostDraw();
 

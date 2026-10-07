@@ -33,6 +33,7 @@ void Game::Initialiaze()
 
 	// シーンの生成と初期化
 	scene_ = new TitleScene();
+	//scene_ = new GamePlayScene();
 	scene_->Initialiaze();
 }
 

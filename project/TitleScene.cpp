@@ -37,6 +37,7 @@ void TitleScene::Initialiaze()
 	//	敵
 	enemyPosition = { -10.0f,-4.0f,10.0f };
 	enemyjRotate = { 0.0f,3.0f,0.0f };
+	
 	// isEnemyAlive = true; bool型だから宣言しなくていい わかりやすくするために置いてる
 	//  スプライト
 	spritePosition = { 0.0f,0.0f,0.0f };
@@ -46,7 +47,7 @@ void TitleScene::Initialiaze()
 
 	// --- テクスチャ＆モデル読み込み ---
 	spriteFile[0] = "resources/white.png";
-	spriteFile[1] = "resources/white.png";
+	spriteFile[1] = "resources/monsterBall.png";
 	for (int i = 0; i < spriteFile.size(); i++)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
@@ -77,40 +78,12 @@ void TitleScene::Initialiaze()
 	enemy3d->SetModel("walk.gltf");
 	enemy3d->SetAnimation("resources", "walk.gltf");
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
+
 	// SkyBox
 	skyBox = new SkyBox();
 	skyBox->Initialize();
 	// 読み込んだテクスチャの番号を SkyBox に教える
 	skyBox->SetTextureIndex(skyboxTextureIndex);
-
-	// --- パーティクル初期化 ---
-	// パーティクル
-	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
-	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
-	TextureManager::GetInstance()->LoadTexture("Resources/gradationLine.png");
-	// 2. これが「何枚目に読み込んだ画像か」で番号を直接決める
-	// (例: 他に2枚読み込んでいて、これが3枚目の画像なら、0から数えて「2」になります)
-	uint32_t particleTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/circle2.png"); // ★環境に合わせて 1 や 2 などに変えてみてください
-	uint32_t particleRingTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/gradationLine.png");
-	// 設定
-	ParticleManager::GetInstance()->CreateGroup("magic", particleTexIndex);
-	particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
-	//ヒットエフェクト
-	ParticleManager::GetInstance()->CreateGroup("Hit", particleTexIndex);
-	particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterHitEffect = new ParticleEmitter("Hit", particleHitEffectTransform, 10, 2.0f);
-
-	ParticleManager::GetInstance()->CreateGroup("spark", particleTexIndex);
-	particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterSparkEffect = new ParticleEmitter("spark", particlesSparkEffectTransform, 20, 2.0f);
-
-	ParticleManager::GetInstance()->CreateGroup("ring", particleRingTexIndex, true);
-	particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
-	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex, false, true);
-	particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterCylinderEffect = new ParticleEmitter("cylinder", particleCylinderTransform, 1, 0.0f);
 
 	// --- スプライト初期化 ---
 	for (uint32_t i = 0; i < 5; ++i)
@@ -133,12 +106,6 @@ void TitleScene::Finalize()
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
-	// エフェクト
-	delete particleEmitterEffect;
-	delete particleEmitterHitEffect;
-	delete particleEmitterSparkEffect;
-	delete particleEmitterRingEffect;
-	delete particleEmitterCylinderEffect;
 
 	delete postEffect;
 }
@@ -160,14 +127,28 @@ void TitleScene::Update()
 
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
 
-	if (input->PushKey(DIK_D))
+	// 敵が右の画面外(12.0f)に完全に出たら、左向きにして右画面外から再スタート
+	if (playerMoveDirX == 1.0f && enemyPosition.x >= 12.0f)
 	{
-		playerMove.x += 0.1f;
+		playerMoveDirX = -1.0f; // 左向きに変更
+
+		// 左へ進んで戻ってくるため、プレイヤーを先頭(左)、敵を後ろ(右)に配置し直す
+		// （初期位置の距離差 3.0f を維持しています）
+		playerPosition.x = 12.0f;
+		enemyPosition.x = 15.0f;
 	}
-	if (input->PushKey(DIK_A))
+	// 敵が左の画面外(-12.0f)に完全に出たら、右向きにして左画面外から再スタート
+	else if (playerMoveDirX == -1.0f && enemyPosition.x <= -12.0f)
 	{
-		playerMove.x -= 0.1f;
+		playerMoveDirX = 1.0f; // 右向きに変更
+
+		// 右へ進んで戻ってくるため、プレイヤーを先頭(右)、敵を後ろ(左)に配置し直す
+		playerPosition.x = -12.0f;
+		enemyPosition.x = -15.0f;
 	}
+
+	// 常に 0.1f ではなく、進行方向(playerMoveDirX)を掛けた値を足す
+	playerMove.x += 0.1f * playerMoveDirX;
 
 	if (playerMove.x != 0.0f || playerMove.z != 0.0f)
 	{
@@ -202,8 +183,6 @@ void TitleScene::Update()
 			isJumping = false;    // ジャンプ状態を解除
 		}
 	}
-
-	particleEmitterCylinderEffect->UpdateCylinderEffect();
 
 	float pos = 0.0f;
 	camera->Update();
@@ -247,6 +226,7 @@ void TitleScene::Update()
 		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
 		// atan2を使ってXとZの向きから角度を算出します
 		enemyjRotate.y = std::atan2(direction.x, direction.z);
+		
 	}
 
 	object3d->DrawSkeleton(lineRenderer);
@@ -331,8 +311,6 @@ void TitleScene::Draw()
 	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	lineRenderer->Draw(camera);
-	// ★ここに追加：パーティクルの描画
-	//ParticleManager::GetInstance()->Draw(camera);
 
 	SpriteCommon::GetInstance()->DrawCommon();
 
