@@ -30,13 +30,23 @@ void TitleScene::Initialiaze()
 	// オブジェクト
 	//	プレイヤー
 	playerPosition = { -7.0f,-4.0f,10.0f };
-	playerjRotate = { 0.0f,3.0f,0.0f };
+	playerRotate = { 0.0f,3.0f,0.0f };
 	velocityY = 0.0f;         // Y軸方向の現在の速度
 	gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	jumpPower = 0.3f;         // ジャンプ力（上に飛び上がる初速）
 	//	敵
 	enemyPosition = { -10.0f,-4.0f,10.0f };
-	enemyjRotate = { 0.0f,3.0f,0.0f };
+	enemyRotate = { 0.0f,3.0f,0.0f };
+	// スペース
+	spacePosition = { -0.3f,-0.5f,0.0f };
+	spaceRotate = { 0.0f,0.0f,0.0f };
+	// タイトル名
+	titlePosition = { 0.0f,1.0f,0.0f };
+	titleRotate = { 0.0f,0.0f,0.0f };
+	// タイトル背景
+	titleBackPosition = { 0.0f,0.0f,10.0f };
+	titleBackRotate = { 0.0f,0.0f,0.0f };
+	titleBackSize = { 5.0f,5.0f,1.0f };
 	
 	// isEnemyAlive = true; bool型だから宣言しなくていい わかりやすくするために置いてる
 	//  スプライト
@@ -48,11 +58,18 @@ void TitleScene::Initialiaze()
 	// --- テクスチャ＆モデル読み込み ---
 	spriteFile[0] = "resources/white.png";
 	spriteFile[1] = "resources/monsterBall.png";
+	spriteFile[2] = "resources/sky_sphere.png";
 	for (int i = 0; i < spriteFile.size(); i++)
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
+	// アニメーション
 	ModelManager::GetInstance()->LoadModel("walk.gltf");
+	// オブジェクト
+	ModelManager::GetInstance()->LoadModel("space.obj");
+	ModelManager::GetInstance()->LoadModel("title.obj");
+	ModelManager::GetInstance()->LoadModel("titleBack.obj");
+	// スカイドーム
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -78,6 +95,21 @@ void TitleScene::Initialiaze()
 	enemy3d->SetModel("walk.gltf");
 	enemy3d->SetAnimation("resources", "walk.gltf");
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	// スペース
+	space3d = new Object3d();
+	space3d->Initialize();
+	space3d->SetModel("space.obj");
+	space3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	// タイトル
+	title3d = new Object3d();
+	title3d->Initialize();
+	title3d->SetModel("title.obj");
+	title3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	// タイトル背景
+	titleBack3d = new Object3d();
+	titleBack3d->Initialize();
+	titleBack3d->SetModel("titleBack.obj");
+	titleBack3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
 
 	// SkyBox
 	skyBox = new SkyBox();
@@ -103,6 +135,9 @@ void TitleScene::Finalize()
 	sprites_.clear();
 	delete object3d;
 	delete enemy3d;
+	delete space3d;
+	delete title3d;
+	delete titleBack3d;
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
@@ -164,7 +199,7 @@ void TitleScene::Update()
 		playerPosition.z += playerMove.z * playerSpeed;
 
 		// 2. 移動方向を向くように回転（敵の処理と同じatan2を使用）
-		playerjRotate.y = std::atan2(playerMove.x, playerMove.z);
+		playerRotate.y = std::atan2(playerMove.x, playerMove.z);
 	}
 
 	if (isJumping)
@@ -186,13 +221,30 @@ void TitleScene::Update()
 
 	float pos = 0.0f;
 	camera->Update();
+	// プレイヤー
 	object3d->Update();
+	object3d->SetRotate(playerRotate);
+	object3d->SetTranslate(playerPosition);
+	// 敵
 	if (isEnemyAlive)
 	{
 		enemy3d->Update();
-		enemy3d->SetRotate(enemyjRotate);
+		enemy3d->SetRotate(enemyRotate);
 		enemy3d->SetTranslate(enemyPosition);
 	}
+	// スペース
+	space3d->Update();
+	space3d->SetTranslate(spacePosition);
+	space3d->SetRotate(spaceRotate);
+	// タイトル
+	title3d->Update();
+	title3d->SetTranslate(titlePosition);
+	title3d->SetRotate(titleRotate);
+	// タイトル背景
+	titleBack3d->Update();
+	titleBack3d->SetTranslate(titleBackPosition);
+	titleBack3d->SetRotate(titleBackRotate);
+	titleBack3d->SetScale(titleBackSize);
 
 	Vector3 diff =
 	{
@@ -225,7 +277,7 @@ void TitleScene::Update()
 
 		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
 		// atan2を使ってXとZの向きから角度を算出します
-		enemyjRotate.y = std::atan2(direction.x, direction.z);
+		enemyRotate.y = std::atan2(direction.x, direction.z);
 		
 	}
 
@@ -235,8 +287,7 @@ void TitleScene::Update()
 		enemy3d->DrawSkeleton(lineRenderer);
 	}
 
-	object3d->SetRotate(playerjRotate);
-	object3d->SetTranslate(playerPosition);
+	
 
 	// 3. 更新
 	skyBox->Update();
@@ -273,7 +324,7 @@ void TitleScene::Update()
 	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
 	ImGui::Text("object3D");
 	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
-	ImGui::DragFloat3("ObjectRotation", &playerjRotate.x, 0.1f);
+	ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
 	// 1. 現在の数値を Object3d から取得してローカル変数に入れる
 	float envCoef = object3d->GetEnvironmentCoefficient();
 
@@ -301,7 +352,10 @@ void TitleScene::Draw()
 	srvManager->PreDraw();
 
 	Object3dCommon::GetInstance()->DrawCommon();
+	titleBack3d->Draw();
 	object3d->Draw();
+	space3d->Draw();
+	title3d->Draw();
 	if (isEnemyAlive)
 	{
 		enemy3d->Draw();
@@ -316,7 +370,7 @@ void TitleScene::Draw()
 
 	for (Sprite* sprite : sprites_)
 	{
-		sprite->Draw();
+		//sprite->Draw();
 	}
 
 	postEffect->PostDraw();
