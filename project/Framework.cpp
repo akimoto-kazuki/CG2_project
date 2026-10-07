@@ -1,6 +1,6 @@
 #include "Framework.h"
 
-void Framework::Initialiaze()
+void Framework::Initialize()
 {
 	// ウィンドウ
 	winApp = new WinApp();
@@ -89,12 +89,24 @@ void Framework::Update()
 	{
 		endRequst_ = true;
 	}
+	if (scene_)
+	{
+		scene_->Update();
+	}
+}
+
+void Framework::Draw()
+{
+	if (scene_)
+	{
+		scene_->Draw();
+	}
 }
 
 void Framework::Run()
 {
 	// 初期化
-	Initialiaze();
+	Initialize();
 
 	while (true)
 	{

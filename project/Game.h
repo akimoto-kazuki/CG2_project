@@ -9,7 +9,7 @@ class Game : public Framework
 public:
 
 	// 初期化
-	void Initialiaze() override;
+	void Initialize() override;
 	// 終了
 	void Finalize() override;
 	// 毎フレーム更新
@@ -18,8 +18,5 @@ public:
 	void Draw() override;
 
 private:
-
-	//GamePlayScene* scene_ = nullptr;
-	TitleScene* scene_ = nullptr;
 };
 

@@ -11,7 +11,7 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "DirectXCommon.h"
-void TitleScene::Initialiaze()
+void TitleScene::Initialize()
 {
 
 	auto dxCommon = DirectXCommon::GetInstance();
