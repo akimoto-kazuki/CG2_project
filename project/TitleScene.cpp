@@ -11,7 +11,8 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "DirectXCommon.h"
-void TitleScene::Initialiaze()
+#include <random>
+void TitleScene::Initialize()
 {
 
 	auto dxCommon = DirectXCommon::GetInstance();
@@ -124,6 +125,40 @@ void TitleScene::Initialiaze()
 		sprite->Initialize(spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
+
+	// 画面全体を覆えるようにブロックを敷き詰める
+	constexpr int columns = 16;
+	constexpr int rows = 9;
+	const float blockWidth = static_cast<float>(WinApp::kClientWidth) / columns;
+	const float blockHeight = static_cast<float>(WinApp::kClientHeight) / rows;
+	std::random_device seed;
+	std::mt19937 random(seed());
+	std::uniform_real_distribution<float> delayDistribution(0.0f, 0.5f);
+	std::uniform_real_distribution<float> horizontalImpulse(-5.0f, 5.0f);
+	std::uniform_real_distribution<float> upwardImpulse(-8.0f, -2.0f);
+	std::uniform_real_distribution<float> gravityDistribution(0.25f, 0.45f);
+	std::uniform_real_distribution<float> rotationDistribution(-0.22f, 0.22f);
+	for (int y = 0; y < rows; ++y)
+	{
+		for (int x = 0; x < columns; ++x)
+		{
+			TransitionBlock block;
+			block.sprite = new Sprite();
+			block.sprite->Initialize("resources/white.png");
+			// Sprite の基準頂点は 100x100px なので、ピクセル寸法を拡大率に変換する
+			block.sprite->SetSize({ (blockWidth + 1.0f) / 100.0f, (blockHeight + 1.0f) / 100.0f });
+			block.sprite->SetPosition({ x * blockWidth, y * blockHeight, 0.0f });
+			block.sprite->SetColor({ 0.08f, 0.12f, 0.2f, 1.0f });
+			block.delay = delayDistribution(random);
+			block.initialVelocityX = horizontalImpulse(random);
+			block.initialVelocityY = upwardImpulse(random);
+			block.velocityX = block.initialVelocityX;
+			block.velocityY = block.initialVelocityY;
+			block.gravity = gravityDistribution(random);
+			block.rotationSpeed = rotationDistribution(random);
+			transitionBlocks_.push_back(block);
+		}
+	}
 }
 
 void TitleScene::Finalize()
@@ -133,6 +168,11 @@ void TitleScene::Finalize()
 		delete sprite;
 	}
 	sprites_.clear();
+	for (TransitionBlock& block : transitionBlocks_)
+	{
+		delete block.sprite;
+	}
+	transitionBlocks_.clear();
 	delete object3d;
 	delete enemy3d;
 	delete space3d;
@@ -155,6 +195,62 @@ void TitleScene::Update()
 
 	// キー入力 始
 	input->Update();
+	if (input->TriggerKey(DIK_SPACE) && !isTransitionPlaying_)
+	{
+		isTransitionPlaying_ = true;
+		transitionBlocksStarted_ = false;
+		transitionTimer_ = 0.0f;
+		for (size_t i = 0; i < transitionBlocks_.size(); ++i)
+		{
+			TransitionBlock& block = transitionBlocks_[i];
+			// Space を押した時点で全ブロックを表示し、画面を覆う
+			block.active = true;
+			block.velocityX = block.initialVelocityX;
+			block.velocityY = block.initialVelocityY;
+			block.sprite->SetRotation(0.0f);
+			int x = static_cast<int>(i % 16);
+			int y = static_cast<int>(i / 16);
+			block.sprite->SetPosition({ x * (static_cast<float>(WinApp::kClientWidth) / 16), y * (static_cast<float>(WinApp::kClientHeight) / 9), 0.0f });
+		}
+	}
+	if (isTransitionPlaying_)
+	{
+		transitionTimer_ += 1.0f / 60.0f;
+		constexpr float messageDuration = 0.75f;
+		if (!transitionBlocksStarted_ && transitionTimer_ >= messageDuration)
+		{
+			transitionBlocksStarted_ = true;
+		}
+		for (size_t i = 0; i < transitionBlocks_.size(); ++i)
+		{
+			TransitionBlock& block = transitionBlocks_[i];
+			if (!block.active || transitionTimer_ < messageDuration + block.delay)
+			{
+				continue;
+			}
+			Vector3 position = block.sprite->GetPosition();
+			block.velocityY += block.gravity;
+			position.x += block.velocityX;
+			position.y += block.velocityY;
+			block.sprite->SetPosition(position);
+			block.sprite->SetRotation(block.sprite->GetRotation() + block.rotationSpeed);
+			if (position.y < -150.0f || position.y > WinApp::kClientHeight + 150.0f ||
+				position.x < -150.0f || position.x > WinApp::kClientWidth + 150.0f)
+			{
+				block.active = false;
+			}
+		}
+		bool hasActiveBlocks = false;
+		for (const TransitionBlock& block : transitionBlocks_)
+		{
+			hasActiveBlocks = hasActiveBlocks || block.active;
+		}
+		if (transitionBlocksStarted_ && !hasActiveBlocks)
+		{
+			isTransitionPlaying_ = false;
+			transitionBlocksStarted_ = false;
+		}
+	}
 	if (input->PushKey(DIK_0))
 	{
 		OutputDebugStringA("Hit 0\n");
@@ -305,13 +401,35 @@ void TitleScene::Update()
 		sprite->SetColor(spriteColor);
 		sprite->Update();
 	}
+	for (size_t i = 0; i < transitionBlocks_.size(); ++i)
+	{
+		TransitionBlock& block = transitionBlocks_[i];
+		if (block.active)
+		{
+			int x = static_cast<int>(i % 16);
+			int y = static_cast<int>(i / 16);
+			// 崩れる順番が来るまでは画面上の元の位置に留める
+			if (transitionTimer_ < 0.75f + block.delay)
+				block.sprite->SetPosition({ x * (static_cast<float>(WinApp::kClientWidth) / 16), y * (static_cast<float>(WinApp::kClientHeight) / 9), 0.0f });
+			block.sprite->Update();
+		}
+	}
 
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
 
 	// ImGui
-#ifdef USE_IMGUI			
+	if (isTransitionPlaying_)
+	{
+		ImDrawList* drawList = ImGui::GetForegroundDrawList();
+		const char* message = "NOW TRANSITIONING...";
+		const ImVec2 textSize = ImGui::CalcTextSize(message);
+		const ImVec2 textPosition((WinApp::kClientWidth - textSize.x) * 0.5f, 44.0f);
+		drawList->AddRectFilled(ImVec2(textPosition.x - 18.0f, textPosition.y - 10.0f), ImVec2(textPosition.x + textSize.x + 18.0f, textPosition.y + textSize.y + 10.0f), IM_COL32(0, 0, 0, 190), 8.0f);
+		drawList->AddText(textPosition, IM_COL32(255, 255, 255, 255), message);
+	}
 
+#ifdef USE_IMGUI			
 	ImGui::ShowDemoWindow();
 
 	ImGui::Text("Camera");
@@ -371,6 +489,13 @@ void TitleScene::Draw()
 	for (Sprite* sprite : sprites_)
 	{
 		//sprite->Draw();
+	}
+	for (const TransitionBlock& block : transitionBlocks_)
+	{
+		if (block.active)
+		{
+			block.sprite->Draw();
+		}
 	}
 
 	postEffect->PostDraw();

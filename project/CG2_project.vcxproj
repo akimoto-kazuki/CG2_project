@@ -182,6 +182,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TarGetDir)dx
     <ClCompile Include="ParticleEmitter.cpp" />
     <ClCompile Include="ParticleManager.cpp" />
     <ClCompile Include="PostEffect.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="SkyBoxCommon.cpp" />
     <ClCompile Include="Sprite.cpp" />
@@ -329,6 +330,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TarGetDir)dx
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PostEffect.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="SkyBox.h" />
     <ClInclude Include="SkyBoxCommon.h" />
     <ClInclude Include="Sprite.h" />

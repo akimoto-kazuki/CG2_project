@@ -229,7 +229,7 @@ void PostEffect::PreDraw() {
     commandList->OMSetRenderTargets(1, &rtvHandle_, FALSE, &dsvHandle);
 
     // 3. レンダーターゲットと深度バッファのクリア
-    FLOAT clearColor[] = { 1.0f, 0.0f, 0.0f, 1.0f }; // 初期化時と同じクリアカラー
+    FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f }; // 初期化時と同じクリアカラー
     commandList->ClearRenderTargetView(rtvHandle_, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0,nullptr);
 

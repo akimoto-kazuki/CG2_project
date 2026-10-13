@@ -27,21 +27,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-void Game::Initialiaze()
+void Game::Initialize()
 {
-	Framework::Initialiaze();
+	Framework::Initialize();
 
 	// シーンの生成と初期化
-	scene_ = new TitleScene();
+	sceneManager_ = new SceneManager();
 	//scene_ = new GamePlayScene();
-	scene_->Initialiaze();
+	sceneManager_->SetInitialScene(new TitleScene());
 }
 
 void Game::Finalize()
 {	
-	scene_->Finalize();
-	delete scene_;
-	scene_ = nullptr;
+	delete sceneManager_;
+	sceneManager_ = nullptr;
+
 	Framework::Finalize();
 
 	//出力ウィンドウへの文字出力
@@ -51,12 +51,10 @@ void Game::Finalize()
 void Game::Update()
 {
 	Framework::Update();
-	// シーンの更新
-	scene_->Update();
+	sceneManager_->Update();
 }
 
 void Game::Draw()
 {
-	// シーンの描画
-	scene_->Draw();
+	sceneManager_->Draw();
 }

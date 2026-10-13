@@ -1,4 +1,7 @@
 #pragma once
+
+// ベースシーン
+#include "BaseScene.h"
 // 入力デバイス
 #include "Input.h"
 //WindowsAPI
@@ -43,13 +46,13 @@ class Framework
 public:
 
 	// 初期化
-	virtual void Initialiaze();
+	virtual void Initialize();
 	// 終了
 	virtual void Finalize();
 	// 毎フレーム更新
 	virtual void Update();
 	// 描画
-	virtual void Draw() = 0;
+	virtual void Draw();
 
 	// 終了フラグのチェック
 	virtual bool IsEndRequst() { return endRequst_; }
@@ -57,6 +60,12 @@ public:
 	virtual ~Framework() = default;
 
 	void Run();
+
+protected:
+
+	BaseScene* scene_ = nullptr;
+
+private:
 
 	// ポインタ
 	// 入力

@@ -177,9 +177,6 @@
     <ClCompile Include="LineRenderer.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Game.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Framework.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
@@ -191,6 +188,12 @@
     </ClCompile>
     <ClCompile Include="BaseScene.cpp">
       <Filter>Engine\ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
+      <Filter>Engine\ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -316,9 +319,6 @@
     <ClInclude Include="LineRenderer.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>Engine\ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Framework.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
@@ -329,6 +329,12 @@
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
     </ClInclude>
     <ClInclude Include="BaseScene.h">
+      <Filter>Engine\ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
     </ClInclude>
   </ItemGroup>

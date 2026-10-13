@@ -2,6 +2,9 @@
 #include <array>
 #include <vector>
 #include <string>
+
+// ベースシーン
+#include "BaseScene.h"
 //カメラ
 #include "Camera.h"
 // オブジェクト
@@ -16,18 +19,18 @@
 #include "Sprite.h"
 // パーティクル
 #include "ParticleEmitter.h"
-class TitleScene
+class TitleScene : public BaseScene
 {
 public:
 
 	// 初期化
-	void Initialiaze();
+	void Initialize() override;
 	// 終了
-	void Finalize();
+	void Finalize() override;
 	// 毎フレーム更新
-	void Update();
+	void Update() override;
 	// 描画
-	void Draw();
+	void Draw() override;
 
 private:
 
@@ -81,5 +84,23 @@ private:
 	Vector2 spriteSize;
 	std::array<std::string, 3> spriteFile;
 	std::vector<Sprite*> sprites_;
+
+	// 画面を覆って崩れるブロック演出
+	struct TransitionBlock
+	{
+		Sprite* sprite = nullptr;
+		float delay = 0.0f;
+		float initialVelocityX = 0.0f;
+		float initialVelocityY = 0.0f;
+		float velocityX = 0.0f;
+		float velocityY = 0.0f;
+		float gravity = 0.0f;
+		float rotationSpeed = 0.0f;
+		bool active = false;
+	};
+	std::vector<TransitionBlock> transitionBlocks_;
+	float transitionTimer_ = 0.0f;
+	bool isTransitionPlaying_ = false;
+	bool transitionBlocksStarted_ = false;
 
 };

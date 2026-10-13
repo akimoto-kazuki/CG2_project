@@ -12,7 +12,7 @@
 #include "Input.h"
 #include "DirectXCommon.h"
 
-void GamePlayScene::Initialiaze()
+void GamePlayScene::Initialize()
 {
 
 	auto dxCommon = DirectXCommon::GetInstance();

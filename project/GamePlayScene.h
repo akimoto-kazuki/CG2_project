@@ -2,6 +2,9 @@
 #include <array>
 #include <vector>
 #include <string>
+
+// ベースシーン
+#include "BaseScene.h"
 //カメラ
 #include "Camera.h"
 // オブジェクト
@@ -17,18 +20,18 @@
 // パーティクル
 #include "ParticleEmitter.h"
 
-class GamePlayScene
+class GamePlayScene : public BaseScene
 {
 public:
 
 	// 初期化
-	void Initialiaze();
+	void Initialize() override;
 	// 終了
-	void Finalize();
+	void Finalize() override;
 	// 毎フレーム更新
-	void Update();
+	void Update() override;
 	// 描画
-	void Draw();
+	void Draw() override;
 
 private:
 

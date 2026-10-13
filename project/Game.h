@@ -3,13 +3,14 @@
 #include "Framework.h"
 #include "GamePlayScene.h"
 #include "TitleScene.h"
+#include "SceneManager.h"
 
 class Game : public Framework
 {
 public:
 
 	// 初期化
-	void Initialiaze() override;
+	void Initialize() override;
 	// 終了
 	void Finalize() override;
 	// 毎フレーム更新
@@ -19,7 +20,6 @@ public:
 
 private:
 
-	//GamePlayScene* scene_ = nullptr;
-	TitleScene* scene_ = nullptr;
+	SceneManager* sceneManager_ = nullptr;
 };
 
