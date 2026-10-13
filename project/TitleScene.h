@@ -85,4 +85,22 @@ private:
 	std::array<std::string, 3> spriteFile;
 	std::vector<Sprite*> sprites_;
 
+	// 画面を覆って崩れるブロック演出
+	struct TransitionBlock
+	{
+		Sprite* sprite = nullptr;
+		float delay = 0.0f;
+		float initialVelocityX = 0.0f;
+		float initialVelocityY = 0.0f;
+		float velocityX = 0.0f;
+		float velocityY = 0.0f;
+		float gravity = 0.0f;
+		float rotationSpeed = 0.0f;
+		bool active = false;
+	};
+	std::vector<TransitionBlock> transitionBlocks_;
+	float transitionTimer_ = 0.0f;
+	bool isTransitionPlaying_ = false;
+	bool transitionBlocksStarted_ = false;
+
 };

@@ -3,6 +3,7 @@
 #include "Framework.h"
 #include "GamePlayScene.h"
 #include "TitleScene.h"
+#include "SceneManager.h"
 
 class Game : public Framework
 {
@@ -18,5 +19,7 @@ public:
 	void Draw() override;
 
 private:
+
+	SceneManager* sceneManager_ = nullptr;
 };
 
