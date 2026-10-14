@@ -418,6 +418,7 @@ void TitleScene::Update()
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
 
+#ifdef USE_IMGUI
 	// ImGui
 	if (isTransitionPlaying_)
 	{
@@ -427,9 +428,7 @@ void TitleScene::Update()
 		const ImVec2 textPosition((WinApp::kClientWidth - textSize.x) * 0.5f, 44.0f);
 		drawList->AddRectFilled(ImVec2(textPosition.x - 18.0f, textPosition.y - 10.0f), ImVec2(textPosition.x + textSize.x + 18.0f, textPosition.y + textSize.y + 10.0f), IM_COL32(0, 0, 0, 190), 8.0f);
 		drawList->AddText(textPosition, IM_COL32(255, 255, 255, 255), message);
-	}
-
-#ifdef USE_IMGUI			
+	}		
 	ImGui::ShowDemoWindow();
 
 	ImGui::Text("Camera");
