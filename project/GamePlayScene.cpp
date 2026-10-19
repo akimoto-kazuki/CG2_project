@@ -382,7 +382,9 @@ void GamePlayScene::Draw()
 	DirectXCommon::GetInstance()->PreDraw();
 
 	postEffect->Draw();
-
+	// スプライト描画の設定をしてから、遷移ブロックを重ねる
+	SpriteCommon::GetInstance()->DrawCommon();
+	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
 	imGuiManager->ImGuiDraw();
 

@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+// シーンマネージャー
+#include "SceneManager.h"
 // ベースシーン
 #include "BaseScene.h"
 //カメラ
