@@ -195,6 +195,9 @@
     <ClCompile Include="Game.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="TransitionEffect.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Sprite.PS.hlsl">
@@ -336,6 +339,9 @@
     </ClInclude>
     <ClInclude Include="SceneManager.h">
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TransitionEffect.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

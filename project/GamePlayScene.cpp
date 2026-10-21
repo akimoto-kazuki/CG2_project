@@ -355,34 +355,34 @@ void GamePlayScene::Draw()
 	srvManager->PreDraw();
 
 	Object3dCommon::GetInstance()->DrawCommon();
-	object3d->Draw();
+	//object3d->Draw();
 	if (isEnemyAlive)
 	{
-		enemy3d->Draw();
+		//enemy3d->Draw();
 	}
 
 	// 4. 描画
 	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
-	skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
-	lineRenderer->Draw(camera);
+	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
+	//lineRenderer->Draw(camera);
 	// ★ここに追加：パーティクルの描画
-	ParticleManager::GetInstance()->Draw(camera);
+	//ParticleManager::GetInstance()->Draw(camera);
 
 	SpriteCommon::GetInstance()->DrawCommon();
 
 	for (Sprite* sprite : sprites_)
 	{
-		sprite->Draw();
+		//sprite->Draw();
 	}
-
-	
 
 	postEffect->PostDraw();
 
 	DirectXCommon::GetInstance()->PreDraw();
 
 	postEffect->Draw();
-
+	// スプライト描画の設定をしてから、遷移ブロックを重ねる
+	SpriteCommon::GetInstance()->DrawCommon();
+	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
 	imGuiManager->ImGuiDraw();
 

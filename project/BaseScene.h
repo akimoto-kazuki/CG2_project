@@ -1,4 +1,5 @@
 #pragma once
+class SceneManager;
 class BaseScene
 {
 public:
@@ -14,8 +15,11 @@ public:
 	// 描画
 	virtual void Draw() = 0;
 
-private:
+	virtual void SetSceneManager(SceneManager* sceneManager) { sceneManager_ = sceneManager; }
 
+	protected:
+	// 各シーンからシーン切り替えを依頼できるよう、基底クラスで共有する
+	SceneManager* sceneManager_ = nullptr;
 
 };
 
