@@ -133,36 +133,6 @@ void GamePlayScene::Initialize()
 	spaceStartMessage_->SetTranslate({ 0.0f, -1.0f, 0.0f });
 	spaceStartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
 
-	// 後々消すやつ==========
-	workPartMessage_ = new Object3d();
-	workPartMessage_->Initialize();
-	workPartMessage_->SetModel("GamePlayScene/part/workPart.obj");
-	workPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
-	workPartMessage_->SetTranslate({ -2.5f, 2.0f, 0.0f });
-	workPartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
-
-	fightPartMessage_ = new Object3d();
-	fightPartMessage_->Initialize();
-	fightPartMessage_->SetModel("GamePlayScene/part/fightPart.obj");
-	fightPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
-	fightPartMessage_->SetTranslate({ -2.5f, 2.0f, 0.0f });
-	fightPartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
-
-	partChangeMessage_ = new Object3d();
-	partChangeMessage_->Initialize();
-	partChangeMessage_->SetModel("GamePlayScene/part/partchange.obj");
-	partChangeMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
-	partChangeMessage_->SetTranslate({ -1.0f, 1.5f, 0.0f });
-	partChangeMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
-
-	workNoPartMessage_ = new Object3d();
-	workNoPartMessage_->Initialize();
-	workNoPartMessage_->SetModel("GamePlayScene/part/workNostart.obj");
-	workNoPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
-	workNoPartMessage_->SetTranslate({ -0.0f, 1.0f, 0.0f });
-	workNoPartMessage_->SetScale({ 0.3f, 0.3f, 0.3f });
-	// =====================
-
 	// SkyBox
 	skyBox = new SkyBox();
 	skyBox->Initialize();
@@ -182,21 +152,6 @@ void GamePlayScene::Initialize()
 	ParticleManager::GetInstance()->CreateGroup("magic", particleTexIndex);
 	particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
 	particleEmitterEffect = new ParticleEmitter("magic", particleEffectTransform, 1, 0.1f);
-	//ヒットエフェクト
-	ParticleManager::GetInstance()->CreateGroup("Hit", particleTexIndex);
-	particleHitEffectTransform = { {0.05f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterHitEffect = new ParticleEmitter("Hit", particleHitEffectTransform, 10, 2.0f);
-
-	ParticleManager::GetInstance()->CreateGroup("spark", particleTexIndex);
-	particlesSparkEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterSparkEffect = new ParticleEmitter("spark", particlesSparkEffectTransform, 20, 2.0f);
-
-	ParticleManager::GetInstance()->CreateGroup("ring", particleRingTexIndex, true);
-	particleRingEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,2.0f,0.0f},{0.0f,0.0f,10.0f } };
-	particleEmitterRingEffect = new ParticleEmitter("ring", particleRingEffectTransform, 4, 2.0f);
-	ParticleManager::GetInstance()->CreateGroup("cylinder", particleRingTexIndex, false, true);		
-	particleCylinderTransform = { {1.0f,0.5f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };	
-	particleEmitterCylinderEffect = new ParticleEmitter("cylinder", particleCylinderTransform, 1, 0.0f);
 
 	// --- スプライト初期化 ---
 	for (uint32_t i = 0; i < 5; ++i)
@@ -233,21 +188,11 @@ void GamePlayScene::Finalize()
 	delete survivalGoalMessage_;
 	delete spaceNextMessage_;
 	delete spaceStartMessage_;
-	// 後々消すやつ
-	delete workPartMessage_;
-	delete fightPartMessage_;
-	delete partChangeMessage_;
-	delete workNoPartMessage_;
-	// ===========
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
 	// エフェクト
 	delete particleEmitterEffect;
-	delete particleEmitterHitEffect;
-	delete particleEmitterSparkEffect;
-	delete particleEmitterRingEffect;
-	delete particleEmitterCylinderEffect;
 
 	delete postEffect;
 }
@@ -288,8 +233,6 @@ void GamePlayScene::Update()
 		object3d->SetRotate(playerRotate);
 		object3d->SetTranslate(playerPosition);
 		object3d->Update();
-		fightPartMessage_->Update();
-		partChangeMessage_->Update();
 		imGuiManager->ImGuiEnd();
 		return;
 	}
@@ -346,13 +289,10 @@ void GamePlayScene::UpdateCombatIntro()
 void GamePlayScene::UpdateWork()
 {
 	// 作業パート固有の処理をここに追加
-	workPartMessage_->Update();
-	workNoPartMessage_->Update();
 }
 
 void GamePlayScene::UpdateCombat()
 {
-	fightPartMessage_->Update();
 	// 戦闘パート固有の処理をここに追加
 	// Enterで作業パートへ戻れるため、敵全滅などの条件待ちは不要
 }
@@ -368,18 +308,6 @@ void GamePlayScene::UpdateCommon()
 	if (input->TriggerKey(DIK_1))
 	{
 		particleEmitterEffect->InputEffect();
-	}
-	if (input->TriggerKey(DIK_2))
-	{
-		particleEmitterHitEffect->InputHitEffect();
-	}
-	if (input->TriggerKey(DIK_3))
-	{
-		particleEmitterSparkEffect->InputSprakEffect();
-	}
-	if (input->TriggerKey(DIK_4))
-	{
-		particleEmitterRingEffect->InputHitEffect();
 	}
 
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
@@ -433,12 +361,9 @@ void GamePlayScene::UpdateCommon()
 		}
 	}
 
-	particleEmitterCylinderEffect->UpdateCylinderEffect();
-
 	float pos = 0.0f;
 	camera->Update();
 	object3d->Update();
-	partChangeMessage_->Update();
 	if (isEnemyAlive)
 	{
 		enemy3d->Update();
@@ -462,7 +387,6 @@ void GamePlayScene::UpdateCommon()
 		if (distance < 2.0f && isEnemyAlive)
 		{
 			isEnemyAlive = false; // 敵を消す
-			particleEmitterHitEffect->InputHitEffect(); // ヒットエフェクトを出す
 		}
 	}
 
@@ -518,8 +442,6 @@ void GamePlayScene::UpdateCommon()
 
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
-	partChangeMessage_->Update();
-
 }
 
 void GamePlayScene::Draw()
@@ -534,7 +456,6 @@ void GamePlayScene::Draw()
 
 	Object3dCommon::GetInstance()->DrawCommon();
 	object3d->Draw();
-	partChangeMessage_->Draw();
 	if (phase_ == GamePhase::Work)
 	{
 		DrawWork();
@@ -597,16 +518,13 @@ void GamePlayScene::Draw()
 void GamePlayScene::DrawWork()
 {
 	// 作業パート専用のオブジェクトやUIはここに追加する
-	workPartMessage_->Draw();
-	workNoPartMessage_->Draw();
 }
 
 void GamePlayScene::DrawCombat()
 {
-	fightPartMessage_->Draw();
 	// 戦闘パート専用のオブジェクトやUIはここに追加する
 	if (isEnemyAlive)
 	{
-		// enemy3d->Draw(); // 敵モデルを表示するときに有効化
+		//enemy3d->Draw(); // 敵モデルを表示するときに有効化
 	}
 }

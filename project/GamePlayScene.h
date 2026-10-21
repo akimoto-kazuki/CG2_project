@@ -64,11 +64,6 @@ private:
 	// spaceを押す案内モデル
 	Object3d* spaceNextMessage_ = nullptr;
 	Object3d* spaceStartMessage_ = nullptr;
-	// これは後々消すやつ
-	Object3d* workPartMessage_ = nullptr;
-	Object3d* fightPartMessage_ = nullptr;
-	Object3d* partChangeMessage_ = nullptr;
-	Object3d* workNoPartMessage_ = nullptr;
 	// スカイボックス
 	SkyBox* skyBox = nullptr;
 	// ラインレンダー
@@ -102,14 +97,5 @@ private:
 
 	// --- パーティクルエミッター ---
 	EulerTransform particleEffectTransform;
-	EulerTransform particleHitEffectTransform;
-	EulerTransform particlesSparkEffectTransform;
-	EulerTransform particleRingEffectTransform;
-	EulerTransform particleCylinderTransform;
-
 	ParticleEmitter* particleEmitterEffect = nullptr;
-	ParticleEmitter* particleEmitterHitEffect = nullptr;
-	ParticleEmitter* particleEmitterSparkEffect = nullptr;
-	ParticleEmitter* particleEmitterRingEffect = nullptr;
-	ParticleEmitter* particleEmitterCylinderEffect = nullptr;
 };

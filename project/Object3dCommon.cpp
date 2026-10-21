@@ -145,9 +145,9 @@ void Object3dCommon::GraphicsPipelineState()
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 	// Shaderをコンパイルする
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"Object3D.VS.hlsl", L"vs_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"resources/shaders/Object3d/Object3D.VS.hlsl", L"vs_6_0");
 	assert(vertexShaderBlobObj != nullptr);
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"Object3D.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlobObj = DirectXCommon::GetInstance()->CompileShader(L"resources/shaders/Object3d/Object3D.PS.hlsl", L"ps_6_0");
 	assert(pixelShaderBlobObj != nullptr);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDescObj{};
