@@ -154,7 +154,7 @@ void TitleScene::Update()
 
 
 	// Spaceキーを押したら
-	if (input->TriggerKey(DIK_RETURN))
+	if (input->TriggerKey(DIK_SPACE))
 	{
 		sceneManager_->StartTransition(new GamePlayScene());
 	}

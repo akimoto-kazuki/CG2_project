@@ -12,7 +12,7 @@ void SceneManager::Update()
 	transitionEffect_.Update();
 
 	// 次シーンの予約があるなら
-	if (nextScene_)
+	if (nextScene_ && transitionEffect_.IsCovered())
 	{
 		// 旧シーンの終了
 		scene_->Finalize();

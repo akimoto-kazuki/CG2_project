@@ -25,31 +25,40 @@ public:
     // すべてのブロックが画面外に出たら終了
     bool IsFinished() const;
 
+    // ブロックがすべて着地して画面を覆ったか
+    bool IsCovered() const;
+
     // ブロックのSpriteを解放
     void Finalize();
 
 private:
+    enum class Phase
+    {
+        Inactive,
+        Falling,
+        Holding,
+        Crumbling,
+        Finished,
+    };
 
     struct Block
     {
         Sprite* sprite = nullptr;
-
-        // 崩れ始めるまでの時間差
+        float targetX = 0.0f;
+        float targetY = 0.0f;
         float delay = 0.0f;
-
-        // 崩れるときの速度
+        float fallSpeed = 0.0f;
         float velocityX = 0.0f;
         float velocityY = 0.0f;
         float gravity = 0.0f;
         float rotationSpeed = 0.0f;
-
         bool active = false;
+        bool landed = false;
     };
 
     std::vector<Block> blocks_;
-
     float timer_ = 0.0f;
-    bool isPlaying_ = false;
-    bool isFinished_ = true;
+    Phase phase_ = Phase::Inactive;
+    bool isCovered_ = false;
 };
 

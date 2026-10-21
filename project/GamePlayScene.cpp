@@ -375,8 +375,6 @@ void GamePlayScene::Draw()
 		sprite->Draw();
 	}
 
-	
-
 	postEffect->PostDraw();
 
 	DirectXCommon::GetInstance()->PreDraw();
