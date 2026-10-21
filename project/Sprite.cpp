@@ -27,7 +27,8 @@ void Sprite::Initialize(std::string textureFilePath)
 	indexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
 	// マテリアル
-	materialResource = dxCommon->CreateBufferResource(sizeof(Vector4));
+	// materialData全体を書き込むので、Material構造体分の領域を確保する
+	materialResource = dxCommon->CreateBufferResource(sizeof(Material));
 	// 書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 

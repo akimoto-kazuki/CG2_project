@@ -46,8 +46,16 @@ private:
 	// PostEffect
 	PostEffect* postEffect = nullptr;
 	// Object3D
+	// プレイヤー
 	Object3d* object3d = nullptr;
+	// 敵
 	Object3d* enemy3d = nullptr;
+	// 戦闘開始時の案内モデル
+	Object3d* enemyApproachMessage_ = nullptr;
+	Object3d* survivalGoalMessage_ = nullptr;
+	// spaceを押す案内モデル
+	Object3d* spaceNextMessage_ = nullptr;
+	Object3d* spaceStartMessage_ = nullptr;
 	// スカイボックス
 	SkyBox* skyBox = nullptr;
 	// ラインレンダー
@@ -56,15 +64,19 @@ private:
 	// --- 3Dオブジェクト用パラメータ ---
 	// プレイヤー
 	Vector3 playerPosition;
-	Vector3 playerjRotate;
+	Vector3 playerRotate;
 	float velocityY;			// Y軸方向の現在の速度
 	float gravity;				// 重力（毎フレーム下に向かって引っ張る力）
 	float jumpPower;			// ジャンプ力（上に飛び上がる初速）
 	bool isJumping = false;     // 現在ジャンプ中かどうかのフラグ
 	// 敵
 	Vector3 enemyPosition;
-	Vector3 enemyjRotate;
+	Vector3 enemyRotate;
 	bool isEnemyAlive = true;   // 敵の生存フラグ
+
+	bool isCombatIntroActive_ = true;
+	bool showSurvivalMessage_ = false;
+	int combatIntroStep_ = 0;
 
 	// --- スプライト用 ---
 	Vector3 spritePosition;
