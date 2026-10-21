@@ -287,7 +287,6 @@ void TitleScene::Update()
 		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
 		// atan2を使ってXとZの向きから角度を算出します
 		enemyRotate.y = std::atan2(direction.x, direction.z);
-		
 	}
 
 	object3d->DrawSkeleton(lineRenderer);
@@ -295,8 +294,6 @@ void TitleScene::Update()
 	{
 		enemy3d->DrawSkeleton(lineRenderer);
 	}
-
-	
 
 	// 3. 更新
 	skyBox->Update();
