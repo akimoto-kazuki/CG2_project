@@ -13,13 +13,17 @@
 #include "DirectXCommon.h"
 #include "WinApp.h"
 
+namespace
+{
+	// ゲーム起動中、最初の戦闘だけ2ページの案内を表示する
+	bool hasShownFirstCombatIntro = false;
+}
+
 void GamePlayScene::Initialize()
 {
-	// この実行中の最初の戦闘だけ、2つ目の案内も表示する
-	static bool hasShownFirstCombatIntro = false;
-	showSurvivalMessage_ = !hasShownFirstCombatIntro;
-	hasShownFirstCombatIntro = true;
-	isCombatIntroActive_ = true;
+	showSurvivalMessage_ = false;
+	phase_ = GamePhase::Work;
+	isCombatIntroActive_ = false;
 	combatIntroStep_ = 0;
 
 	auto dxCommon = DirectXCommon::GetInstance();
@@ -64,6 +68,10 @@ void GamePlayScene::Initialize()
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/survival/survival.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/spaceNext/spaceNext.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/spaceStart/spaceStart.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/workPart.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/fightPart.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/partchange.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/workNostart.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -124,6 +132,36 @@ void GamePlayScene::Initialize()
 	spaceStartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
 	spaceStartMessage_->SetTranslate({ 0.0f, -1.0f, 0.0f });
 	spaceStartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+
+	// 後々消すやつ==========
+	workPartMessage_ = new Object3d();
+	workPartMessage_->Initialize();
+	workPartMessage_->SetModel("GamePlayScene/part/workPart.obj");
+	workPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	workPartMessage_->SetTranslate({ -2.5f, 2.0f, 0.0f });
+	workPartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+
+	fightPartMessage_ = new Object3d();
+	fightPartMessage_->Initialize();
+	fightPartMessage_->SetModel("GamePlayScene/part/fightPart.obj");
+	fightPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	fightPartMessage_->SetTranslate({ -2.5f, 2.0f, 0.0f });
+	fightPartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+
+	partChangeMessage_ = new Object3d();
+	partChangeMessage_->Initialize();
+	partChangeMessage_->SetModel("GamePlayScene/part/partchange.obj");
+	partChangeMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	partChangeMessage_->SetTranslate({ -1.0f, 1.5f, 0.0f });
+	partChangeMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+
+	workNoPartMessage_ = new Object3d();
+	workNoPartMessage_->Initialize();
+	workNoPartMessage_->SetModel("GamePlayScene/part/workNostart.obj");
+	workNoPartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	workNoPartMessage_->SetTranslate({ -0.0f, 1.0f, 0.0f });
+	workNoPartMessage_->SetScale({ 0.3f, 0.3f, 0.3f });
+	// =====================
 
 	// SkyBox
 	skyBox = new SkyBox();
@@ -195,6 +233,12 @@ void GamePlayScene::Finalize()
 	delete survivalGoalMessage_;
 	delete spaceNextMessage_;
 	delete spaceStartMessage_;
+	// 後々消すやつ
+	delete workPartMessage_;
+	delete fightPartMessage_;
+	delete partChangeMessage_;
+	delete workNoPartMessage_;
+	// ===========
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
@@ -218,33 +262,104 @@ void GamePlayScene::Update()
 
 	// キー入力 始
 	input->Update();
+	if (input->TriggerKey(DIK_RETURN) && !isCombatIntroActive_)
+	{
+		if (phase_ == GamePhase::Work)
+		{
+			phase_ = GamePhase::Combat;
+			isEnemyAlive = true;
+			isCombatIntroActive_ = true;
+			combatIntroStep_ = 0;
+			showSurvivalMessage_ = !hasShownFirstCombatIntro;
+			hasShownFirstCombatIntro = true;
+		}
+		else
+		{
+			phase_ = GamePhase::Work;
+		}
+	}
 	if (isCombatIntroActive_)
 	{
-		// 初回はNextで2つ目の案内へ進み、Startで戦闘開始。
-		// 2回目以降は最初からStartを表示して、一度で戦闘開始。
-		if (input->TriggerKey(DIK_SPACE))
-		{
-			if (showSurvivalMessage_ && combatIntroStep_ == 0)
-			{
-				combatIntroStep_ = 1;
-			}
-			else
-			{
-				isCombatIntroActive_ = false;
-			}
-		}
-
-		// 案内中もカメラとプレイヤーの行列を更新してから描画する
+		UpdateCombatIntro();
+		// 案内中はゲームプレイ側の更新を止め、表示に必要な行列だけ更新する
 		camera->SetRotate(rotate);
 		camera->SetTranslate(translate);
 		camera->Update();
 		object3d->SetRotate(playerRotate);
 		object3d->SetTranslate(playerPosition);
 		object3d->Update();
-
+		fightPartMessage_->Update();
+		partChangeMessage_->Update();
 		imGuiManager->ImGuiEnd();
 		return;
 	}
+
+	UpdateCommon();
+	if (phase_ == GamePhase::Work)
+	{
+		UpdateWork();
+	}
+	else
+	{
+		UpdateCombat();
+	}
+
+	// ImGui
+#ifdef USE_IMGUI
+	ImGui::ShowDemoWindow();
+	ImGui::Text("Phase: %s (Enterで切り替え)", phase_ == GamePhase::Work ? "Work" : "Combat");
+	ImGui::Text("Camera");
+	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
+	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
+	ImGui::Text("Sprite");
+	ImGui::DragFloat2("SpritePosition", &spritePosition.x, 0.1f);
+	ImGui::DragFloat("SpriteRotation", &spriteRotation, 0.1f);
+	ImGui::DragFloat4("SpriteColor", &spriteColor.x, 0.1f);
+	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
+	ImGui::Text("object3D");
+	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
+	ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
+	float envCoef = object3d->GetEnvironmentCoefficient();
+	if (ImGui::SliderFloat("Environment Rate", &envCoef, 0.0f, 1.0f))
+	{
+		object3d->SetEnvironmentCoefficient(envCoef);
+	}
+#endif
+	imGuiManager->ImGuiEnd();
+}
+
+void GamePlayScene::UpdateCombatIntro()
+{
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE))
+	{
+		if (showSurvivalMessage_ && combatIntroStep_ == 0)
+		{
+			combatIntroStep_ = 1;
+		}
+		else
+		{
+			isCombatIntroActive_ = false;
+		}
+	}
+}
+
+void GamePlayScene::UpdateWork()
+{
+	// 作業パート固有の処理をここに追加
+	workPartMessage_->Update();
+	workNoPartMessage_->Update();
+}
+
+void GamePlayScene::UpdateCombat()
+{
+	fightPartMessage_->Update();
+	// 戦闘パート固有の処理をここに追加
+	// Enterで作業パートへ戻れるため、敵全滅などの条件待ちは不要
+}
+
+void GamePlayScene::UpdateCommon()
+{
+	auto input = Input::GetInstance();
 	if (input->PushKey(DIK_0))
 	{
 		OutputDebugStringA("Hit 0\n");
@@ -323,6 +438,7 @@ void GamePlayScene::Update()
 	float pos = 0.0f;
 	camera->Update();
 	object3d->Update();
+	partChangeMessage_->Update();
 	if (isEnemyAlive)
 	{
 		enemy3d->Update();
@@ -340,7 +456,7 @@ void GamePlayScene::Update()
 	// 2. プレイヤーと敵の距離を計算する
 	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
 
-	if (input->TriggerKey(DIK_RETURN))
+	if (input->TriggerKey(DIK_F))
 	{
 		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
 		if (distance < 2.0f && isEnemyAlive)
@@ -402,37 +518,8 @@ void GamePlayScene::Update()
 
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
+	partChangeMessage_->Update();
 
-	// ImGui
-#ifdef USE_IMGUI			
-
-	ImGui::ShowDemoWindow();
-
-	ImGui::Text("Camera");
-	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
-	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
-	ImGui::Text("Sprite");
-	ImGui::DragFloat2("SpritePosition", &spritePosition.x, 0.1f);
-	ImGui::DragFloat("SpriteRotation", &spriteRotation, 0.1f);
-	ImGui::DragFloat4("SpriteColor", &spriteColor.x, 0.1f);
-	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
-	ImGui::Text("object3D");
-	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
-	ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
-	// 1. 現在の数値を Object3d から取得してローカル変数に入れる
-	float envCoef = object3d->GetEnvironmentCoefficient();
-
-	// 2. ImGuiのスライダーでローカル変数の値をいじる
-	if (ImGui::SliderFloat("Environment Rate", &envCoef, 0.0f, 1.0f))
-	{
-		// 3. スライダーが動いて値が変わったら、新しい数値を Object3d にセットする
-		object3d->SetEnvironmentCoefficient(envCoef);
-	}
-
-#endif // USE_IMGUI
-
-	// ImGuiの設定 終
-	imGuiManager->ImGuiEnd();
 }
 
 void GamePlayScene::Draw()
@@ -447,9 +534,14 @@ void GamePlayScene::Draw()
 
 	Object3dCommon::GetInstance()->DrawCommon();
 	object3d->Draw();
-	if (isEnemyAlive)
+	partChangeMessage_->Draw();
+	if (phase_ == GamePhase::Work)
 	{
-		//enemy3d->Draw();
+		DrawWork();
+	}
+	else
+	{
+		DrawCombat();
 	}
 
 	// 4. 描画
@@ -500,4 +592,21 @@ void GamePlayScene::Draw()
 	imGuiManager->ImGuiDraw();
 
 	DirectXCommon::GetInstance()->PostDraw();
+}
+
+void GamePlayScene::DrawWork()
+{
+	// 作業パート専用のオブジェクトやUIはここに追加する
+	workPartMessage_->Draw();
+	workNoPartMessage_->Draw();
+}
+
+void GamePlayScene::DrawCombat()
+{
+	fightPartMessage_->Draw();
+	// 戦闘パート専用のオブジェクトやUIはここに追加する
+	if (isEnemyAlive)
+	{
+		// enemy3d->Draw(); // 敵モデルを表示するときに有効化
+	}
 }

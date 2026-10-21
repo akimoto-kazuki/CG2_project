@@ -36,6 +36,14 @@ public:
 	void Draw() override;
 
 private:
+	enum class GamePhase { Work, Combat };
+	GamePhase phase_ = GamePhase::Work;
+	void UpdateCommon();
+	void UpdateWork();
+	void UpdateCombat();
+	void UpdateCombatIntro();
+	void DrawWork();
+	void DrawCombat();
 
 	// --- カメラ ---
 	Camera* camera = nullptr;
@@ -56,6 +64,11 @@ private:
 	// spaceを押す案内モデル
 	Object3d* spaceNextMessage_ = nullptr;
 	Object3d* spaceStartMessage_ = nullptr;
+	// これは後々消すやつ
+	Object3d* workPartMessage_ = nullptr;
+	Object3d* fightPartMessage_ = nullptr;
+	Object3d* partChangeMessage_ = nullptr;
+	Object3d* workNoPartMessage_ = nullptr;
 	// スカイボックス
 	SkyBox* skyBox = nullptr;
 	// ラインレンダー
@@ -74,7 +87,7 @@ private:
 	Vector3 enemyRotate;
 	bool isEnemyAlive = true;   // 敵の生存フラグ
 
-	bool isCombatIntroActive_ = true;
+	bool isCombatIntroActive_ = false;
 	bool showSurvivalMessage_ = false;
 	int combatIntroStep_ = 0;
 
