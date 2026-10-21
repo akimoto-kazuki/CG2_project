@@ -27,9 +27,9 @@ void PostEffect::Initialize() {
     // クリアカラー（背景色）の設定（資料の既定値）
     D3D12_CLEAR_VALUE clearValue{};
     clearValue.Format = textureDesc.Format;
-    clearValue.Color[0] = 1.0f;  // R
-    clearValue.Color[1] = 0.0f;  // G
-    clearValue.Color[2] = 0.0f;  // B
+    clearValue.Color[0] = 0.1f;  // R
+    clearValue.Color[1] = 0.25f; // G
+    clearValue.Color[2] = 0.5f;  // B
     clearValue.Color[3] = 1.0f;  // A
 
     // リソースの生成

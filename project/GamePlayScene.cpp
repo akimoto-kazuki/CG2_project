@@ -11,9 +11,16 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "DirectXCommon.h"
+#include "WinApp.h"
 
 void GamePlayScene::Initialize()
 {
+	// この実行中の最初の戦闘だけ、2つ目の案内も表示する
+	static bool hasShownFirstCombatIntro = false;
+	showSurvivalMessage_ = !hasShownFirstCombatIntro;
+	hasShownFirstCombatIntro = true;
+	isCombatIntroActive_ = true;
+	combatIntroStep_ = 0;
 
 	auto dxCommon = DirectXCommon::GetInstance();
 
@@ -31,13 +38,13 @@ void GamePlayScene::Initialize()
 	// オブジェクト
 	//	プレイヤー
 	playerPosition = { 0.0f,0.0f,10.0f };
-	playerjRotate = { 0.0f,3.0f,0.0f };
+	playerRotate = { 0.0f,3.0f,0.0f };
 	velocityY = 0.0f;         // Y軸方向の現在の速度
 	gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	jumpPower = 0.3f;         // ジャンプ力（上に飛び上がる初速）
 	//	敵
 	enemyPosition = { 0.0f,0.0f,10.0f };
-	enemyjRotate = { 0.0f,3.0f,0.0f };
+	enemyRotate = { 0.0f,3.0f,0.0f };
 	// isEnemyAlive = true; bool型だから宣言しなくていい わかりやすくするために置いてる
 	//  スプライト
 	spritePosition = { 0.0f,0.0f,0.0f };
@@ -53,6 +60,10 @@ void GamePlayScene::Initialize()
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
 	ModelManager::GetInstance()->LoadModel("walk.gltf");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/fight/fight.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/survival/survival.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/spaceNext/spaceNext.obj");
+	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/spaceStart/spaceStart.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
 
@@ -71,13 +82,49 @@ void GamePlayScene::Initialize()
 	object3d->Initialize();
 	object3d->SetModel("walk.gltf");
 	object3d->SetAnimation("resources", "walk.gltf");
+	// walk.gltfのメッシュは約1.65単位の高さなので、等倍で表示する
+	object3d->SetScale({ 1.0f, 1.0f, 1.0f });
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); 
 	//  敵
 	enemy3d = new Object3d();
 	enemy3d->Initialize();
 	enemy3d->SetModel("walk.gltf");
 	enemy3d->SetAnimation("resources", "walk.gltf");
+	enemy3d->SetScale({ 1.0f, 1.0f, 1.0f });
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
+
+	// -----文字(案内)-----
+	//   ---１ページ目---
+	// Blenderで作成した戦闘開始メッセージ
+	enemyApproachMessage_ = new Object3d();
+	enemyApproachMessage_->Initialize();
+	enemyApproachMessage_->SetModel("GamePlayScene/character/fight/fight.obj");
+	enemyApproachMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	// Blenderモデルは原点を中心に作られているので、まず画面中央へ表示する
+	enemyApproachMessage_->SetTranslate({ 0.0f, 1.0f, 0.0f });
+	enemyApproachMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+	// スペースの案内
+	spaceNextMessage_ = new Object3d();
+	spaceNextMessage_->Initialize();
+	spaceNextMessage_->SetModel("GamePlayScene/character/spaceNext/spaceNext.obj");
+	spaceNextMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	spaceNextMessage_->SetTranslate({ 0.0f, -1.0f, 0.0f });
+	spaceNextMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+	//   ---２ページ目---
+	survivalGoalMessage_ = new Object3d();
+	survivalGoalMessage_->Initialize();
+	survivalGoalMessage_->SetModel("GamePlayScene/character/survival/survival.obj");
+	survivalGoalMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	survivalGoalMessage_->SetTranslate({ 0.0f, 1.0f, 0.0f });
+	survivalGoalMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+	// スペースの案内
+	spaceStartMessage_ = new Object3d();
+	spaceStartMessage_->Initialize();
+	spaceStartMessage_->SetModel("GamePlayScene/character/spaceStart/spaceStart.obj");
+	spaceStartMessage_->SetEnvironmentTextureIndex(skyboxTextureIndex);
+	spaceStartMessage_->SetTranslate({ 0.0f, -1.0f, 0.0f });
+	spaceStartMessage_->SetScale({ 0.5f, 0.5f, 0.5f });
+
 	// SkyBox
 	skyBox = new SkyBox();
 	skyBox->Initialize();
@@ -120,6 +167,17 @@ void GamePlayScene::Initialize()
 		sprite->Initialize(spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
+
+	// 開始演出用の半透明な黒い幕
+	startOverlay_ = new Sprite();
+	startOverlay_->Initialize("resources/white.png");
+	startOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
+	startOverlay_->SetSize({
+		static_cast<float>(WinApp::kClientWidth),
+		static_cast<float>(WinApp::kClientHeight)
+	});
+	startOverlay_->SetColor({ 0.0f, 0.0f, 0.0f, 0.55f });
+	startOverlay_->Update();
 }
 
 void GamePlayScene::Finalize()
@@ -129,8 +187,14 @@ void GamePlayScene::Finalize()
 		delete sprite;
 	}
 	sprites_.clear();
+	delete startOverlay_;
+	startOverlay_ = nullptr;
 	delete object3d;
 	delete enemy3d;
+	delete enemyApproachMessage_;
+	delete survivalGoalMessage_;
+	delete spaceNextMessage_;
+	delete spaceStartMessage_;
 	delete skyBox;
 	delete camera;
 	delete lineRenderer;
@@ -154,6 +218,33 @@ void GamePlayScene::Update()
 
 	// キー入力 始
 	input->Update();
+	if (isCombatIntroActive_)
+	{
+		// 初回はNextで2つ目の案内へ進み、Startで戦闘開始。
+		// 2回目以降は最初からStartを表示して、一度で戦闘開始。
+		if (input->TriggerKey(DIK_SPACE))
+		{
+			if (showSurvivalMessage_ && combatIntroStep_ == 0)
+			{
+				combatIntroStep_ = 1;
+			}
+			else
+			{
+				isCombatIntroActive_ = false;
+			}
+		}
+
+		// 案内中もカメラとプレイヤーの行列を更新してから描画する
+		camera->SetRotate(rotate);
+		camera->SetTranslate(translate);
+		camera->Update();
+		object3d->SetRotate(playerRotate);
+		object3d->SetTranslate(playerPosition);
+		object3d->Update();
+
+		imGuiManager->ImGuiEnd();
+		return;
+	}
 	if (input->PushKey(DIK_0))
 	{
 		OutputDebugStringA("Hit 0\n");
@@ -207,7 +298,7 @@ void GamePlayScene::Update()
 		playerPosition.z += playerMove.z * playerSpeed;
 
 		// 2. 移動方向を向くように回転（敵の処理と同じatan2を使用）
-		playerjRotate.y = std::atan2(playerMove.x, playerMove.z);
+		playerRotate.y = std::atan2(playerMove.x, playerMove.z);
 	}
 
 	if (isJumping)
@@ -235,7 +326,7 @@ void GamePlayScene::Update()
 	if (isEnemyAlive)
 	{
 		enemy3d->Update();
-		enemy3d->SetRotate(enemyjRotate);
+		enemy3d->SetRotate(enemyRotate);
 		enemy3d->SetTranslate(enemyPosition);
 	}
 
@@ -280,7 +371,7 @@ void GamePlayScene::Update()
 
 		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
 		// atan2を使ってXとZの向きから角度を算出します
-		enemyjRotate.y = std::atan2(direction.x, direction.z);
+		enemyRotate.y = std::atan2(direction.x, direction.z);
 	}
 
 	object3d->DrawSkeleton(lineRenderer);
@@ -289,7 +380,7 @@ void GamePlayScene::Update()
 		enemy3d->DrawSkeleton(lineRenderer);
 	}
 
-	object3d->SetRotate(playerjRotate);
+	object3d->SetRotate(playerRotate);
 	object3d->SetTranslate(playerPosition);
 
 	// 3. 更新
@@ -327,7 +418,7 @@ void GamePlayScene::Update()
 	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
 	ImGui::Text("object3D");
 	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
-	ImGui::DragFloat3("ObjectRotation", &playerjRotate.x, 0.1f);
+	ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
 	// 1. 現在の数値を Object3d から取得してローカル変数に入れる
 	float envCoef = object3d->GetEnvironmentCoefficient();
 
@@ -355,7 +446,7 @@ void GamePlayScene::Draw()
 	srvManager->PreDraw();
 
 	Object3dCommon::GetInstance()->DrawCommon();
-	//object3d->Draw();
+	object3d->Draw();
 	if (isEnemyAlive)
 	{
 		//enemy3d->Draw();
@@ -381,6 +472,28 @@ void GamePlayScene::Draw()
 
 	postEffect->Draw();
 	// スプライト描画の設定をしてから、遷移ブロックを重ねる
+	SpriteCommon::GetInstance()->DrawCommon();
+	if (isCombatIntroActive_)
+	{
+		startOverlay_->Draw();
+		Object3dCommon::GetInstance()->DrawCommon();
+		if (combatIntroStep_ == 0)
+		{
+			enemyApproachMessage_->Update();
+			enemyApproachMessage_->Draw();
+			Object3d* spaceMessage = showSurvivalMessage_ ? spaceNextMessage_ : spaceStartMessage_;
+			spaceMessage->Update();
+			spaceMessage->Draw();
+		}
+		else
+		{
+			survivalGoalMessage_->Update();
+			survivalGoalMessage_->Draw();
+			spaceStartMessage_->Update();
+			spaceStartMessage_->Draw();
+		}
+	}
+	// メッセージ描画で3D用PSOに切り替わるため、遷移Spriteの前に戻す
 	SpriteCommon::GetInstance()->DrawCommon();
 	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
