@@ -101,8 +101,18 @@ void SpriteCommon::GraphicsPipelineState()
 
 	// BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
+	D3D12_RENDER_TARGET_BLEND_DESC& spriteBlend = blendDesc.RenderTarget[0];
+	spriteBlend.BlendEnable = TRUE;
+	spriteBlend.LogicOpEnable = FALSE;
+	spriteBlend.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	spriteBlend.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	spriteBlend.BlendOp = D3D12_BLEND_OP_ADD;
+	spriteBlend.SrcBlendAlpha = D3D12_BLEND_ONE;
+	spriteBlend.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+	spriteBlend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	spriteBlend.LogicOp = D3D12_LOGIC_OP_NOOP;
 	// すべての色要素を書き込む
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	spriteBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	// RasiterzerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 

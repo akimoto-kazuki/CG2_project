@@ -73,6 +73,7 @@ private:
 	Vector2 spriteSize;
 	std::array<std::string, 2> spriteFile;
 	std::vector<Sprite*> sprites_;
+	Sprite* startOverlay_ = nullptr;
 
 	// --- パーティクルエミッター ---
 	EulerTransform particleEffectTransform;

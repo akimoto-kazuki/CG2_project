@@ -11,6 +11,7 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "DirectXCommon.h"
+#include "WinApp.h"
 
 void GamePlayScene::Initialize()
 {
@@ -120,6 +121,17 @@ void GamePlayScene::Initialize()
 		sprite->Initialize(spriteFile[i % 2]);
 		sprites_.push_back(sprite);
 	}
+
+	// 開始演出用の半透明な黒い幕
+	startOverlay_ = new Sprite();
+	startOverlay_->Initialize("resources/white.png");
+	startOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
+	startOverlay_->SetSize({
+		static_cast<float>(WinApp::kClientWidth),
+		static_cast<float>(WinApp::kClientHeight)
+	});
+	startOverlay_->SetColor({ 0.0f, 0.0f, 0.0f, 0.8f });
+	startOverlay_->Update();
 }
 
 void GamePlayScene::Finalize()
@@ -129,6 +141,8 @@ void GamePlayScene::Finalize()
 		delete sprite;
 	}
 	sprites_.clear();
+	delete startOverlay_;
+	startOverlay_ = nullptr;
 	delete object3d;
 	delete enemy3d;
 	delete skyBox;
@@ -355,7 +369,7 @@ void GamePlayScene::Draw()
 	srvManager->PreDraw();
 
 	Object3dCommon::GetInstance()->DrawCommon();
-	//object3d->Draw();
+	object3d->Draw();
 	if (isEnemyAlive)
 	{
 		//enemy3d->Draw();
@@ -382,6 +396,7 @@ void GamePlayScene::Draw()
 	postEffect->Draw();
 	// スプライト描画の設定をしてから、遷移ブロックを重ねる
 	SpriteCommon::GetInstance()->DrawCommon();
+	startOverlay_->Draw();
 	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
 	imGuiManager->ImGuiDraw();
