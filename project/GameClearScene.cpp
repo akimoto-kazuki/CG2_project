@@ -154,7 +154,7 @@ void GameClearScene::Update()
 	// Spaceキーを押したら
 	if (input->TriggerKey(DIK_SPACE))
 	{
-		sceneManager_->StartTransition(new GamePlayScene());
+		sceneManager_->StartTransition(SceneType::GamePlay);
 	}
 
 	// ImGuiの設定 始

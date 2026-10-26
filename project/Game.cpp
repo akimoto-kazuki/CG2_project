@@ -34,7 +34,7 @@ void Game::Initialize()
 	// シーンの生成と初期化
 	sceneManager_ = new SceneManager();
 	//scene_ = new GamePlayScene();
-	sceneManager_->SetInitialScene(new TitleScene());
+	sceneManager_->SetInitialScene(SceneType::Title);
 }
 
 void Game::Finalize()

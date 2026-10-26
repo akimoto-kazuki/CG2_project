@@ -192,6 +192,9 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>Engine\ソース ファイル\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="SceneFactory.cpp">
+      <Filter>Engine\ソース ファイル\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Game.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
@@ -347,6 +350,9 @@
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="SceneManager.h">
+      <Filter>Engine\ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneFactory.h">
       <Filter>Engine\ヘッダー ファイル\Scene</Filter>
     </ClInclude>
     <ClInclude Include="TransitionEffect.h">
