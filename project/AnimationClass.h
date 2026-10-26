@@ -62,9 +62,9 @@ public:
 
 	static Animation LoadAnimationFile(const std::string& directoryPath, const std::string& filename);
 
-	static Vector3 CalculateValueVector3(const std::vector<KeyframeVector3>& keyframes, float time);
+	static Vector3 SampleVector3Keyframes(const std::vector<KeyframeVector3>& keyframes, float time);
 
-	static Quaternion CalculateValueQuaternion(const std::vector<KeyframeQuaternion>& keyframes, float time);
+	static Quaternion SampleQuaternionKeyframes(const std::vector<KeyframeQuaternion>& keyframes, float time);
 
 	static Skeleton CreateSkeleton(const Model::Node& rootNode);
 

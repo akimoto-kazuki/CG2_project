@@ -61,12 +61,12 @@ POINT Input::GetMouseDelta() const
 	return { mousePosition_.x - mousePositionPre_.x, mousePosition_.y - mousePositionPre_.y };
 }
 
-bool Input::PushMouseButton(int virtualKey) const
+bool Input::IsMouseButtonDown(int virtualKey) const
 {
 	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 }
 
-bool Input::PushKey(BYTE keyNumber)
+bool Input::IsKeyDown(BYTE keyNumber) const
 {
 	if (key[keyNumber])
 	{
@@ -75,7 +75,7 @@ bool Input::PushKey(BYTE keyNumber)
 	return false;
 }
 
-bool Input::TriggerKey(BYTE keyNumber)
+bool Input::WasKeyPressed(BYTE keyNumber) const
 {
 	if (!keyPre[keyNumber] && key[keyNumber])
 	{

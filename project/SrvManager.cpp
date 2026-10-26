@@ -85,7 +85,7 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 	);
 }
 
-void SrvManager::CreateSRVforCubeBox(uint32_t srvIndex, ID3D12Resource* pResource, const DirectX::TexMetadata& metadata)
+void SrvManager::CreateSRVForCubeTexture(uint32_t srvIndex, ID3D12Resource* pResource, const DirectX::TexMetadata& metadata)
 {
 	// metaDataを基にSRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};

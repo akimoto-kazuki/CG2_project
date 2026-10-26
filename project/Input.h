@@ -31,23 +31,23 @@ public:
 	void Update();
 
 	/// <summary>
-	/// キーの押下をチェック
+	/// 現在キーが押されているかをチェック
 	/// </summary>
 	/// <param name="keyNumber">キー番号( DIK_0 等)</param>
-	/// <returns>押されているか</returns>
+	/// <returns>押されている間は true</returns>
 
-	bool PushKey(BYTE keyNumber);
+	bool IsKeyDown(BYTE keyNumber) const;
 
 	/// <summary>
-	/// キーのトリガーをチェック
+	/// 前フレームでは離されていて、今フレームで押されたかをチェック
 	/// </summary>
 	/// <param name="keyNumber">キー番号( DIK_0 等)</param>
-	/// <returns>トリガーか</returns>
-	bool TriggerKey(BYTE keyNumber);
+	/// <returns>押された最初のフレームだけ true</returns>
+	bool WasKeyPressed(BYTE keyNumber) const;
 
 	// マウス操作
 	POINT GetMouseDelta() const;
-	bool PushMouseButton(int virtualKey) const;
+	bool IsMouseButtonDown(int virtualKey) const;
 
 private:
 

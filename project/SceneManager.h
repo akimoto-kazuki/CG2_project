@@ -2,18 +2,19 @@
 
 #include "BaseScene.h"
 #include "TransitionEffect.h"
+#include "SceneFactory.h"
 
 class SceneManager
 {
 public:
 
-	void SetInitialScene(BaseScene* initialScene);
+	void SetInitialScene(SceneType initialSceneType);
 
 	// 演出を開始して、次のシーンを予約する
-	void StartTransition(BaseScene* nextScene);
+	void StartTransition(SceneType nextSceneType);
 
 	// 次シーン予約
-	void SetNextScene(BaseScene* nextScene) { nextScene_ = nextScene; }
+	void SetNextScene(SceneType nextSceneType);
 
 	void Update();
 
@@ -21,6 +22,9 @@ public:
 
 	// 各シーンの描画中に呼び、画面最前面へブロックを描く
 	void DrawTransitionEffect();
+
+	// 画面遷移エフェクトが終わったか
+	bool IsTransitionFinished() const { return transitionEffect_.IsFinished(); }
 
 	~SceneManager();
 

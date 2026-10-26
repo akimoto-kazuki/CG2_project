@@ -70,9 +70,9 @@ public:
 	void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; }
 	float GetEnvironmentCoefficient() const { return environmentCoefficient_; }
 
-	const Vector3& GetScale()const { transform.scale; }
-	const Vector3& GetRotate()const { transform.rotate; }
-	const Vector3& GetTranslate()const { transform.translate; }
+	const Vector3& GetScale() const { return transform.scale; }
+	const Vector3& GetRotate() const { return transform.rotate; }
+	const Vector3& GetTranslate() const { return transform.translate; }
 
 	// ★追加：アニメーションを読み込んでセットする関数
 	void SetAnimation(const std::string& directoryPath, const std::string& filename);

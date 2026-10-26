@@ -88,7 +88,7 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreatRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device>device,uint32_t width,uint32_t height, DXGI_FORMAT format, const MyMath::Vector4& clearColor);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const MyMath::Vector4& clearColor);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList);
@@ -128,7 +128,7 @@ public:
 	DXGI_FORMAT GetDepthBufferFormat() const { return DXGI_FORMAT_D24_UNORM_S8_UINT; } // StencilInitializeで使用しているフォーマット
 	uint32_t GetBackBufferCount() const { return static_cast<uint32_t>(swapChainResources.size()); }
 
-	size_t GetSwapChainResourcesNum()const { return swapChainResources.size(); }
+	size_t GetSwapChainResourceCount() const { return swapChainResources.size(); }
 
 private:
 
