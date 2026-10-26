@@ -45,6 +45,10 @@ public:
 	/// <returns>トリガーか</returns>
 	bool TriggerKey(BYTE keyNumber);
 
+	// マウス操作
+	POINT GetMouseDelta() const;
+	bool PushMouseButton(int virtualKey) const;
+
 private:
 
 	// ★ コンストラクタを private へ移動
@@ -58,6 +62,9 @@ private:
 	BYTE key[256] = {};
 
 	BYTE keyPre[256] = {};
+	POINT mousePosition_{};
+	POINT mousePositionPre_{};
+	bool isMousePositionInitialized_ = false;
 
 	// ポインタ
 	// WindowsAPI

@@ -33,6 +33,12 @@ void GamePlayScene::Initialize()
 	// カメラの数値設定
 	rotate = { 0.0f,0.0f,0.0f };
 	translate = { 0.0f,0.0f,-10.0f };
+#if defined(_DEBUG)
+	cameraOrbitTarget_ = { 0.0f, 0.0f, 10.0f };
+	cameraOrbitYaw_ = 0.0f;
+	cameraOrbitPitch_ = 0.0f;
+	cameraOrbitDistance_ = 20.0f;
+#endif
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
 	Object3dCommon::GetInstance()->SetDefaultCamera(camera);
@@ -41,11 +47,17 @@ void GamePlayScene::Initialize()
 	// --- 描画オブジェクトパラメータ設定 ---
 	// オブジェクト
 	//	プレイヤー
-	playerPosition = { 0.0f,0.0f,10.0f };
-	playerRotate = { 0.0f,3.0f,0.0f };
+	playerPosition = { 0.0f,TileMap::kTileSize,10.0f };
+	playerIsInsideMap_ = tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_);
+	playerRotate = { 0.0f,0.0f,0.0f };
 	velocityY = 0.0f;         // Y軸方向の現在の速度
 	gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	jumpPower = 0.3f;         // ジャンプ力（上に飛び上がる初速）
+	currentTool_ = TileMap::ToolType::Shovel;
+	dirtCount_ = 0;
+	stoneCount_ = 0;
+	oreCount_ = 0;
+	woodCount_ = 0;
 	//	敵
 	enemyPosition = { 0.0f,0.0f,10.0f };
 	enemyRotate = { 0.0f,3.0f,0.0f };
@@ -72,8 +84,12 @@ void GamePlayScene::Initialize()
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/fightPart.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/partchange.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/part/workNostart.obj");
+	ModelManager::GetInstance()->LoadModel("block/block.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skybox.dds");
 	uint32_t skyboxTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("resources/skybox.dds");
+
+	// 作業・戦闘の両パートで共有するマップを初期化
+	tileMap_.Initialize(skyboxTextureIndex);
 
 	// --- エフェクト・レンダー関連初期化 ---
 	// エフェクト
@@ -88,10 +104,10 @@ void GamePlayScene::Initialize()
 	//  プレイヤー
 	object3d = new Object3d();
 	object3d->Initialize();
-	object3d->SetModel("walk.gltf");
-	object3d->SetAnimation("resources", "walk.gltf");
-	// walk.gltfのメッシュは約1.65単位の高さなので、等倍で表示する
-	object3d->SetScale({ 1.0f, 1.0f, 1.0f });
+	// アニメーション完成まで、当たり判定サイズが見えるブロックを仮モデルにする
+	object3d->SetModel("block/block.obj");
+	object3d->SetScale({ kPlayerCollisionRadius * 2.0f, kPlayerHeight, kPlayerCollisionRadius * 2.0f });
+	object3d->SetTranslate({ playerPosition.x, playerPosition.y + kPlayerHeight * 0.5f, playerPosition.z });
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex); 
 	//  敵
 	enemy3d = new Object3d();
@@ -175,6 +191,7 @@ void GamePlayScene::Initialize()
 
 void GamePlayScene::Finalize()
 {
+	tileMap_.Finalize();
 	for (Sprite* sprite : sprites_)
 	{
 		delete sprite;
@@ -207,6 +224,9 @@ void GamePlayScene::Update()
 
 	// キー入力 始
 	input->Update();
+#if defined(_DEBUG)
+	UpdateMouseCamera();
+#endif
 	if (input->TriggerKey(DIK_RETURN) && !isCombatIntroActive_)
 	{
 		if (phase_ == GamePhase::Work)
@@ -230,8 +250,9 @@ void GamePlayScene::Update()
 		camera->SetRotate(rotate);
 		camera->SetTranslate(translate);
 		camera->Update();
+		tileMap_.Update();
 		object3d->SetRotate(playerRotate);
-		object3d->SetTranslate(playerPosition);
+		object3d->SetTranslate({ playerPosition.x, playerPosition.y + kPlayerHeight * 0.5f, playerPosition.z });
 		object3d->Update();
 		imGuiManager->ImGuiEnd();
 		return;
@@ -251,6 +272,12 @@ void GamePlayScene::Update()
 #ifdef USE_IMGUI
 	ImGui::ShowDemoWindow();
 	ImGui::Text("Phase: %s (Enterで切り替え)", phase_ == GamePhase::Work ? "Work" : "Combat");
+	ImGui::Text("Player Tile: (%d, %d) %s", playerTileX_, playerTileY_, playerIsInsideMap_ ? "Inside" : "Outside");
+	const char* toolName = "Shovel";
+	if (currentTool_ == TileMap::ToolType::Pickaxe) toolName = "Pickaxe";
+	if (currentTool_ == TileMap::ToolType::Axe) toolName = "Axe";
+	ImGui::Text("Tool: %s (Tabで切り替え)", toolName);
+	ImGui::Text("Materials: Dirt %d / Stone %d / Ore %d / Wood %d", dirtCount_, stoneCount_, oreCount_, woodCount_);
 	ImGui::Text("Camera");
 	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
 	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
@@ -286,9 +313,112 @@ void GamePlayScene::UpdateCombatIntro()
 	}
 }
 
+#if defined(_DEBUG)
+void GamePlayScene::UpdateMouseCamera()
+{
+	auto input = Input::GetInstance();
+	if (input->PushMouseButton(VK_RBUTTON))
+	{
+		const POINT mouseDelta = input->GetMouseDelta();
+		constexpr float kMouseSensitivity = 0.005f;
+		cameraOrbitYaw_ += static_cast<float>(mouseDelta.x) * kMouseSensitivity;
+		cameraOrbitPitch_ += static_cast<float>(mouseDelta.y) * kMouseSensitivity;
+
+		// カメラが真上・真下を向いて操作が反転しないように制限する
+		constexpr float kPitchLimit = 1.35f;
+		if (cameraOrbitPitch_ > kPitchLimit) cameraOrbitPitch_ = kPitchLimit;
+		if (cameraOrbitPitch_ < -kPitchLimit) cameraOrbitPitch_ = -kPitchLimit;
+	}
+
+	const float cosPitch = std::cos(cameraOrbitPitch_);
+	translate = {
+		cameraOrbitTarget_.x + std::sin(cameraOrbitYaw_) * cosPitch * cameraOrbitDistance_,
+		cameraOrbitTarget_.y + std::sin(cameraOrbitPitch_) * cameraOrbitDistance_,
+		cameraOrbitTarget_.z - std::cos(cameraOrbitYaw_) * cosPitch * cameraOrbitDistance_
+	};
+	rotate = { cameraOrbitPitch_, -cameraOrbitYaw_, 0.0f };
+}
+#endif
+
 void GamePlayScene::UpdateWork()
 {
-	// 作業パート固有の処理をここに追加
+	auto input = Input::GetInstance();
+	if (input->TriggerKey(DIK_TAB))
+	{
+		switch (currentTool_)
+		{
+		case TileMap::ToolType::Shovel:
+			currentTool_ = TileMap::ToolType::Pickaxe;
+			break;
+		case TileMap::ToolType::Pickaxe:
+			currentTool_ = TileMap::ToolType::Axe;
+			break;
+		case TileMap::ToolType::Axe:
+			currentTool_ = TileMap::ToolType::Shovel;
+			break;
+		}
+	}
+
+	if (input->TriggerKey(DIK_F))
+	{
+		TryMineFront();
+	}
+	if (input->TriggerKey(DIK_Q))
+	{
+		// 足元の床を採掘する（床を壊すと下のY=0まで落ちる）
+		TryMineBelow();
+	}
+}
+
+void GamePlayScene::TryMineFront()
+{
+	if (!tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_))
+	{
+		return;
+	}
+
+	const int directionX = static_cast<int>(std::round(std::sin(playerRotate.y)));
+	const int directionY = static_cast<int>(std::round(std::cos(playerRotate.y)));
+	const int targetLayer = static_cast<int>(playerPosition.y / TileMap::kTileSize);
+	TryMineTile(playerTileX_ + directionX, playerTileY_ + directionY, targetLayer);
+}
+
+void GamePlayScene::TryMineBelow()
+{
+	if (!tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_))
+	{
+		return;
+	}
+
+	const int targetLayer = static_cast<int>(std::ceil(playerPosition.y / TileMap::kTileSize)) - 1;
+	TryMineTile(playerTileX_, playerTileY_, targetLayer);
+}
+
+void GamePlayScene::TryMineTile(int tileX, int tileY, int layer)
+{
+	TileMap::TileType minedType = TileMap::TileType::Air;
+	if (!tileMap_.MineBlock(tileX, tileY, layer, currentTool_, minedType))
+	{
+		return;
+	}
+
+	switch (minedType)
+	{
+	case TileMap::TileType::Dirt:
+		++dirtCount_;
+		break;
+	case TileMap::TileType::Stone:
+		++stoneCount_;
+		break;
+	case TileMap::TileType::Ore:
+		++oreCount_;
+		break;
+	case TileMap::TileType::Wood:
+		++woodCount_;
+		break;
+	default:
+		break;
+	}
 }
 
 void GamePlayScene::UpdateCombat()
@@ -320,6 +450,14 @@ void GamePlayScene::UpdateCommon()
 	{
 		playerMove.x -= 0.1f;
 	}
+	if (input->PushKey(DIK_W))
+	{
+		playerMove.z += 0.1f;
+	}
+	if (input->PushKey(DIK_S))
+	{
+		playerMove.z -= 0.1f;
+	}
 
 	if (input->TriggerKey(DIK_SPACE) && !isJumping)
 	{
@@ -336,33 +474,61 @@ void GamePlayScene::UpdateCommon()
 		playerMove.x /= length;
 		playerMove.z /= length;
 
-		// 1. 移動処理
-		playerPosition.x += playerMove.x * playerSpeed;
-		playerPosition.z += playerMove.z * playerSpeed;
+		// X方向とZ方向を別々に判定し、壁に沿って移動できるようにする
+		Vector3 nextPosition = playerPosition;
+		nextPosition.x += playerMove.x * playerSpeed;
+		if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
+		{
+			playerPosition.x = nextPosition.x;
+		}
+
+		nextPosition = playerPosition;
+		nextPosition.z += playerMove.z * playerSpeed;
+		if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
+		{
+			playerPosition.z = nextPosition.z;
+		}
 
 		// 2. 移動方向を向くように回転（敵の処理と同じatan2を使用）
 		playerRotate.y = std::atan2(playerMove.x, playerMove.z);
 	}
+	playerIsInsideMap_ = tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_);
 
-	if (isJumping)
+	if (isJumping || playerPosition.y > 0.0f)
 	{
-		// 1. 座標に現在の速度を足す
-		playerPosition.y += velocityY;
-
-		// 2. 速度に重力をかけて減速させる（下方向の力を加える）
+		const float previousFeetY = playerPosition.y;
 		velocityY += gravity;
+		const float nextFeetY = playerPosition.y + velocityY;
+		float landingY = 0.0f;
 
-		// 3. 着地判定（とりあえず Y=0.0f を地面の高さとします）
-		if (playerPosition.y <= 0.0f)
+		if (velocityY <= 0.0f && tileMap_.FindLandingSurface(
+			playerPosition, kPlayerCollisionRadius, previousFeetY, nextFeetY, landingY))
 		{
-			playerPosition.y = 0.0f; // 地面にめり込まないように補正
-			velocityY = 0.0f;     // 速度をリセット
-			isJumping = false;    // ジャンプ状態を解除
+			playerPosition.y = landingY;
+			velocityY = 0.0f;
+			isJumping = false;
+		}
+		else
+		{
+			Vector3 nextPosition = playerPosition;
+			nextPosition.y = nextFeetY;
+			if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
+			{
+				playerPosition.y = nextFeetY;
+			}
+			else
+			{
+				// 上にブロックがある場合は頭が当たったところで上昇を止める
+				velocityY = 0.0f;
+			}
+			isJumping = true;
 		}
 	}
 
 	float pos = 0.0f;
 	camera->Update();
+	object3d->SetRotate(playerRotate);
+	object3d->SetTranslate({ playerPosition.x, playerPosition.y + kPlayerHeight * 0.5f, playerPosition.z });
 	object3d->Update();
 	if (isEnemyAlive)
 	{
@@ -381,7 +547,7 @@ void GamePlayScene::UpdateCommon()
 	// 2. プレイヤーと敵の距離を計算する
 	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
 
-	if (input->TriggerKey(DIK_F))
+	if (phase_ == GamePhase::Combat && input->TriggerKey(DIK_F))
 	{
 		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
 		if (distance < 2.0f && isEnemyAlive)
@@ -420,9 +586,6 @@ void GamePlayScene::UpdateCommon()
 		enemy3d->DrawSkeleton(lineRenderer);
 	}
 
-	object3d->SetRotate(playerRotate);
-	object3d->SetTranslate(playerPosition);
-
 	// 3. 更新
 	skyBox->Update();
 
@@ -442,6 +605,8 @@ void GamePlayScene::UpdateCommon()
 
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
+	camera->Update();
+	tileMap_.Update();
 }
 
 void GamePlayScene::Draw()
@@ -455,6 +620,7 @@ void GamePlayScene::Draw()
 	srvManager->PreDraw();
 
 	Object3dCommon::GetInstance()->DrawCommon();
+	tileMap_.Draw();
 	object3d->Draw();
 	if (phase_ == GamePhase::Work)
 	{

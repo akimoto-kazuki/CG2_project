@@ -39,6 +39,31 @@ void Input::Update()
 	result = keyboard->Acquire();
 
 	result = keyboard->GetDeviceState(sizeof(key), key);
+
+	POINT screenPosition{};
+	if (GetCursorPos(&screenPosition) && ScreenToClient(winApp->GetHwnd(), &screenPosition))
+	{
+		if (!isMousePositionInitialized_)
+		{
+			mousePositionPre_ = screenPosition;
+			isMousePositionInitialized_ = true;
+		}
+		else
+		{
+			mousePositionPre_ = mousePosition_;
+		}
+		mousePosition_ = screenPosition;
+	}
+}
+
+POINT Input::GetMouseDelta() const
+{
+	return { mousePosition_.x - mousePositionPre_.x, mousePosition_.y - mousePositionPre_.y };
+}
+
+bool Input::PushMouseButton(int virtualKey) const
+{
+	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 }
 
 bool Input::PushKey(BYTE keyNumber)

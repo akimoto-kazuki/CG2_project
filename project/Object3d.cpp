@@ -45,8 +45,12 @@ void Object3d::Initialize()
 
 void Object3d::Update()
 {
-	animationTime_ += 1.0f / 60.0f;
-	animationTime_ = std::fmod(animationTime_, animation_.duration);
+	// アニメーション未設定の静的モデルではdurationが0なので、時間を進めない
+	if (animation_.duration > 0.0f)
+	{
+		animationTime_ += 1.0f / 60.0f;
+		animationTime_ = std::fmod(animationTime_, animation_.duration);
+	}
 
 	AnimationClass::ApplyAnimation(skeleton_, animation_, animationTime_);
 	AnimationClass::Update(skeleton_);
@@ -76,6 +80,7 @@ void Object3d::Update()
 
 	transformationMatrixData->WVP = Multiply(localMatrix, worldViewProjectionMatrix);
 	transformationMatrixData->World = Multiply(localMatrix, worldMatrix);
+	transformationMatrixData->color = objectColor_;
 }
 
 void Object3d::Draw()

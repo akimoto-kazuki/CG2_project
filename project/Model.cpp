@@ -196,7 +196,21 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		{
 			aiString textureFilePath;
 			material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
-			modelData.material.textureFilePath = directoryPath + "/" + textureFilePath.C_Str();
+
+			// MTLの画像パスはモデルと同じフォルダ基準の場合がある。
+			// まず従来のresources基準を試し、見つからなければモデルのフォルダ基準で解決する。
+			const std::filesystem::path texturePath(textureFilePath.C_Str());
+			const std::filesystem::path modelDirectory =
+				(std::filesystem::path(directoryPath) / std::filesystem::path(filename)).parent_path();
+			std::filesystem::path resolvedTexturePath =
+				texturePath.is_absolute() ? texturePath : std::filesystem::path(directoryPath) / texturePath;
+
+			if (!std::filesystem::exists(resolvedTexturePath) && !texturePath.is_absolute())
+			{
+				resolvedTexturePath = modelDirectory / texturePath;
+			}
+
+			modelData.material.textureFilePath = resolvedTexturePath.lexically_normal().generic_string();
 		}
 	}
 

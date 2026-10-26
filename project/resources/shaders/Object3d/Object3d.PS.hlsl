@@ -90,5 +90,6 @@ PixelShaderOutput main(VertexShaderOutput input)
     {
         output.color = gMaterial.color * textureColor;
     }
+    output.color *= input.color;
     return output;
 }
