@@ -40,7 +40,7 @@ public:
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(const std::string& filePath);
 
-	const DirectX::TexMetadata& GetMetaData(const std::string& filePath);
+	const DirectX::TexMetadata& GetMetadata(const std::string& filePath);
 
 private:
 	static TextureManager* instance;

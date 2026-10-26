@@ -61,16 +61,16 @@ public:
 	const MyMath::Vector2& GetAnchorPoint()const { return anchorPoint; }
 	void SetAnchorPoint(const MyMath::Vector2& anchorPoint) { this->anchorPoint = anchorPoint; }
 
-	bool GetIsFlipX()const { return isFlipX_; }
-	void SetIsFlipX(const bool isFlipX) { this->isFlipX_ = isFlipX; }
+	bool IsFlippedX() const { return isFlipX_; }
+	void SetFlippedX(bool isFlipped) { isFlipX_ = isFlipped; }
 
-	bool GetIsFlipY()const { return isFlipY_; }
-	void SetIsFlipY(const bool isFlipY) { this->isFlipY_ = isFlipY; }
+	bool IsFlippedY() const { return isFlipY_; }
+	void SetFlippedY(bool isFlipped) { isFlipY_ = isFlipped; }
 
-	const MyMath::Vector2& GetTextureLeftTop()const { return textureLeftTop; }
-	void SetTextureLeftTop(const MyMath::Vector2& textureLeftTop) { this->textureLeftTop = textureLeftTop; }
-	const MyMath::Vector2& GetTextureSize()const { return textureSize; }
-	void SetTextureSize(const MyMath::Vector2& textureSize) { this->textureSize = textureSize; }
+	const MyMath::Vector2& GetTextureOrigin() const { return textureLeftTop; }
+	void SetTextureOrigin(const MyMath::Vector2& origin) { textureLeftTop = origin; }
+	const MyMath::Vector2& GetTextureRegionSize() const { return textureSize; }
+	void SetTextureRegionSize(const MyMath::Vector2& size) { textureSize = size; }
 
 private:
 

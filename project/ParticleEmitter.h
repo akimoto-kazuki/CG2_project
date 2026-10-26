@@ -15,17 +15,16 @@ public:
 
 	// 毎フレームの更新処理（時間経過でパーティクルを自動発生させる）
 	// 通常エフェクト
-	void UpdateEffect();
-	void InputEffect();
+	void UpdateTimedEffect();
+	void EmitEffectNow();
 	// ヒットエフェクト
-	void UpdateHitEffect();
-	void InputHitEffect();
+	void UpdateTimedHitEffect();
+	void EmitHitEffectNow();
 	// 火花のようなエフェクト
-	void UpdateSprakEffect();
-	void InputSprakEffect();
+	void UpdateTimedSparkEffect();
+	void EmitSparkEffectNow();
 	// cylinder
-	void UpdateCylinderEffect();
-	void InputCylinderEffect();
+	void EmitCylinderEffectNow();
 
 private:
 	std::string groupName_;     // 発生させるパーティクルグループの名前

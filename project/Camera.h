@@ -29,7 +29,7 @@ public:
 	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
 	void SetFov(const float setFov) { fov = setFov; }
 	void SetAspectRatio(const float setAspectRatio) { aspectRatio = setAspectRatio; }
-	void SerNearClip(const float setNeatClip) { nearClip = setNeatClip; }
+	void SetNearClip(const float nearClipValue) { nearClip = nearClipValue; }
 	void SetFarClip(const float setFarClip) { farClip = setFarClip; }
 
 	// Get

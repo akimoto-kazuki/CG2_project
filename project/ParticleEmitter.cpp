@@ -10,7 +10,7 @@ ParticleEmitter::ParticleEmitter(const std::string& groupName, const EulerTransf
 }
 
 // 毎フレームの更新処理
-void ParticleEmitter::UpdateEffect()
+void ParticleEmitter::UpdateTimedEffect()
 {
 	// 本来はゲームループの正確な1フレームの経過時間（DeltaTime）を使用しますが、ここでは仮に 1/60秒 とします
 	const float kDeltaTime = 1.0f / 60.0f;
@@ -29,13 +29,13 @@ void ParticleEmitter::UpdateEffect()
 	}
 }
 
-void ParticleEmitter::InputEffect()
+void ParticleEmitter::EmitEffectNow()
 {
 	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
 	ParticleManager::GetInstance()->EmitEffect(groupName_, transform_, count_);
 }
 
-void ParticleEmitter::UpdateHitEffect()
+void ParticleEmitter::UpdateTimedHitEffect()
 {
 	// 本来はゲームループの正確な1フレームの経過時間（DeltaTime）を使用しますが、ここでは仮に 1/60秒 とします
 	const float kDeltaTime = 1.0f / 60.0f;
@@ -54,14 +54,14 @@ void ParticleEmitter::UpdateHitEffect()
 	}
 }
 
-void ParticleEmitter::InputHitEffect()
+void ParticleEmitter::EmitHitEffectNow()
 {
 	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
 	ParticleManager::GetInstance()->EmitHitEffect(groupName_, transform_, count_);
 
 }
 
-void ParticleEmitter::UpdateSprakEffect()
+void ParticleEmitter::UpdateTimedSparkEffect()
 {
 	// 本来はゲームループの正確な1フレームの経過時間（DeltaTime）を使用しますが、ここでは仮に 1/60秒 とします
 	const float kDeltaTime = 1.0f / 60.0f;
@@ -80,19 +80,13 @@ void ParticleEmitter::UpdateSprakEffect()
 	}
 }
 
-void ParticleEmitter::InputSprakEffect()
+void ParticleEmitter::EmitSparkEffectNow()
 {
 	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
 	ParticleManager::GetInstance()->EmitSparkEffect(groupName_, transform_, count_);
 }
 
-void ParticleEmitter::UpdateCylinderEffect()
-{
-	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
-	ParticleManager::GetInstance()->EmitCylinderEffect(groupName_, transform_, count_);	
-}
-
-void ParticleEmitter::InputCylinderEffect()
+void ParticleEmitter::EmitCylinderEffectNow()
 {
 	// シングルトン化した ParticleManager のインスタンスを取得して Emit（発生）を実行
 	ParticleManager::GetInstance()->EmitCylinderEffect(groupName_, transform_, count_);

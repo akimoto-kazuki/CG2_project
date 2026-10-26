@@ -178,7 +178,7 @@ Vector3 TileMap::TileToWorld(int tileX, int tileY, float worldY) const
 
 bool TileMap::CanOccupyWorldPosition(const Vector3& worldPosition, float radius, float height) const
 {
-	// プレイヤーのXZ平面上の四隅と、Y方向の高さがブロックと重なるか調べる
+	// プレイヤーのXZ平面上の四隅を調べ、どれかがブロックと重なれば通行不可にする
     const float offsets[] = { -radius, radius };
     for (float offsetX : offsets)
     {
@@ -222,6 +222,7 @@ bool TileMap::CanOccupyWorldPosition(const Vector3& worldPosition, float radius,
 bool TileMap::FindLandingSurface(const Vector3& worldPosition, float radius,
 	float previousFeetY, float nextFeetY, float& landingY) const
 {
+	// 足元の範囲にある床のうち、今回の落下中に通過した一番高い面を着地点にする
 	bool foundSurface = false;
 	landingY = 0.0f;
 
@@ -277,6 +278,7 @@ bool TileMap::MineBlock(int x, int y, int layer, ToolType tool, TileType& minedT
 
 	const int layerIndex = ToLayerIndex(layer);
 	const TileType targetType = tiles_[layerIndex][y][x];
+	// 素材ごとに対応する道具を限定する
 	const bool canMine =
 		(targetType == TileType::Dirt && tool == ToolType::Shovel) ||
 		((targetType == TileType::Stone || targetType == TileType::Ore) && tool == ToolType::Pickaxe) ||

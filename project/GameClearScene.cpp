@@ -152,7 +152,7 @@ void GameClearScene::Update()
 	auto imGuiManager = ImGuiManager::GetInstance();
 
 	// Spaceキーを押したら
-	if (input->TriggerKey(DIK_SPACE))
+	if (input->WasKeyPressed(DIK_SPACE))
 	{
 		sceneManager_->StartTransition(SceneType::GamePlay);
 	}
@@ -162,7 +162,7 @@ void GameClearScene::Update()
 
 	// キー入力 始
 	input->Update();
-	if (input->PushKey(DIK_0))
+	if (input->IsKeyDown(DIK_0))
 	{
 		OutputDebugStringA("Hit 0\n");
 	}

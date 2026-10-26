@@ -41,7 +41,7 @@ private:
 	GamePhase phase_ = GamePhase::Work;
 	// 作業・戦闘の両パートで共有するマップ
 	TileMap tileMap_;
-	void UpdateCommon();
+	void UpdateSharedGameplay();
 	void UpdateWork();
 	void UpdateCombat();
 	void UpdateCombatIntro();

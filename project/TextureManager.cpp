@@ -74,7 +74,7 @@ void TextureManager::LoadTexture(const std::string& filePath)
 
 	if (textureData.metadata.IsCubemap()) {
 		// キューブマップ用
-		srvManager->CreateSRVforCubeBox(textureData.srvIndex, textureData.resource.Get(), textureData.metadata);
+		srvManager->CreateSRVForCubeTexture(textureData.srvIndex, textureData.resource.Get(), textureData.metadata);
 	}
 	else {
 		// 通常の2Dテクスチャ用
@@ -116,7 +116,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(const std::string& f
 	return textureData.srvHandleGPU;
 }
 
-const DirectX::TexMetadata& TextureManager::GetMetaData(const std::string& filePath)
+const DirectX::TexMetadata& TextureManager::GetMetadata(const std::string& filePath)
 {
 	// TODO: return ステートメントをここに挿入します
 	assert(textureDatas.contains(filePath));

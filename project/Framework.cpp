@@ -87,7 +87,7 @@ void Framework::Update()
 {
 	if (winApp->ProcessMessage())
 	{
-		endRequst_ = true;
+		exitRequested_ = true;
 	}
 	if (scene_)
 	{
@@ -113,7 +113,7 @@ void Framework::Run()
 		// 毎フレーム更新
 		Update();
 		// 終了リクエストが来たら抜ける
-		if (IsEndRequst())
+		if (IsExitRequested())
 		{
 			break;
 		}

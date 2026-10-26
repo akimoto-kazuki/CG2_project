@@ -55,7 +55,7 @@ public:
 	virtual void Draw();
 
 	// 終了フラグのチェック
-	virtual bool IsEndRequst() { return endRequst_; }
+	virtual bool IsExitRequested() const { return exitRequested_; }
 
 	virtual ~Framework() = default;
 
@@ -88,6 +88,6 @@ private:
 
 	HANDLE fenceEvent;
 
-	bool endRequst_ = false;
+	bool exitRequested_ = false;
 };
 

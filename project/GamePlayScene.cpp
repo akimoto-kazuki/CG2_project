@@ -226,7 +226,7 @@ void GamePlayScene::Update()
 	input->Update();
 #if defined(_DEBUG)
 	// ゲームオーバー画面確認用の仮入力（F2）
-	if (input->TriggerKey(DIK_F2))
+	if (input->WasKeyPressed(DIK_F2))
 	{
 		sceneManager_->StartTransition(SceneType::GameOver);
 	}
@@ -234,7 +234,7 @@ void GamePlayScene::Update()
 #if defined(_DEBUG)
 	UpdateMouseCamera();
 #endif
-	if (input->TriggerKey(DIK_RETURN) && !isCombatIntroActive_)
+	if (input->WasKeyPressed(DIK_RETURN) && !isCombatIntroActive_)
 	{
 		if (phase_ == GamePhase::Work)
 		{
@@ -265,7 +265,9 @@ void GamePlayScene::Update()
 		return;
 	}
 
-	UpdateCommon();
+	// 移動や重力など、作業・戦闘の両方に共通する処理を先に進める
+	UpdateSharedGameplay();
+	// パート固有の入力とルールは、現在のフェーズに応じて分けて処理する
 	if (phase_ == GamePhase::Work)
 	{
 		UpdateWork();
@@ -307,7 +309,7 @@ void GamePlayScene::Update()
 
 void GamePlayScene::UpdateCombatIntro()
 {
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE))
+	if (Input::GetInstance()->WasKeyPressed(DIK_SPACE))
 	{
 		if (showSurvivalMessage_ && combatIntroStep_ == 0)
 		{
@@ -324,7 +326,7 @@ void GamePlayScene::UpdateCombatIntro()
 void GamePlayScene::UpdateMouseCamera()
 {
 	auto input = Input::GetInstance();
-	if (input->PushMouseButton(VK_RBUTTON))
+	if (input->IsMouseButtonDown(VK_RBUTTON))
 	{
 		const POINT mouseDelta = input->GetMouseDelta();
 		constexpr float kMouseSensitivity = 0.005f;
@@ -350,7 +352,7 @@ void GamePlayScene::UpdateMouseCamera()
 void GamePlayScene::UpdateWork()
 {
 	auto input = Input::GetInstance();
-	if (input->TriggerKey(DIK_TAB))
+	if (input->WasKeyPressed(DIK_TAB))
 	{
 		switch (currentTool_)
 		{
@@ -366,11 +368,11 @@ void GamePlayScene::UpdateWork()
 		}
 	}
 
-	if (input->TriggerKey(DIK_F))
+	if (input->WasKeyPressed(DIK_F))
 	{
 		TryMineFront();
 	}
-	if (input->TriggerKey(DIK_Q))
+	if (input->WasKeyPressed(DIK_Q))
 	{
 		// 足元の床を採掘する（床を壊すと下のY=0まで落ちる）
 		TryMineBelow();
@@ -409,6 +411,7 @@ void GamePlayScene::TryMineTile(int tileX, int tileY, int layer)
 		return;
 	}
 
+	// 採掘に成功した素材だけ、対応する所持数へ加算する
 	switch (minedType)
 	{
 	case TileMap::TileType::Dirt:
@@ -434,39 +437,39 @@ void GamePlayScene::UpdateCombat()
 	// Enterで作業パートへ戻れるため、敵全滅などの条件待ちは不要
 }
 
-void GamePlayScene::UpdateCommon()
+void GamePlayScene::UpdateSharedGameplay()
 {
 	auto input = Input::GetInstance();
-	if (input->PushKey(DIK_0))
+	if (input->IsKeyDown(DIK_0))
 	{
 		OutputDebugStringA("Hit 0\n");
 	}
 
-	if (input->TriggerKey(DIK_1))
+	if (input->WasKeyPressed(DIK_1))
 	{
-		particleEmitterEffect->InputEffect();
+		particleEmitterEffect->EmitEffectNow();
 	}
 
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
 
-	if (input->PushKey(DIK_D))
+	if (input->IsKeyDown(DIK_D))
 	{
 		playerMove.x += 0.1f;
 	}
-	if (input->PushKey(DIK_A))
+	if (input->IsKeyDown(DIK_A))
 	{
 		playerMove.x -= 0.1f;
 	}
-	if (input->PushKey(DIK_W))
+	if (input->IsKeyDown(DIK_W))
 	{
 		playerMove.z += 0.1f;
 	}
-	if (input->PushKey(DIK_S))
+	if (input->IsKeyDown(DIK_S))
 	{
 		playerMove.z -= 0.1f;
 	}
 
-	if (input->TriggerKey(DIK_SPACE) && !isJumping)
+	if (input->WasKeyPressed(DIK_SPACE) && !isJumping)
 	{
 		velocityY = jumpPower; // 上方向への初速を与える
 		isJumping = true;      // ジャンプ状態をオンにする
@@ -481,7 +484,7 @@ void GamePlayScene::UpdateCommon()
 		playerMove.x /= length;
 		playerMove.z /= length;
 
-		// X方向とZ方向を別々に判定し、壁に沿って移動できるようにする
+		// 軸ごとに衝突判定することで、壁に当たっても壁沿いの移動を続けられる
 		Vector3 nextPosition = playerPosition;
 		nextPosition.x += playerMove.x * playerSpeed;
 		if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
@@ -501,6 +504,7 @@ void GamePlayScene::UpdateCommon()
 	}
 	playerIsInsideMap_ = tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_);
 
+	// 前フレームと次フレームの足元位置を比べ、落下中に通過した床を探す
 	if (isJumping || playerPosition.y > 0.0f)
 	{
 		const float previousFeetY = playerPosition.y;
@@ -554,7 +558,7 @@ void GamePlayScene::UpdateCommon()
 	// 2. プレイヤーと敵の距離を計算する
 	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
 
-	if (phase_ == GamePhase::Combat && input->TriggerKey(DIK_F))
+	if (phase_ == GamePhase::Combat && input->WasKeyPressed(DIK_F))
 	{
 		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
 		if (distance < 2.0f && isEnemyAlive)

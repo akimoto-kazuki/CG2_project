@@ -58,12 +58,12 @@ void GameOverScene::Update()
 	imGuiManager->ImGuiEnd();
 
 	// SPACEで再挑戦、ENTERでタイトルへ戻る
-	if (input->TriggerKey(DIK_SPACE))
+	if (input->WasKeyPressed(DIK_SPACE))
 	{
 		sceneManager_->StartTransition(SceneType::GamePlay);
 		return;
 	}
-	if (input->TriggerKey(DIK_RETURN))
+	if (input->WasKeyPressed(DIK_RETURN))
 	{
 		sceneManager_->StartTransition(SceneType::Title);
 		return;

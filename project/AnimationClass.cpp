@@ -46,7 +46,7 @@ AnimationClass::Animation AnimationClass::LoadAnimationFile(const std::string& d
 	return animation;
 }
 
-Vector3 AnimationClass::CalculateValueVector3(const std::vector<AnimationClass::KeyframeVector3>& keyframes, float time)
+Vector3 AnimationClass::SampleVector3Keyframes(const std::vector<AnimationClass::KeyframeVector3>& keyframes, float time)
 {
 	assert(!keyframes.empty()); // キーフレームが空ならエラー
 
@@ -59,7 +59,7 @@ Vector3 AnimationClass::CalculateValueVector3(const std::vector<AnimationClass::
 		return keyframes.back().value;
 	}
 
-	// 現在の時間に対応するキーフレームの区間を探す
+	// 再生時刻を挟む2つのキーを見つけ、その間を線形補間する
 	for (size_t i = 0; i < keyframes.size() - 1; ++i) {
 		const auto& nextKey = keyframes[i + 1];
 		if (time < nextKey.time) {
@@ -73,7 +73,7 @@ Vector3 AnimationClass::CalculateValueVector3(const std::vector<AnimationClass::
 	return keyframes.back().value;
 }
 
-Quaternion AnimationClass::CalculateValueQuaternion(const std::vector<AnimationClass::KeyframeQuaternion>& keyframes, float time)
+Quaternion AnimationClass::SampleQuaternionKeyframes(const std::vector<AnimationClass::KeyframeQuaternion>& keyframes, float time)
 {
 	assert(!keyframes.empty());
 
@@ -84,6 +84,7 @@ Quaternion AnimationClass::CalculateValueQuaternion(const std::vector<AnimationC
 		return keyframes.back().value;
 	}
 
+	// 回転はキーフレーム間を球面線形補間し、急な向きの変化を抑える
 	for (size_t i = 0; i < keyframes.size() - 1; ++i) {
 		const auto& nextKey = keyframes[i + 1];
 		if (time < nextKey.time) {
@@ -148,9 +149,9 @@ void AnimationClass::ApplyAnimation(Skeleton& skeleton, const Animation& animati
 		if (auto it = animation.nodeAnimations.find(joint.name); it != animation.nodeAnimations.end())
 		{
 			const NodeAnimation& rootNodeAnimation = (*it).second;
-			joint.transform.translate = CalculateValueVector3(rootNodeAnimation.translate, animationTime);
-			joint.transform.rotate = CalculateValueQuaternion(rootNodeAnimation.rotate, animationTime);
-			joint.transform.scale = CalculateValueVector3(rootNodeAnimation.scale, animationTime);
+			joint.transform.translate = SampleVector3Keyframes(rootNodeAnimation.translate, animationTime);
+			joint.transform.rotate = SampleQuaternionKeyframes(rootNodeAnimation.rotate, animationTime);
+			joint.transform.scale = SampleVector3Keyframes(rootNodeAnimation.scale, animationTime);
 		}
 	}
 }

@@ -6,13 +6,13 @@ void SceneManager::Update()
 
 	if (scene_)
 	{
-		// 実行中シーンを更新する
+		// 現在のシーンを更新し、必要なら遷移先を予約させる
 		scene_->Update();
 	}
 
 	transitionEffect_.Update();
 
-	// 次シーンの予約があるなら
+	// 画面が覆われたタイミングで旧シーンを破棄し、予約したシーンを初期化する
 	if (nextScene_ && transitionEffect_.IsCovered())
 	{
 		// 旧シーンの終了
