@@ -21,6 +21,7 @@
 #include "Sprite.h"
 // パーティクル
 #include "ParticleEmitter.h"
+#include "TileMap.h"
 
 class GamePlayScene : public BaseScene
 {
@@ -38,10 +39,15 @@ public:
 private:
 	enum class GamePhase { Work, Combat };
 	GamePhase phase_ = GamePhase::Work;
+	// 作業・戦闘の両パートで共有するマップ
+	TileMap tileMap_;
 	void UpdateCommon();
 	void UpdateWork();
 	void UpdateCombat();
 	void UpdateCombatIntro();
+	void TryMineFront();
+	void TryMineBelow();
+	void TryMineTile(int tileX, int tileY, int layer);
 	void DrawWork();
 	void DrawCombat();
 
@@ -49,6 +55,13 @@ private:
 	Camera* camera = nullptr;
 	Vector3 rotate;
 	Vector3 translate;
+#if defined(_DEBUG)
+	Vector3 cameraOrbitTarget_ = { 0.0f, 0.0f, 10.0f };
+	float cameraOrbitYaw_ = 0.0f;
+	float cameraOrbitPitch_ = 0.0f;
+	float cameraOrbitDistance_ = 20.0f;
+	void UpdateMouseCamera();
+#endif
 	
 	// --- 描画オブジェクト ---
 	// PostEffect
@@ -71,8 +84,18 @@ private:
 
 	// --- 3Dオブジェクト用パラメータ ---
 	// プレイヤー
+	static constexpr float kPlayerCollisionRadius = 0.3f;
+	static constexpr float kPlayerHeight = 1.6f;
 	Vector3 playerPosition;
 	Vector3 playerRotate;
+	int playerTileX_ = 0;
+	int playerTileY_ = 0;
+	bool playerIsInsideMap_ = false;
+	TileMap::ToolType currentTool_ = TileMap::ToolType::Shovel;
+	int dirtCount_ = 0;
+	int stoneCount_ = 0;
+	int oreCount_ = 0;
+	int woodCount_ = 0;
 	float velocityY;			// Y軸方向の現在の速度
 	float gravity;				// 重力（毎フレーム下に向かって引っ張る力）
 	float jumpPower;			// ジャンプ力（上に飛び上がる初速）

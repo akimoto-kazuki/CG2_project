@@ -26,6 +26,7 @@ class Object3d
 	{
 		MyMath::Matrix4x4 WVP;
 		MyMath::Matrix4x4 World;
+		MyMath::Vector4 color;
 	};
 
 	struct DirectionalLight
@@ -58,6 +59,7 @@ public:
 	void SetScale(const Vector3& scale) { transform.scale = scale; }
 	void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
 	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
+	void SetColor(const Vector4& color) { objectColor_ = color; }
 
 	void SetCamera(Camera* camera) { this->camera = camera; }
 
@@ -101,6 +103,7 @@ private:
 	uint32_t environmentTextureIndex_ = 0;
 
 	float environmentCoefficient_ = 0.3f;
+	Vector4 objectColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	AnimationClass::Animation animation_;  // 読み込んだアニメーションデータ
 	float animationTime_ = 0.0f;  // 再生中の時刻（秒）
