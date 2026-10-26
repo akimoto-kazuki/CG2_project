@@ -286,6 +286,7 @@ void GamePlayScene::Update()
 	if (currentTool_ == TileMap::ToolType::Pickaxe) toolName = "Pickaxe";
 	if (currentTool_ == TileMap::ToolType::Axe) toolName = "Axe";
 	ImGui::Text("Tool: %s (Tabで切り替え)", toolName);
+	ImGui::Text("採掘: 左クリック=正面 / E=正面の一段上 / Q=足元");
 	ImGui::Text("Materials: Dirt %d / Stone %d / Ore %d / Wood %d", dirtCount_, stoneCount_, oreCount_, woodCount_);
 	ImGui::Text("Camera");
 	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
@@ -368,18 +369,23 @@ void GamePlayScene::UpdateWork()
 		}
 	}
 
-	if (input->WasKeyPressed(DIK_F))
+	// 左クリックで正面、Eで正面の一段上、Qで足元を採掘する。
+	if (input->WasMouseButtonPressed(VK_LBUTTON))
 	{
 		TryMineFront();
 	}
+	if (input->WasKeyPressed(DIK_E))
+	{
+		TryMineFront(1);
+	}
 	if (input->WasKeyPressed(DIK_Q))
 	{
-		// 足元の床を採掘する（床を壊すと下のY=0まで落ちる）
+		// 足元のブロックを採掘する
 		TryMineBelow();
 	}
 }
 
-void GamePlayScene::TryMineFront()
+void GamePlayScene::TryMineFront(int verticalOffset)
 {
 	if (!tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_))
 	{
@@ -388,7 +394,7 @@ void GamePlayScene::TryMineFront()
 
 	const int directionX = static_cast<int>(std::round(std::sin(playerRotate.y)));
 	const int directionY = static_cast<int>(std::round(std::cos(playerRotate.y)));
-	const int targetLayer = static_cast<int>(playerPosition.y / TileMap::kTileSize);
+	const int targetLayer = static_cast<int>(std::floor(playerPosition.y / TileMap::kTileSize)) + verticalOffset;
 	TryMineTile(playerTileX_ + directionX, playerTileY_ + directionY, targetLayer);
 }
 
@@ -504,36 +510,34 @@ void GamePlayScene::UpdateSharedGameplay()
 	}
 	playerIsInsideMap_ = tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_);
 
-	// 前フレームと次フレームの足元位置を比べ、落下中に通過した床を探す
-	if (isJumping || playerPosition.y > 0.0f)
-	{
-		const float previousFeetY = playerPosition.y;
-		velocityY += gravity;
-		const float nextFeetY = playerPosition.y + velocityY;
-		float landingY = 0.0f;
+	// 接地中も毎フレーム重力を適用する。
+	// 足元のブロックを採掘して消えた場合、次の層まで落下できる。
+	const float previousFeetY = playerPosition.y;
+	velocityY += gravity;
+	const float nextFeetY = playerPosition.y + velocityY;
+	float landingY = 0.0f;
 
-		if (velocityY <= 0.0f && tileMap_.FindLandingSurface(
-			playerPosition, kPlayerCollisionRadius, previousFeetY, nextFeetY, landingY))
+	if (velocityY <= 0.0f && tileMap_.FindLandingSurface(
+		playerPosition, kPlayerCollisionRadius, previousFeetY, nextFeetY, landingY))
+	{
+		playerPosition.y = landingY;
+		velocityY = 0.0f;
+		isJumping = false;
+	}
+	else
+	{
+		Vector3 nextPosition = playerPosition;
+		nextPosition.y = nextFeetY;
+		if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
 		{
-			playerPosition.y = landingY;
-			velocityY = 0.0f;
-			isJumping = false;
+			playerPosition.y = nextFeetY;
 		}
 		else
 		{
-			Vector3 nextPosition = playerPosition;
-			nextPosition.y = nextFeetY;
-			if (tileMap_.CanOccupyWorldPosition(nextPosition, kPlayerCollisionRadius, kPlayerHeight))
-			{
-				playerPosition.y = nextFeetY;
-			}
-			else
-			{
-				// 上にブロックがある場合は頭が当たったところで上昇を止める
-				velocityY = 0.0f;
-			}
-			isJumping = true;
+			// 上にブロックがある場合は頭が当たったところで上昇を止める
+			velocityY = 0.0f;
 		}
+		isJumping = true;
 	}
 
 	float pos = 0.0f;

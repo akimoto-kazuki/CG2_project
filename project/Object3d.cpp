@@ -109,6 +109,22 @@ void Object3d::Draw()
 	}
 }
 
+void Object3d::DrawInstanced(const D3D12_VERTEX_BUFFER_VIEW& instanceBufferView, uint32_t instanceCount)
+{
+	if (!model_ || instanceCount == 0)
+	{
+		return;
+	}
+
+	auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+	SrvManager* srvManager = SrvManager::GetInstance();
+	commandList->SetGraphicsRootDescriptorTable(5, srvManager->GetGPUDescriptorHandle(environmentTextureIndex_));
+	model_->DrawInstanced(instanceBufferView, instanceCount);
+}
+
 void Object3d::DrawSkeleton(LineRenderer* lineRenderer)
 {
 	if (!lineRenderer || skeleton_.joints.empty()) return;

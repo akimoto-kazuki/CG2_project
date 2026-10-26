@@ -51,6 +51,7 @@ public:
 	void Update();
 
 	void Draw();
+	void DrawInstanced(const D3D12_VERTEX_BUFFER_VIEW& instanceBufferView, uint32_t instanceCount);
 
 	void DrawSkeleton(LineRenderer* lineRenderer);
 
