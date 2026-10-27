@@ -224,13 +224,11 @@ void GamePlayScene::Update()
 
 	// キー入力 始
 	input->Update();
-#if defined(_DEBUG)
 	// ゲームオーバー画面確認用の仮入力（F2）
 	if (input->WasKeyPressed(DIK_F2))
 	{
 		sceneManager_->StartTransition(SceneType::GameOver);
 	}
-#endif
 #if defined(_DEBUG)
 	UpdateMouseCamera();
 #endif
