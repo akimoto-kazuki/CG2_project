@@ -33,6 +33,17 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	indexResource.Get()->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
+	// 通常の1個描画ではインスタンス位置0・白色を使う
+	defaultInstanceResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(float) * 7);
+	float* defaultInstanceData = nullptr;
+	defaultInstanceResource_->Map(0, nullptr, reinterpret_cast<void**>(&defaultInstanceData));
+	const float defaultInstanceValues[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+	std::memcpy(defaultInstanceData, defaultInstanceValues, sizeof(defaultInstanceValues));
+	defaultInstanceResource_->Unmap(0, nullptr);
+	defaultInstanceBufferView_.BufferLocation = defaultInstanceResource_->GetGPUVirtualAddress();
+	defaultInstanceBufferView_.SizeInBytes = static_cast<UINT>(sizeof(defaultInstanceValues));
+	defaultInstanceBufferView_.StrideInBytes = static_cast<UINT>(sizeof(defaultInstanceValues));
+
 	//マテリアル
 	materialResource = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(Material));
 	// 書き込むためのアドレスを取得
@@ -244,7 +255,8 @@ void Model ::Draw()
 
 	auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
-	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = { vertexBufferView, defaultInstanceBufferView_ };
+	commandList->IASetVertexBuffers(0, 2, vertexBufferViews);  // 頂点と通常描画用の中立インスタンスを設定
 	// インデックス
 	commandList->IASetIndexBuffer(&indexBufferView);
 	// マテリアルCBufferの場所を設定
@@ -257,4 +269,22 @@ void Model ::Draw()
 	// 描画！（DrawCall／ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
+}
+
+void Model::DrawInstanced(const D3D12_VERTEX_BUFFER_VIEW& instanceBufferView, uint32_t instanceCount)
+{
+	if (instanceCount == 0)
+	{
+		return;
+	}
+
+	auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = { vertexBufferView, instanceBufferView };
+	commandList->IASetVertexBuffers(0, 2, vertexBufferViews);
+	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+
+	assert(!modelData.material.textureFilePath.empty());
+	assert(TextureManager::GetInstance()->textureDatas.contains(modelData.material.textureFilePath));
+	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureFilePath));
+	commandList->DrawInstanced(UINT(modelData.vertices.size()), instanceCount, 0, 0);
 }

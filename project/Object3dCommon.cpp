@@ -114,7 +114,7 @@ void Object3dCommon::RootSignature()
 void Object3dCommon::GraphicsPipelineState()
 {
 	RootSignature();
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[5] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -129,6 +129,20 @@ void Object3dCommon::GraphicsPipelineState()
 	inputElementDescs[2].SemanticIndex = 0;
 	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+	inputElementDescs[3].SemanticName = "INSTANCEPOSITION";
+	inputElementDescs[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[3].InputSlot = 1;
+	inputElementDescs[3].AlignedByteOffset = 0;
+	inputElementDescs[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+	inputElementDescs[3].InstanceDataStepRate = 1;
+
+	inputElementDescs[4].SemanticName = "INSTANCECOLOR";
+	inputElementDescs[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	inputElementDescs[4].InputSlot = 1;
+	inputElementDescs[4].AlignedByteOffset = sizeof(MyMath::Vector3);
+	inputElementDescs[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+	inputElementDescs[4].InstanceDataStepRate = 1;
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;

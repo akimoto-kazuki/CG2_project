@@ -14,5 +14,6 @@ public:
 private:
 	Sprite* background_ = nullptr;
 	Sprite* accent_ = nullptr;
+	Sprite* textOverlay_ = nullptr;
 	float timer_ = 0.0f;
 };

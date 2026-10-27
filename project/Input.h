@@ -48,6 +48,7 @@ public:
 	// マウス操作
 	POINT GetMouseDelta() const;
 	bool IsMouseButtonDown(int virtualKey) const;
+	bool WasMouseButtonPressed(int virtualKey) const;
 
 private:
 
@@ -65,6 +66,8 @@ private:
 	POINT mousePosition_{};
 	POINT mousePositionPre_{};
 	bool isMousePositionInitialized_ = false;
+	bool mouseLeftDown_ = false;
+	bool mouseLeftDownPre_ = false;
 
 	// ポインタ
 	// WindowsAPI

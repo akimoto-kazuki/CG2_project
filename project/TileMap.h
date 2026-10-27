@@ -4,13 +4,15 @@
 
 #include <array>
 #include <cstdint>
+#include <d3d12.h>
+#include <wrl.h>
 
 class TileMap
 {
 public:
 
-    static constexpr int kWidth = 10;   // 横のマス数
-    static constexpr int kHeight = 10;  // 奥行きのマス数
+    static constexpr int kWidth = 15;   // 横のマス数
+    static constexpr int kHeight = 15;  // 奥行きのマス数
     static constexpr int kMinVerticalLayer = -6;
     static constexpr int kMaxVerticalLayer = 2;
     static constexpr int kVerticalLayers = kMaxVerticalLayer - kMinVerticalLayer + 1;
@@ -52,9 +54,20 @@ public:
 private:
     // tiles_[高さの層][奥行き][横]。高さの層番号は-6〜2。
     std::array<std::array<std::array<TileType, kWidth>, kHeight>, kVerticalLayers> tiles_{};
-    std::array<std::array<std::array<Object3d*, kWidth>, kHeight>, kVerticalLayers> blockObjects_{};
+    struct InstanceData
+    {
+        Vector3 position;
+        Vector4 color;
+    };
+    static constexpr uint32_t kMaxBlockInstances = kWidth * kHeight * kVerticalLayers;
+    Object3d* renderObject_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
+    InstanceData* instanceBufferData_ = nullptr;
+    uint32_t instanceCount_ = 0;
+    D3D12_VERTEX_BUFFER_VIEW instanceBufferView_{};
 
     static constexpr int ToLayerIndex(int layer) { return layer - kMinVerticalLayer; }
     void CreateRenderObjects(uint32_t environmentTextureIndex);
+    void RebuildInstanceData();
 };
 

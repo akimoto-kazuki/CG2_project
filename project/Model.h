@@ -84,6 +84,7 @@ public:
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 
 	void Draw();
+	void DrawInstanced(const D3D12_VERTEX_BUFFER_VIEW& instanceBufferView, uint32_t instanceCount);
 
 	static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
@@ -107,6 +108,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+	Microsoft::WRL::ComPtr<ID3D12Resource> defaultInstanceResource_ = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW defaultInstanceBufferView_{};
 	//
 	VertexData* vertexData = nullptr;
 

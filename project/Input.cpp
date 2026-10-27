@@ -54,6 +54,8 @@ void Input::Update()
 		}
 		mousePosition_ = screenPosition;
 	}
+	mouseLeftDownPre_ = mouseLeftDown_;
+	mouseLeftDown_ = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 }
 
 POINT Input::GetMouseDelta() const
@@ -64,6 +66,15 @@ POINT Input::GetMouseDelta() const
 bool Input::IsMouseButtonDown(int virtualKey) const
 {
 	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+}
+
+bool Input::WasMouseButtonPressed(int virtualKey) const
+{
+	if (virtualKey == VK_LBUTTON)
+	{
+		return !mouseLeftDownPre_ && mouseLeftDown_;
+	}
+	return false;
 }
 
 bool Input::IsKeyDown(BYTE keyNumber) const

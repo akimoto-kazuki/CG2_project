@@ -1,6 +1,7 @@
 #include "TileMap.h"
 
 #include <cmath>
+#include <cstring>
 
 void TileMap::Initialize(uint32_t environmentTextureIndex)
 {
@@ -47,95 +48,89 @@ void TileMap::Initialize(uint32_t environmentTextureIndex)
 
 void TileMap::Finalize()
 {
-    for (int layerIndex = 0; layerIndex < kVerticalLayers; ++layerIndex)
+	if (instanceBuffer_ && instanceBufferData_)
     {
-        for (int y = 0; y < kHeight; ++y)
-        {
-            for (int x = 0; x < kWidth; ++x)
-            {
-                delete blockObjects_[layerIndex][y][x];
-                blockObjects_[layerIndex][y][x] = nullptr;
-            }
-        }
+		instanceBuffer_->Unmap(0, nullptr);
     }
+	instanceBufferData_ = nullptr;
+	instanceBuffer_.Reset();
+	instanceBufferView_ = {};
+	instanceCount_ = 0;
+	delete renderObject_;
+	renderObject_ = nullptr;
 }
 
 void TileMap::CreateRenderObjects(uint32_t environmentTextureIndex)
 {
-    for (int layerIndex = 0; layerIndex < kVerticalLayers; ++layerIndex)
-    {
-        const int layer = layerIndex + kMinVerticalLayer;
-        for (int y = 0; y < kHeight; ++y)
-        {
-            for (int x = 0; x < kWidth; ++x)
-            {
-                const float worldX = (x - (kWidth - 1) * 0.5f) * kTileSize;
-                const float worldZ = kMapCenterZ + (y - (kHeight - 1) * 0.5f) * kTileSize;
+	renderObject_ = new Object3d();
+	renderObject_->Initialize();
+	renderObject_->SetModel("block/block.obj");
+	renderObject_->SetEnvironmentTextureIndex(environmentTextureIndex);
+	renderObject_->SetScale({ 1.0f, 1.0f, 1.0f });
+	renderObject_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	renderObject_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
-                const TileType type = tiles_[layerIndex][y][x];
-                if (type != TileType::Air && type != TileType::Bedrock)
-                {
-                    Object3d* block = new Object3d();
-                    block->Initialize();
-                    block->SetModel("block/block.obj");
-                    block->SetEnvironmentTextureIndex(environmentTextureIndex);
-                    block->SetScale({ kTileSize, kTileSize, kTileSize });
-                    block->SetTranslate({ worldX, (layer + 0.5f) * kTileSize, worldZ });
-                    switch (type)
-                    {
-                    case TileType::Dirt:
-                        block->SetColor({ 0.55f, 0.30f, 0.12f, 1.0f });
-                        break;
-                    case TileType::Stone:
-                        block->SetColor({ 0.55f, 0.58f, 0.62f, 1.0f });
-                        break;
-                    case TileType::Ore:
-                        block->SetColor({ 1.0f, 0.70f, 0.12f, 1.0f });
-                        break;
-                    case TileType::Wood:
-                        block->SetColor({ 0.35f, 0.16f, 0.06f, 1.0f });
-                        break;
-                    default:
-                        break;
-                    }
-                    blockObjects_[layerIndex][y][x] = block;
-                }
-            }
-        }
-    }
+	instanceBuffer_ = DirectXCommon::GetInstance()->CreateBufferResource(
+		sizeof(InstanceData) * kMaxBlockInstances);
+	instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&instanceBufferData_));
+	instanceBufferView_.BufferLocation = instanceBuffer_->GetGPUVirtualAddress();
+	instanceBufferView_.SizeInBytes = static_cast<UINT>(sizeof(InstanceData) * kMaxBlockInstances);
+	instanceBufferView_.StrideInBytes = static_cast<UINT>(sizeof(InstanceData));
+	RebuildInstanceData();
+}
+
+void TileMap::RebuildInstanceData()
+{
+	instanceCount_ = 0;
+	for (int layerIndex = 0; layerIndex < kVerticalLayers; ++layerIndex)
+	{
+		const int layer = layerIndex + kMinVerticalLayer;
+		for (int y = 0; y < kHeight; ++y)
+		{
+			for (int x = 0; x < kWidth; ++x)
+			{
+				const TileType type = tiles_[layerIndex][y][x];
+				if (type == TileType::Air || type == TileType::Bedrock)
+				{
+					continue;
+				}
+
+				Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+				switch (type)
+				{
+				case TileType::Dirt: color = { 0.55f, 0.30f, 0.12f, 1.0f }; break;
+				case TileType::Stone: color = { 0.55f, 0.58f, 0.62f, 1.0f }; break;
+				case TileType::Ore: color = { 1.0f, 0.70f, 0.12f, 1.0f }; break;
+				case TileType::Wood: color = { 0.35f, 0.16f, 0.06f, 1.0f }; break;
+				default: break;
+				}
+
+				instanceBufferData_[instanceCount_++] = {
+					{
+						(x - (kWidth - 1) * 0.5f) * kTileSize,
+						(layer + 0.5f) * kTileSize,
+						kMapCenterZ + (y - (kHeight - 1) * 0.5f) * kTileSize
+					},
+					color
+				};
+			}
+		}
+	}
 }
 
 void TileMap::Update()
 {
-    for (int layerIndex = 0; layerIndex < kVerticalLayers; ++layerIndex)
-    {
-        for (int y = 0; y < kHeight; ++y)
-        {
-            for (int x = 0; x < kWidth; ++x)
-            {
-                if (blockObjects_[layerIndex][y][x])
-                {
-                    blockObjects_[layerIndex][y][x]->Update();
-                }
-            }
-        }
-    }
+	if (renderObject_)
+	{
+		renderObject_->Update();
+	}
 }
 
 void TileMap::Draw()
 {
-    for (int layerIndex = 0; layerIndex < kVerticalLayers; ++layerIndex)
+	if (renderObject_ && instanceCount_ > 0)
     {
-        for (int y = 0; y < kHeight; ++y)
-        {
-            for (int x = 0; x < kWidth; ++x)
-            {
-                if (blockObjects_[layerIndex][y][x])
-                {
-                    blockObjects_[layerIndex][y][x]->Draw();
-                }
-            }
-        }
+		renderObject_->DrawInstanced(instanceBufferView_, instanceCount_);
     }
 }
 
@@ -290,7 +285,6 @@ bool TileMap::MineBlock(int x, int y, int layer, ToolType tool, TileType& minedT
 
 	minedType = targetType;
 	tiles_[layerIndex][y][x] = TileType::Air;
-	delete blockObjects_[layerIndex][y][x];
-	blockObjects_[layerIndex][y][x] = nullptr;
+	RebuildInstanceData();
 	return true;
 }

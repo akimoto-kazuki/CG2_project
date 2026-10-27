@@ -45,7 +45,7 @@ private:
 	void UpdateWork();
 	void UpdateCombat();
 	void UpdateCombatIntro();
-	void TryMineFront();
+	void TryMineFront(int verticalOffset = 0);
 	void TryMineBelow();
 	void TryMineTile(int tileX, int tileY, int layer);
 	void DrawWork();
