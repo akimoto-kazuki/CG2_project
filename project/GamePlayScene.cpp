@@ -12,19 +12,37 @@
 #include "Input.h"
 #include "DirectXCommon.h"
 #include "WinApp.h"
+#include <algorithm>
+#include <cmath>
 
 namespace
 {
-	// ゲーム起動中、最初の戦闘だけ2ページの案内を表示する
-	bool hasShownFirstCombatIntro = false;
+	constexpr float kDeltaTime = 1.0f / 60.0f;
+	constexpr float kDamageFlashDuration = 0.24f;
+	constexpr float kEnemyAttackInterval = 1.2f;
+	// 両モデルの幅(0.6)に余裕を少し足し、面同士が触れる手前で止める
+	constexpr float kEnemyAttackRange = 0.65f;
+	constexpr float kEnemySpawnDistance = 3.5f;
+	constexpr float kDeathAnimationDuration = 0.9f;
+	constexpr float kDeathFadeDuration = 0.7f;
+	constexpr float kDeathFallAngle = 1.45f;
+
 }
 
 void GamePlayScene::Initialize()
 {
 	showSurvivalMessage_ = false;
-	phase_ = GamePhase::Work;
+	// 展示でタイトル／ゲームオーバーから入った時、すぐ戦闘を見せられるようにする
+	phase_ = GamePhase::Combat;
 	isCombatIntroActive_ = false;
 	combatIntroStep_ = 0;
+	playerHealth_ = kMaxPlayerHealth;
+	enemyAttackCooldown_ = 0.0f;
+	damageFlashTimer_ = 0.0f;
+	deathAnimationTimer_ = 0.0f;
+	deathStartRotationX_ = 0.0f;
+	isPlayerDead_ = false;
+	gameOverTransitionRequested_ = false;
 
 	auto dxCommon = DirectXCommon::GetInstance();
 
@@ -33,12 +51,10 @@ void GamePlayScene::Initialize()
 	// カメラの数値設定
 	rotate = { 0.0f,0.0f,0.0f };
 	translate = { 0.0f,0.0f,-10.0f };
-#if defined(_DEBUG)
 	cameraOrbitTarget_ = { 0.0f, 0.0f, 10.0f };
 	cameraOrbitYaw_ = 0.0f;
 	cameraOrbitPitch_ = 0.0f;
 	cameraOrbitDistance_ = 20.0f;
-#endif
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
 	Object3dCommon::GetInstance()->SetDefaultCamera(camera);
@@ -58,9 +74,15 @@ void GamePlayScene::Initialize()
 	stoneCount_ = 0;
 	oreCount_ = 0;
 	woodCount_ = 0;
-	//	敵
-	enemyPosition = { 0.0f,0.0f,10.0f };
+	// 戦闘開始時の敵をプレイヤーの前方に配置する
+	enemyPosition = {
+		playerPosition.x + std::cos(playerRotate.y) * kEnemySpawnDistance,
+		playerPosition.y,
+		playerPosition.z - std::sin(playerRotate.y) * kEnemySpawnDistance
+	};
 	enemyRotate = { 0.0f,3.0f,0.0f };
+	isEnemyAlive = true;
+	enemyAttackCooldown_ = 0.8f;
 	// isEnemyAlive = true; bool型だから宣言しなくていい わかりやすくするために置いてる
 	//  スプライト
 	spritePosition = { 0.0f,0.0f,0.0f };
@@ -75,7 +97,6 @@ void GamePlayScene::Initialize()
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	ModelManager::GetInstance()->LoadModel("walk.gltf");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/fight/fight.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/survival/survival.obj");
 	ModelManager::GetInstance()->LoadModel("GamePlayScene/character/spaceNext/spaceNext.obj");
@@ -112,9 +133,9 @@ void GamePlayScene::Initialize()
 	//  敵
 	enemy3d = new Object3d();
 	enemy3d->Initialize();
-	enemy3d->SetModel("walk.gltf");
-	enemy3d->SetAnimation("resources", "walk.gltf");
-	enemy3d->SetScale({ 1.0f, 1.0f, 1.0f });
+	enemy3d->SetModel("block/block.obj");
+	enemy3d->SetScale({ kPlayerCollisionRadius * 2.0f, kPlayerHeight, kPlayerCollisionRadius * 2.0f });
+	enemy3d->SetColor({ 1.0f, 0.12f, 0.08f, 1.0f });
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
 
 	// -----文字(案内)-----
@@ -182,11 +203,40 @@ void GamePlayScene::Initialize()
 	startOverlay_->Initialize("resources/white.png");
 	startOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
 	startOverlay_->SetSize({
-		static_cast<float>(WinApp::kClientWidth),
-		static_cast<float>(WinApp::kClientHeight)
+		WinApp::kClientWidth / 100.0f,
+		WinApp::kClientHeight / 100.0f
 	});
 	startOverlay_->SetColor({ 0.0f, 0.0f, 0.0f, 0.55f });
 	startOverlay_->Update();
+
+	// 被弾時の赤い画面フラッシュと、戦闘中のHPバー
+	damageFlashOverlay_ = new Sprite();
+	damageFlashOverlay_->Initialize("resources/white.png");
+	damageFlashOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
+	damageFlashOverlay_->SetSize({ WinApp::kClientWidth / 100.0f, WinApp::kClientHeight / 100.0f });
+	damageFlashOverlay_->SetColor({ 1.0f, 0.0f, 0.0f, 0.0f });
+	damageFlashOverlay_->Update();
+
+	// 倒れた後に画面全体を暗くしてからゲームオーバーへ遷移する
+	deathFadeOverlay_ = new Sprite();
+	deathFadeOverlay_->Initialize("resources/white.png");
+	deathFadeOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
+	deathFadeOverlay_->SetSize({ WinApp::kClientWidth / 100.0f, WinApp::kClientHeight / 100.0f });
+	deathFadeOverlay_->SetColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+	deathFadeOverlay_->Update();
+
+	healthBarBackground_ = new Sprite();
+	healthBarBackground_->Initialize("resources/white.png");
+	healthBarBackground_->SetPosition({ 32.0f, 28.0f, 0.0f });
+	healthBarBackground_->SetSize({ 3.16f, 0.28f });
+	healthBarBackground_->SetColor({ 0.08f, 0.08f, 0.1f, 0.9f });
+	healthBarBackground_->Update();
+
+	healthBarFill_ = new Sprite();
+	healthBarFill_->Initialize("resources/white.png");
+	healthBarFill_->SetPosition({ 36.0f, 32.0f, 0.0f });
+	healthBarFill_->SetColor({ 0.85f, 0.06f, 0.08f, 1.0f });
+	UpdateHealthBar();
 }
 
 void GamePlayScene::Finalize()
@@ -199,6 +249,14 @@ void GamePlayScene::Finalize()
 	sprites_.clear();
 	delete startOverlay_;
 	startOverlay_ = nullptr;
+	delete damageFlashOverlay_;
+	damageFlashOverlay_ = nullptr;
+	delete deathFadeOverlay_;
+	deathFadeOverlay_ = nullptr;
+	delete healthBarBackground_;
+	healthBarBackground_ = nullptr;
+	delete healthBarFill_;
+	healthBarFill_ = nullptr;
 	delete object3d;
 	delete enemy3d;
 	delete enemyApproachMessage_;
@@ -229,28 +287,19 @@ void GamePlayScene::Update()
 	{
 		sceneManager_->StartTransition(SceneType::GameOver);
 	}
-#if defined(_DEBUG)
-	UpdateMouseCamera();
-#endif
-	if (input->WasKeyPressed(DIK_RETURN) && !isCombatIntroActive_)
+	if (isPlayerDead_)
 	{
-		if (phase_ == GamePhase::Work)
-		{
-			phase_ = GamePhase::Combat;
-			isEnemyAlive = true;
-			isCombatIntroActive_ = true;
-			combatIntroStep_ = 0;
-			showSurvivalMessage_ = !hasShownFirstCombatIntro;
-			hasShownFirstCombatIntro = true;
-		}
-		else
-		{
-			phase_ = GamePhase::Work;
-		}
+		UpdateDamageFlash();
+		UpdateDeathAnimation();
+		imGuiManager->ImGuiEnd();
+		return;
 	}
+	UpdateMouseCamera();
+	// 展示用に、Enterによる作業・戦闘パート切り替えは一時停止
 	if (isCombatIntroActive_)
 	{
 		UpdateCombatIntro();
+		UpdateDamageFlash();
 		// 案内中はゲームプレイ側の更新を止め、表示に必要な行列だけ更新する
 		camera->SetRotate(rotate);
 		camera->SetTranslate(translate);
@@ -274,6 +323,8 @@ void GamePlayScene::Update()
 	{
 		UpdateCombat();
 	}
+	UpdateDamageFlash();
+	UpdateHealthBar();
 
 	// ImGui
 #ifdef USE_IMGUI
@@ -286,6 +337,7 @@ void GamePlayScene::Update()
 	ImGui::Text("Tool: %s (Tabで切り替え)", toolName);
 	ImGui::Text("採掘: 左クリック=正面 / E=正面の一段上 / Q=足元");
 	ImGui::Text("Materials: Dirt %d / Stone %d / Ore %d / Wood %d", dirtCount_, stoneCount_, oreCount_, woodCount_);
+	ImGui::Text("HP: %d / %d", playerHealth_, kMaxPlayerHealth);
 	ImGui::Text("Camera");
 	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
 	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
@@ -308,6 +360,8 @@ void GamePlayScene::Update()
 
 void GamePlayScene::UpdateCombatIntro()
 {
+	UpdateCombatIntroLayout();
+
 	if (Input::GetInstance()->WasKeyPressed(DIK_SPACE))
 	{
 		if (showSurvivalMessage_ && combatIntroStep_ == 0)
@@ -321,7 +375,53 @@ void GamePlayScene::UpdateCombatIntro()
 	}
 }
 
-#if defined(_DEBUG)
+void GamePlayScene::UpdateCombatIntroLayout()
+{
+	// 案内文字をカメラの正面に置き、マウスで視点を回しても画面内に保つ
+	const float sinYaw = std::sin(cameraOrbitYaw_);
+	const float cosYaw = std::cos(cameraOrbitYaw_);
+	const float sinPitch = std::sin(cameraOrbitPitch_);
+	const float cosPitch = std::cos(cameraOrbitPitch_);
+	const Vector3 cameraForward = {
+		-sinYaw * cosPitch,
+		-sinPitch,
+		 cosYaw * cosPitch
+	};
+	const Vector3 cameraUp = {
+		-sinYaw * sinPitch,
+		 cosPitch,
+		 cosYaw * sinPitch
+	};
+	constexpr float kMessageDistance = 12.0f;
+	const Vector3 messageCenter = {
+		translate.x + cameraForward.x * kMessageDistance,
+		translate.y + cameraForward.y * kMessageDistance,
+		translate.z + cameraForward.z * kMessageDistance
+	};
+	const Vector3 cameraFacingRotation = { cameraOrbitPitch_, -cameraOrbitYaw_, 0.0f };
+	constexpr float kMessageVerticalOffset = 1.0f;
+
+	const Vector3 headingPosition = {
+		messageCenter.x + cameraUp.x * kMessageVerticalOffset,
+		messageCenter.y + cameraUp.y * kMessageVerticalOffset,
+		messageCenter.z + cameraUp.z * kMessageVerticalOffset
+	};
+	const Vector3 promptPosition = {
+		messageCenter.x - cameraUp.x * kMessageVerticalOffset,
+		messageCenter.y - cameraUp.y * kMessageVerticalOffset,
+		messageCenter.z - cameraUp.z * kMessageVerticalOffset
+	};
+
+	enemyApproachMessage_->SetTranslate(headingPosition);
+	enemyApproachMessage_->SetRotate(cameraFacingRotation);
+	survivalGoalMessage_->SetTranslate(headingPosition);
+	survivalGoalMessage_->SetRotate(cameraFacingRotation);
+	spaceNextMessage_->SetTranslate(promptPosition);
+	spaceNextMessage_->SetRotate(cameraFacingRotation);
+	spaceStartMessage_->SetTranslate(promptPosition);
+	spaceStartMessage_->SetRotate(cameraFacingRotation);
+}
+
 void GamePlayScene::UpdateMouseCamera()
 {
 	auto input = Input::GetInstance();
@@ -338,6 +438,9 @@ void GamePlayScene::UpdateMouseCamera()
 		if (cameraOrbitPitch_ < -kPitchLimit) cameraOrbitPitch_ = -kPitchLimit;
 	}
 
+	// カメラの注視高さをプレイヤーの中心に合わせ、掘り進んだ高さにも追従させる
+	cameraOrbitTarget_.y = playerPosition.y + kPlayerHeight * 0.5f;
+
 	const float cosPitch = std::cos(cameraOrbitPitch_);
 	translate = {
 		cameraOrbitTarget_.x + std::sin(cameraOrbitYaw_) * cosPitch * cameraOrbitDistance_,
@@ -346,7 +449,6 @@ void GamePlayScene::UpdateMouseCamera()
 	};
 	rotate = { cameraOrbitPitch_, -cameraOrbitYaw_, 0.0f };
 }
-#endif
 
 void GamePlayScene::UpdateWork()
 {
@@ -437,8 +539,93 @@ void GamePlayScene::TryMineTile(int tileX, int tileY, int layer)
 
 void GamePlayScene::UpdateCombat()
 {
-	// 戦闘パート固有の処理をここに追加
-	// Enterで作業パートへ戻れるため、敵全滅などの条件待ちは不要
+	if (!isEnemyAlive || isPlayerDead_)
+	{
+		return;
+	}
+
+	enemyAttackCooldown_ = (std::max)(0.0f, enemyAttackCooldown_ - kDeltaTime);
+	const float dx = playerPosition.x - enemyPosition.x;
+	const float dz = playerPosition.z - enemyPosition.z;
+	const float horizontalDistance = std::sqrt(dx * dx + dz * dz);
+
+	if (horizontalDistance <= kEnemyAttackRange && enemyAttackCooldown_ <= 0.0f)
+	{
+		TakePlayerDamage();
+		enemyAttackCooldown_ = kEnemyAttackInterval;
+	}
+}
+
+void GamePlayScene::TakePlayerDamage()
+{
+	if (isPlayerDead_)
+	{
+		return;
+	}
+
+	playerHealth_ = (std::max)(0, playerHealth_ - 1);
+	damageFlashTimer_ = kDamageFlashDuration;
+	damageFlashOverlay_->SetColor({ 1.0f, 0.02f, 0.02f, 0.22f });
+
+	if (playerHealth_ == 0)
+	{
+		isPlayerDead_ = true;
+		deathAnimationTimer_ = 0.0f;
+		deathStartRotationX_ = playerRotate.x;
+		velocityY = 0.0f;
+		isJumping = false;
+	}
+}
+
+void GamePlayScene::UpdateDeathAnimation()
+{
+	deathAnimationTimer_ += kDeltaTime;
+	const float progress = (std::min)(deathAnimationTimer_ / kDeathAnimationDuration, 1.0f);
+	const float easedProgress = progress * progress * (3.0f - 2.0f * progress);
+
+	// プレイヤーの上半身を後ろへ倒し、体の中心も地面の高さまで下げる
+	playerRotate.x = deathStartRotationX_ - kDeathFallAngle * easedProgress;
+	const float centerHeight = kPlayerHeight * 0.5f +
+		(kPlayerCollisionRadius - kPlayerHeight * 0.5f) * easedProgress;
+	object3d->SetRotate(playerRotate);
+	object3d->SetTranslate({ playerPosition.x, playerPosition.y + centerHeight, playerPosition.z });
+	object3d->Update();
+	camera->Update();
+	tileMap_.Update();
+
+	if (progress >= 1.0f)
+	{
+		const float fadeProgress = (std::min)(
+			(deathAnimationTimer_ - kDeathAnimationDuration) / kDeathFadeDuration, 1.0f);
+		deathFadeOverlay_->SetColor({ 0.0f, 0.0f, 0.0f, fadeProgress });
+		deathFadeOverlay_->Update();
+
+		if (fadeProgress >= 1.0f && !gameOverTransitionRequested_)
+		{
+			gameOverTransitionRequested_ = true;
+			sceneManager_->StartTransition(SceneType::GameOver);
+		}
+	}
+}
+
+void GamePlayScene::UpdateDamageFlash()
+{
+	damageFlashTimer_ = (std::max)(0.0f, damageFlashTimer_ - kDeltaTime);
+	const float flashProgress = damageFlashTimer_ / kDamageFlashDuration;
+	const float overlayAlpha = 0.22f * flashProgress;
+	damageFlashOverlay_->SetColor({ 1.0f, 0.02f, 0.02f, overlayAlpha });
+	object3d->SetColor(flashProgress > 0.0f
+		? Vector4{ 1.0f, 0.08f, 0.08f, 1.0f }
+		: Vector4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	damageFlashOverlay_->Update();
+}
+
+void GamePlayScene::UpdateHealthBar()
+{
+	const float healthRatio = static_cast<float>(playerHealth_) / kMaxPlayerHealth;
+	healthBarFill_->SetPosition({ 36.0f, 32.0f, 0.0f });
+	healthBarFill_->SetSize({ 2.96f * healthRatio, 0.20f });
+	healthBarFill_->Update();
 }
 
 void GamePlayScene::UpdateSharedGameplay()
@@ -543,13 +730,6 @@ void GamePlayScene::UpdateSharedGameplay()
 	object3d->SetRotate(playerRotate);
 	object3d->SetTranslate({ playerPosition.x, playerPosition.y + kPlayerHeight * 0.5f, playerPosition.z });
 	object3d->Update();
-	if (isEnemyAlive)
-	{
-		enemy3d->Update();
-		enemy3d->SetRotate(enemyRotate);
-		enemy3d->SetTranslate(enemyPosition);
-	}
-
 	Vector3 diff =
 	{
 		playerPosition.x - enemyPosition.x,
@@ -569,28 +749,29 @@ void GamePlayScene::UpdateSharedGameplay()
 		}
 	}
 
-	// 敵の移動スピード（好みの速さに調整してください）
-	float enemySpeed = 0.05f;
-
-	// 3. プレイヤーと敵が少し離れている場合のみ移動処理を行う（完全に重なるのを防ぐため）
-	if (distance > 0.1f)
+	// 敵は攻撃距離に入ったら水平方向の移動を止め、プレイヤーと重ならないようにする
+	constexpr float enemySpeed = 0.05f;
+	const float horizontalDistance = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+	if (phase_ == GamePhase::Combat && isEnemyAlive && !isPlayerDead_ &&
+		horizontalDistance > kEnemyAttackRange)
 	{
-		// ベクトルを正規化（長さを1にする）して方向だけを取り出す
-		Vector3 direction = {
-			diff.x / distance,
-			diff.y / distance,
-			diff.z / distance
-		};
-
-		// 4. 敵の座標に「方向 × スピード」を足して移動させる
-		enemyPosition.x += direction.x * enemySpeed;
-		// 空を飛ばせたくない場合は Y 軸の追従をコメントアウトするか、重力処理を別途入れてください
-		enemyPosition.y += direction.y * enemySpeed;
-		enemyPosition.z += direction.z * enemySpeed;
-
-		// (おまけ) 敵がプレイヤーの方向を向くように回転（Y軸回転）
-		// atan2を使ってXとZの向きから角度を算出します
-		enemyRotate.y = std::atan2(direction.x, direction.z);
+		const float directionX = diff.x / horizontalDistance;
+		const float directionZ = diff.z / horizontalDistance;
+		enemyPosition.x += directionX * enemySpeed;
+		enemyPosition.z += directionZ * enemySpeed;
+		enemyRotate.y = std::atan2(directionX, directionZ);
+	}
+	// プレイヤーがジャンプ・落下した場合は、敵の高さだけ追従させる
+	if (phase_ == GamePhase::Combat && isEnemyAlive && !isPlayerDead_ && std::abs(diff.y) > 0.05f)
+	{
+		const float verticalStep = std::min(std::abs(diff.y), enemySpeed);
+		enemyPosition.y += diff.y > 0.0f ? verticalStep : -verticalStep;
+	}
+	if (isEnemyAlive)
+	{
+		enemy3d->SetRotate(enemyRotate);
+		enemy3d->SetTranslate({ enemyPosition.x, enemyPosition.y + kPlayerHeight * 0.5f, enemyPosition.z });
+		enemy3d->Update();
 	}
 
 	object3d->DrawSkeleton(lineRenderer);
@@ -687,6 +868,16 @@ void GamePlayScene::Draw()
 	}
 	// メッセージ描画で3D用PSOに切り替わるため、遷移Spriteの前に戻す
 	SpriteCommon::GetInstance()->DrawCommon();
+	damageFlashOverlay_->Draw();
+	if (phase_ == GamePhase::Combat && !isCombatIntroActive_)
+	{
+		healthBarBackground_->Draw();
+		healthBarFill_->Draw();
+	}
+	if (isPlayerDead_)
+	{
+		deathFadeOverlay_->Draw();
+	}
 	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
 	imGuiManager->ImGuiDraw();
@@ -704,6 +895,6 @@ void GamePlayScene::DrawCombat()
 	// 戦闘パート専用のオブジェクトやUIはここに追加する
 	if (isEnemyAlive)
 	{
-		//enemy3d->Draw(); // 敵モデルを表示するときに有効化
+		enemy3d->Draw();
 	}
 }
