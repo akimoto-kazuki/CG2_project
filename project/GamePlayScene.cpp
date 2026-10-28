@@ -282,11 +282,6 @@ void GamePlayScene::Update()
 
 	// キー入力 始
 	input->Update();
-	// ゲームオーバー画面確認用の仮入力（F2）
-	if (input->WasKeyPressed(DIK_F2))
-	{
-		sceneManager_->StartTransition(SceneType::GameOver);
-	}
 	if (isPlayerDead_)
 	{
 		UpdateDamageFlash();
@@ -631,39 +626,29 @@ void GamePlayScene::UpdateHealthBar()
 void GamePlayScene::UpdateSharedGameplay()
 {
 	auto input = Input::GetInstance();
-	if (input->IsKeyDown(DIK_0))
-	{
-		OutputDebugStringA("Hit 0\n");
-	}
-
-	if (input->WasKeyPressed(DIK_1))
-	{
-		particleEmitterEffect->EmitEffectNow();
-	}
 
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
 
-	if (input->IsKeyDown(DIK_D))
+	// 展示中は戦闘パートの移動・ジャンプ・デバッグ入力を無効にする。
+	if (phase_ == GamePhase::Work)
 	{
-		playerMove.x += 0.1f;
-	}
-	if (input->IsKeyDown(DIK_A))
-	{
-		playerMove.x -= 0.1f;
-	}
-	if (input->IsKeyDown(DIK_W))
-	{
-		playerMove.z += 0.1f;
-	}
-	if (input->IsKeyDown(DIK_S))
-	{
-		playerMove.z -= 0.1f;
-	}
-
-	if (input->WasKeyPressed(DIK_SPACE) && !isJumping)
-	{
-		velocityY = jumpPower; // 上方向への初速を与える
-		isJumping = true;      // ジャンプ状態をオンにする
+		if (input->IsKeyDown(DIK_0))
+		{
+			OutputDebugStringA("Hit 0\n");
+		}
+		if (input->WasKeyPressed(DIK_1))
+		{
+			particleEmitterEffect->EmitEffectNow();
+		}
+		if (input->IsKeyDown(DIK_D)) playerMove.x += 0.1f;
+		if (input->IsKeyDown(DIK_A)) playerMove.x -= 0.1f;
+		if (input->IsKeyDown(DIK_W)) playerMove.z += 0.1f;
+		if (input->IsKeyDown(DIK_S)) playerMove.z -= 0.1f;
+		if (input->WasKeyPressed(DIK_SPACE) && !isJumping)
+		{
+			velocityY = jumpPower; // 上方向への初速を与える
+			isJumping = true;      // ジャンプ状態をオンにする
+		}
 	}
 
 	if (playerMove.x != 0.0f || playerMove.z != 0.0f)
@@ -736,18 +721,6 @@ void GamePlayScene::UpdateSharedGameplay()
 		playerPosition.y - enemyPosition.y,
 		playerPosition.z - enemyPosition.z
 	};
-
-	// 2. プレイヤーと敵の距離を計算する
-	float distance = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
-
-	if (phase_ == GamePhase::Combat && input->WasKeyPressed(DIK_F))
-	{
-		// 敵との距離が近く、かつ敵が生きているなら攻撃ヒット
-		if (distance < 2.0f && isEnemyAlive)
-		{
-			isEnemyAlive = false; // 敵を消す
-		}
-	}
 
 	// 敵は攻撃距離に入ったら水平方向の移動を止め、プレイヤーと重ならないようにする
 	constexpr float enemySpeed = 0.05f;
