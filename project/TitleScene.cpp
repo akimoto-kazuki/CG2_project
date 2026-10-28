@@ -64,8 +64,8 @@ void TitleScene::Initialize()
 	{
 		TextureManager::GetInstance()->LoadTexture(spriteFile[i]);
 	}
-	// アニメーション
-	ModelManager::GetInstance()->LoadModel("walk.gltf");
+	// プレイヤーと敵に使う箱型モデル
+	ModelManager::GetInstance()->LoadModel("block/block.obj");
 	// オブジェクト
 	ModelManager::GetInstance()->LoadModel("space.obj");
 	ModelManager::GetInstance()->LoadModel("title.obj");
@@ -87,14 +87,15 @@ void TitleScene::Initialize()
 	//  プレイヤー
 	object3d = new Object3d();
 	object3d->Initialize();
-	object3d->SetModel("walk.gltf");
-	object3d->SetAnimation("resources", "walk.gltf");
+	object3d->SetModel("block/block.obj");
+	object3d->SetScale({ 0.6f, 1.6f, 0.6f });
 	object3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
 	//  敵
 	enemy3d = new Object3d();
 	enemy3d->Initialize();
-	enemy3d->SetModel("walk.gltf");
-	enemy3d->SetAnimation("resources", "walk.gltf");
+	enemy3d->SetModel("block/block.obj");
+	enemy3d->SetScale({ 0.6f, 1.6f, 0.6f });
+	enemy3d->SetColor({ 1.0f, 0.12f, 0.08f, 1.0f });
 	enemy3d->SetEnvironmentTextureIndex(skyboxTextureIndex);
 	// スペース
 	space3d = new Object3d();
@@ -233,13 +234,13 @@ void TitleScene::Update()
 	// プレイヤー
 	object3d->Update();
 	object3d->SetRotate(playerRotate);
-	object3d->SetTranslate(playerPosition);
+	object3d->SetTranslate({ playerPosition.x, playerPosition.y + 0.8f, playerPosition.z });
 	// 敵
 	if (isEnemyAlive)
 	{
 		enemy3d->Update();
 		enemy3d->SetRotate(enemyRotate);
-		enemy3d->SetTranslate(enemyPosition);
+		enemy3d->SetTranslate({ enemyPosition.x, enemyPosition.y + 0.8f, enemyPosition.z });
 	}
 	// スペース
 	space3d->Update();

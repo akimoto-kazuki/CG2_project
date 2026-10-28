@@ -45,6 +45,11 @@ private:
 	void UpdateWork();
 	void UpdateCombat();
 	void UpdateCombatIntro();
+	void UpdateCombatIntroLayout();
+	void TakePlayerDamage();
+	void UpdateDeathAnimation();
+	void UpdateDamageFlash();
+	void UpdateHealthBar();
 	void TryMineFront(int verticalOffset = 0);
 	void TryMineBelow();
 	void TryMineTile(int tileX, int tileY, int layer);
@@ -55,13 +60,11 @@ private:
 	Camera* camera = nullptr;
 	Vector3 rotate;
 	Vector3 translate;
-#if defined(_DEBUG)
 	Vector3 cameraOrbitTarget_ = { 0.0f, 0.0f, 10.0f };
 	float cameraOrbitYaw_ = 0.0f;
 	float cameraOrbitPitch_ = 0.0f;
 	float cameraOrbitDistance_ = 20.0f;
 	void UpdateMouseCamera();
-#endif
 	
 	// --- 描画オブジェクト ---
 	// PostEffect
@@ -104,6 +107,14 @@ private:
 	Vector3 enemyPosition;
 	Vector3 enemyRotate;
 	bool isEnemyAlive = true;   // 敵の生存フラグ
+	static constexpr int kMaxPlayerHealth = 3;
+	int playerHealth_ = kMaxPlayerHealth;
+	float enemyAttackCooldown_ = 0.0f;
+	float damageFlashTimer_ = 0.0f;
+	float deathAnimationTimer_ = 0.0f;
+	float deathStartRotationX_ = 0.0f;
+	bool isPlayerDead_ = false;
+	bool gameOverTransitionRequested_ = false;
 
 	bool isCombatIntroActive_ = false;
 	bool showSurvivalMessage_ = false;
@@ -117,6 +128,10 @@ private:
 	std::array<std::string, 2> spriteFile;
 	std::vector<Sprite*> sprites_;
 	Sprite* startOverlay_ = nullptr;
+	Sprite* damageFlashOverlay_ = nullptr;
+	Sprite* deathFadeOverlay_ = nullptr;
+	Sprite* healthBarBackground_ = nullptr;
+	Sprite* healthBarFill_ = nullptr;
 
 	// --- パーティクルエミッター ---
 	EulerTransform particleEffectTransform;
