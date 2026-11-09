@@ -32,8 +32,14 @@ namespace
 void GamePlayScene::Initialize()
 {
 	showSurvivalMessage_ = false;
-	// 展示でタイトル／ゲームオーバーから入った時、すぐ戦闘を見せられるようにする
-	phase_ = GamePhase::Combat;
+	// 制作チャートの最初の段階として、次の戦闘用素材を集める作業パートから始める。
+	phase_ = GamePhase::Work;
+	equippedWeapon_ = WeaponType::None;
+	isBossFight_ = false;
+	gameClearTransitionRequested_ = false;
+	enemyHealth_ = 0;
+	enemyMaxHealth_ = 0;
+	playerAttackCooldown_ = 0.0f;
 	isCombatIntroActive_ = false;
 	combatIntroStep_ = 0;
 	playerHealth_ = kMaxPlayerHealth;
@@ -321,36 +327,157 @@ void GamePlayScene::Update()
 	UpdateDamageFlash();
 	UpdateHealthBar();
 
-	// ImGui
+#ifdef _DEBUG
+	DrawGameplayHud();
+#endif
 #ifdef USE_IMGUI
-	ImGui::ShowDemoWindow();
-	ImGui::Text("Phase: %s (Enterで切り替え)", phase_ == GamePhase::Work ? "Work" : "Combat");
-	ImGui::Text("Player Tile: (%d, %d) %s", playerTileX_, playerTileY_, playerIsInsideMap_ ? "Inside" : "Outside");
-	const char* toolName = "Shovel";
-	if (currentTool_ == TileMap::ToolType::Pickaxe) toolName = "Pickaxe";
-	if (currentTool_ == TileMap::ToolType::Axe) toolName = "Axe";
-	ImGui::Text("Tool: %s (Tabで切り替え)", toolName);
-	ImGui::Text("採掘: 左クリック=正面 / E=正面の一段上 / Q=足元");
-	ImGui::Text("Materials: Dirt %d / Stone %d / Ore %d / Wood %d", dirtCount_, stoneCount_, oreCount_, woodCount_);
-	ImGui::Text("HP: %d / %d", playerHealth_, kMaxPlayerHealth);
-	ImGui::Text("Camera");
-	ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
-	ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
-	ImGui::Text("Sprite");
-	ImGui::DragFloat2("SpritePosition", &spritePosition.x, 0.1f);
-	ImGui::DragFloat("SpriteRotation", &spriteRotation, 0.1f);
-	ImGui::DragFloat4("SpriteColor", &spriteColor.x, 0.1f);
-	ImGui::DragFloat2("SpriteSize", &spriteSize.x, 0.1f);
-	ImGui::Text("object3D");
-	ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
-	ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
-	float envCoef = object3d->GetEnvironmentCoefficient();
-	if (ImGui::SliderFloat("Environment Rate", &envCoef, 0.0f, 1.0f))
-	{
-		object3d->SetEnvironmentCoefficient(envCoef);
-	}
+	DrawHotbar();
 #endif
 	imGuiManager->ImGuiEnd();
+}
+
+// Debugビルドでだけ、画面上部にゲーム状況・操作方法・デバッグ値を表示する。
+void GamePlayScene::DrawGameplayHud()
+{
+#ifdef USE_IMGUI
+	const char* toolName = "シャベル";
+	if (currentTool_ == TileMap::ToolType::Pickaxe) toolName = "つるはし";
+	if (currentTool_ == TileMap::ToolType::Axe) toolName = "斧";
+
+	// 操作方法と目標は、フェーズに応じて必要なものだけを常時表示する。
+	ImGui::SetNextWindowPos(ImVec2(18.0f, 18.0f), ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.82f);
+	const ImGuiWindowFlags guideWindowFlags = ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+	if (ImGui::Begin("ゲーム状況と操作方法", nullptr, guideWindowFlags))
+	{
+		ImGui::TextUnformatted(phase_ == GamePhase::Work ? "作業パート" : "戦闘パート");
+		if (phase_ == GamePhase::Work)
+		{
+			if (!isBossFight_)
+			{
+				ImGui::Text("目標: 木材を%d個集めて木の剣を作る", kWorkGoalWoodCount);
+				ImGui::Text("木材: %d / %d%s", woodCount_, kWorkGoalWoodCount,
+					IsWorkGoalComplete() ? " 目標達成" : "");
+			}
+			else
+			{
+				ImGui::Text("目標: 鉱石2個で鉱石の剣を作り、ボスを倒す");
+			}
+			ImGui::Text("道具: %s (Tabで切り替え)", toolName);
+		}
+		else
+		{
+			ImGui::Text("敵HP: %d / %d%s", enemyHealth_, enemyMaxHealth_, isBossFight_ ? "  ボス" : "");
+			ImGui::Text("プレイヤーHP: %d / %d", playerHealth_, kMaxPlayerHealth);
+		}
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("共通: WASD カメラ方向へ移動 / Space ジャンプ / 右クリック+マウス 視点操作");
+		if (phase_ == GamePhase::Work)
+		{
+			ImGui::TextUnformatted("採掘: 左クリック=正面 / E=正面の上 / Q=足元");
+			if (equippedWeapon_ == WeaponType::None)
+			{
+				ImGui::TextUnformatted("C: 素材から武器作成");
+			}
+			else
+			{
+				ImGui::TextUnformatted("Enter: 戦闘開始");
+			}
+		}
+		else
+		{
+			ImGui::TextUnformatted("J または左クリック: 武器で攻撃");
+		}
+
+		if (ImGui::CollapsingHeader("素材の所持数"))
+		{
+			ImGui::Text("木材 %d / 鉱石 %d / 石 %d / 土 %d", woodCount_, oreCount_, stoneCount_, dirtCount_);
+		}
+		if (ImGui::CollapsingHeader("デバッグ情報"))
+		{
+			ImGui::Text("Player Tile: (%d, %d) %s", playerTileX_, playerTileY_, playerIsInsideMap_ ? "Inside" : "Outside");
+			ImGui::DragFloat3("cameraRotato", &rotate.x, 0.1f);
+			ImGui::DragFloat3("cameraTranslate", &translate.x, 0.1f);
+			ImGui::DragFloat3("ObjectPosition", &playerPosition.x, 0.1f);
+			ImGui::DragFloat3("ObjectRotation", &playerRotate.x, 0.1f);
+			float environmentRate = object3d->GetEnvironmentCoefficient();
+			if (ImGui::SliderFloat("Environment Rate", &environmentRate, 0.0f, 1.0f))
+			{
+				object3d->SetEnvironmentCoefficient(environmentRate);
+			}
+		}
+	}
+	ImGui::End();
+#endif
+}
+
+// Debug/Release共通のImGui描画で、道具・武器・素材数を9枠に表示する。
+void GamePlayScene::DrawHotbar()
+{
+#ifdef USE_IMGUI
+	const char* toolName = "シャベル";
+	if (currentTool_ == TileMap::ToolType::Pickaxe) toolName = "つるはし";
+	if (currentTool_ == TileMap::ToolType::Axe) toolName = "斧";
+
+	// スロット順: 道具、木の剣、鉱石の剣、木材、鉱石、土、石、空き、空き。
+	const char* slotNames[] = { toolName, "木の剣", "鉱石剣", "木材", "鉱石", "土", "石", "空き", "空き" };
+	const int slotCounts[] = { 1,
+		equippedWeapon_ == WeaponType::WoodSword ? 1 : 0,
+		equippedWeapon_ == WeaponType::OreSword ? 1 : 0,
+		woodCount_, oreCount_, dirtCount_, stoneCount_, 0, 0 };
+	const int selectedSlot = equippedWeapon_ == WeaponType::WoodSword ? 1
+		: equippedWeapon_ == WeaponType::OreSword ? 2 : 0;
+	constexpr float kHotbarSlotWidth = 78.0f;
+	constexpr float kHotbarSlotHeight = 64.0f;
+	constexpr float kHotbarWindowWidth = 790.0f;
+	constexpr float kHotbarWindowHeight = 96.0f;
+
+	// 画面下中央にMinecraft/Terraria風の9枠ホットバーを固定表示する。
+	ImGui::SetNextWindowPos(ImVec2(WinApp::kClientWidth * 0.5f,
+		WinApp::kClientHeight - kHotbarWindowHeight - 16.0f), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(kHotbarWindowWidth, kHotbarWindowHeight), ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.86f);
+	const ImGuiWindowFlags hotbarWindowFlags = ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNavFocus;
+	if (ImGui::Begin("##所持品スロット", nullptr, hotbarWindowFlags))
+	{
+		for (int slotIndex = 0; slotIndex < 9; ++slotIndex)
+		{
+			// 選択中のスロットだけ背景色を明るくし、装備中の道具・武器を示す。
+			const bool isSelected = slotIndex == selectedSlot;
+			const ImVec4 slotColor = isSelected
+				? ImVec4(0.55f, 0.40f, 0.16f, 1.0f)
+				: ImVec4(0.12f, 0.14f, 0.18f, 1.0f);
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, slotColor);
+			const char* slotId = "##HotbarSlot";
+			ImGui::PushID(slotIndex);
+			if (ImGui::BeginChild(slotId, ImVec2(kHotbarSlotWidth, kHotbarSlotHeight),
+				ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle,
+				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+			{
+				ImGui::Text("%d", slotIndex + 1);
+				ImGui::Text("%s", slotNames[slotIndex]);
+				if (slotCounts[slotIndex] > 0)
+				{
+					ImGui::Text("x%d", slotCounts[slotIndex]);
+				}
+			}
+			ImGui::EndChild();
+			ImGui::PopID();
+			ImGui::PopStyleColor();
+			if (slotIndex < 8)
+			{
+				ImGui::SameLine();
+			}
+		}
+	}
+	ImGui::End();
+#endif
 }
 
 void GamePlayScene::UpdateCombatIntro()
@@ -448,6 +575,15 @@ void GamePlayScene::UpdateMouseCamera()
 void GamePlayScene::UpdateWork()
 {
 	auto input = Input::GetInstance();
+	// 必要素材を消費して武器を作り、Enter で次の戦闘へ進む。
+	if (input->WasKeyPressed(DIK_C))
+	{
+		CraftWeapon();
+	}
+	if (input->WasKeyPressed(DIK_RETURN) && equippedWeapon_ != WeaponType::None)
+	{
+		StartCombat();
+	}
 	if (input->WasKeyPressed(DIK_TAB))
 	{
 		switch (currentTool_)
@@ -478,6 +614,12 @@ void GamePlayScene::UpdateWork()
 		// 足元のブロックを採掘する
 		TryMineBelow();
 	}
+}
+
+// 作業目標の達成状況を判定する。後続の武器作成・パート進行からも再利用できる。
+bool GamePlayScene::IsWorkGoalComplete() const
+{
+	return woodCount_ >= kWorkGoalWoodCount;
 }
 
 void GamePlayScene::TryMineFront(int verticalOffset)
@@ -540,6 +682,17 @@ void GamePlayScene::UpdateCombat()
 	}
 
 	enemyAttackCooldown_ = (std::max)(0.0f, enemyAttackCooldown_ - kDeltaTime);
+	playerAttackCooldown_ = (std::max)(0.0f, playerAttackCooldown_ - kDeltaTime);
+	// J または左クリックで近くの敵を攻撃する。
+	const auto input = Input::GetInstance();
+	if (input->WasKeyPressed(DIK_J) || input->WasMouseButtonPressed(VK_LBUTTON))
+	{
+		TryPlayerAttack();
+	}
+	if (phase_ != GamePhase::Combat || !isEnemyAlive)
+	{
+		return;
+	}
 	const float dx = playerPosition.x - enemyPosition.x;
 	const float dz = playerPosition.z - enemyPosition.z;
 	const float horizontalDistance = std::sqrt(dx * dx + dz * dz);
@@ -549,6 +702,96 @@ void GamePlayScene::UpdateCombat()
 		TakePlayerDamage();
 		enemyAttackCooldown_ = kEnemyAttackInterval;
 	}
+}
+
+// 素材を消費して武器を作成する。初戦は木材、ボス戦前は報酬の鉱石を使う。
+void GamePlayScene::CraftWeapon()
+{
+	if (isBossFight_)
+	{
+		if (equippedWeapon_ == WeaponType::None && oreCount_ >= 2)
+		{
+			oreCount_ -= 2;
+			equippedWeapon_ = WeaponType::OreSword;
+		}
+		return;
+	}
+
+	if (equippedWeapon_ == WeaponType::None && IsWorkGoalComplete())
+	{
+		woodCount_ -= kWorkGoalWoodCount;
+		equippedWeapon_ = WeaponType::WoodSword;
+	}
+}
+
+// 戦闘開始時に敵の強さと配置を現在の進行段階に合わせる。
+void GamePlayScene::StartCombat()
+{
+	phase_ = GamePhase::Combat;
+	isEnemyAlive = true;
+	enemyMaxHealth_ = isBossFight_ ? 36 : 21;
+	enemyHealth_ = enemyMaxHealth_;
+	enemyAttackCooldown_ = isBossFight_ ? 1.8f : 1.0f;
+	playerAttackCooldown_ = 0.0f;
+	playerHealth_ = kMaxPlayerHealth;
+	enemyPosition = {
+		playerPosition.x + std::cos(playerRotate.y) * kEnemySpawnDistance,
+		playerPosition.y,
+		playerPosition.z - std::sin(playerRotate.y) * kEnemySpawnDistance
+	};
+	enemy3d->SetColor(isBossFight_
+		? Vector4{ 0.55f, 0.08f, 0.75f, 1.0f }
+		: Vector4{ 1.0f, 0.12f, 0.08f, 1.0f });
+}
+
+// 攻撃距離内の敵に武器の威力を適用し、HP が0になったら勝利処理へ進む。
+void GamePlayScene::TryPlayerAttack()
+{
+	if (!isEnemyAlive || playerAttackCooldown_ > 0.0f || equippedWeapon_ == WeaponType::None)
+	{
+		return;
+	}
+
+	const float dx = playerPosition.x - enemyPosition.x;
+	const float dz = playerPosition.z - enemyPosition.z;
+	const float attackRange = 1.6f;
+	if (dx * dx + dz * dz > attackRange * attackRange)
+	{
+		return;
+	}
+
+	const int damage = equippedWeapon_ == WeaponType::WoodSword ? 7 : 12;
+	enemyHealth_ = (std::max)(0, enemyHealth_ - damage);
+	playerAttackCooldown_ = 0.45f;
+	if (enemyHealth_ == 0)
+	{
+		isEnemyAlive = false;
+		HandleEnemyDefeated();
+	}
+}
+
+// 通常敵の勝利で鉱石と回復を得てボス準備へ、ボス勝利でクリア画面へ進む。
+void GamePlayScene::HandleEnemyDefeated()
+{
+	if (isBossFight_)
+	{
+		if (!gameClearTransitionRequested_)
+		{
+			gameClearTransitionRequested_ = true;
+			sceneManager_->StartTransition(SceneType::GameClear);
+		}
+		return;
+	}
+
+	isBossFight_ = true;
+	phase_ = GamePhase::Work;
+	equippedWeapon_ = WeaponType::None;
+	oreCount_ += 2;
+	playerHealth_ = kMaxPlayerHealth;
+	playerPosition = { 0.0f, TileMap::kTileSize, 10.0f };
+	playerTileX_ = 0;
+	playerTileY_ = 0;
+	playerIsInsideMap_ = tileMap_.WorldToTile(playerPosition, playerTileX_, playerTileY_);
 }
 
 void GamePlayScene::TakePlayerDamage()
@@ -627,9 +870,12 @@ void GamePlayScene::UpdateSharedGameplay()
 {
 	auto input = Input::GetInstance();
 
+	// WASD入力をまずカメラから見た左右・前後方向で受け取り、後でワールド方向へ変換する。
+	float localMoveRight = 0.0f;
+	float localMoveForward = 0.0f;
 	Vector3 playerMove = { 0.0f, 0.0f, 0.0f };
 
-	// 展示中は戦闘パートの移動・ジャンプ・デバッグ入力を無効にする。
+	// 開発用入力だけ作業パートに限定する。
 	if (phase_ == GamePhase::Work)
 	{
 		if (input->IsKeyDown(DIK_0))
@@ -640,16 +886,24 @@ void GamePlayScene::UpdateSharedGameplay()
 		{
 			particleEmitterEffect->EmitEffectNow();
 		}
-		if (input->IsKeyDown(DIK_D)) playerMove.x += 0.1f;
-		if (input->IsKeyDown(DIK_A)) playerMove.x -= 0.1f;
-		if (input->IsKeyDown(DIK_W)) playerMove.z += 0.1f;
-		if (input->IsKeyDown(DIK_S)) playerMove.z -= 0.1f;
-		if (input->WasKeyPressed(DIK_SPACE) && !isJumping)
-		{
-			velocityY = jumpPower; // 上方向への初速を与える
-			isJumping = true;      // ジャンプ状態をオンにする
-		}
 	}
+
+	// 戦闘中もWASDで移動し、Spaceでジャンプして敵との距離を調整できる。
+	if (input->IsKeyDown(DIK_D)) localMoveRight += 1.0f;
+	if (input->IsKeyDown(DIK_A)) localMoveRight -= 1.0f;
+	if (input->IsKeyDown(DIK_W)) localMoveForward += 1.0f;
+	if (input->IsKeyDown(DIK_S)) localMoveForward -= 1.0f;
+	if (input->WasKeyPressed(DIK_SPACE) && !isJumping)
+	{
+		velocityY = jumpPower; // 上方向への初速を与える
+		isJumping = true;      // ジャンプ状態をオンにする
+	}
+
+	// 水平方向のカメラ回転に合わせてWASDを回し、カメラ正面を前進方向にする。
+	const float sinCameraYaw = std::sin(cameraOrbitYaw_);
+	const float cosCameraYaw = std::cos(cameraOrbitYaw_);
+	playerMove.x = localMoveRight * cosCameraYaw - localMoveForward * sinCameraYaw;
+	playerMove.z = localMoveRight * sinCameraYaw + localMoveForward * cosCameraYaw;
 
 	if (playerMove.x != 0.0f || playerMove.z != 0.0f)
 	{

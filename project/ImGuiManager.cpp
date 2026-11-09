@@ -1,4 +1,5 @@
 #include "ImGuiManager.h"
+#include <string>
 
 ImGuiManager* ImGuiManager::GetInstance()
 {
@@ -15,6 +16,24 @@ void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] S
 	IMGUI_CHECKVERSION();
 	// ImGuiのコンテキストを生成
 	ImGui::CreateContext();
+	// MergeMode の重ね先になる標準フォントを先に登録する。
+	ImGui::GetIO().Fonts->AddFontDefault();
+	// Windows標準の日本語フォントを標準フォントへ重ね、HUDの日本語を読めるようにする。
+	char windowsDirectory[MAX_PATH] = {};
+	GetWindowsDirectoryA(windowsDirectory, MAX_PATH);
+	std::string japaneseFontPath = std::string(windowsDirectory) + "\\Fonts\\meiryo.ttc";
+	if (GetFileAttributesA(japaneseFontPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+	{
+		japaneseFontPath = std::string(windowsDirectory) + "\\Fonts\\msgothic.ttc";
+	}
+	if (GetFileAttributesA(japaneseFontPath.c_str()) != INVALID_FILE_ATTRIBUTES)
+	{
+		ImFontConfig japaneseFontConfig{};
+		japaneseFontConfig.MergeMode = true;
+		ImGui::GetIO().Fonts->AddFontFromFileTTF(
+			japaneseFontPath.c_str(), 16.0f, &japaneseFontConfig,
+			ImGui::GetIO().Fonts->GetGlyphRangesJapanese());
+	}
 	// ImGuiのスタイルを設定
 	ImGui::StyleColorsDark();
 

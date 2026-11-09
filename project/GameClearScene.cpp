@@ -313,7 +313,7 @@ void GameClearScene::Update()
 	camera->SetRotate(rotate);
 	camera->SetTranslate(translate);
 
-#ifdef USE_IMGUI
+#ifdef _DEBUG
 	// ImGui
 	ImGui::ShowDemoWindow();
 
@@ -338,7 +338,7 @@ void GameClearScene::Update()
 		object3d->SetEnvironmentCoefficient(envCoef);
 	}
 
-#endif // USE_IMGUI
+#endif // _DEBUG
 
 	// ImGuiの設定 終
 	imGuiManager->ImGuiEnd();
