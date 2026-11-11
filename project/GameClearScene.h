@@ -82,6 +82,11 @@ private:
 	Vector3 titleBackSize;
 
 	// --- スプライト用 ---
+	// クリア画面の背景、脈動するアクセント線、文字画像を保持する。
+	Sprite* background_ = nullptr;
+	Sprite* accent_ = nullptr;
+	Sprite* textOverlay_ = nullptr;
+	float timer_ = 0.0f;
 	Vector3 spritePosition;
 	float spriteRotation;
 	Vector4 spriteColor;
