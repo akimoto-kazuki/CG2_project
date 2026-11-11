@@ -53,6 +53,10 @@ private:
 	void UpdateSharedGameplay();
 	// Debug専用の詳細な状況・デバッグ情報を画面上部に表示する。
 	void DrawGameplayHud();
+	// 現在の進行状態から、次に行う作業を左上に案内する。
+	void DrawObjectiveNavigation();
+	// Debug/Release共通で現在のフェーズに必要な操作方法を表示する。
+	void DrawControlGuide();
 	// Debug/Release共通で画面下部に9枠の手持ちスロットを表示する。
 	void DrawHotbar();
 	void UpdateWork();
@@ -111,7 +115,8 @@ private:
 	int playerTileX_ = 0;
 	int playerTileY_ = 0;
 	bool playerIsInsideMap_ = false;
-	TileMap::ToolType currentTool_ = TileMap::ToolType::Shovel;
+	// 現在の道具。操作切替を無効にしている間は斧を使う。
+	TileMap::ToolType currentTool_ = TileMap::ToolType::Axe;
 	int dirtCount_ = 0;
 	int stoneCount_ = 0;
 	int oreCount_ = 0;
@@ -130,6 +135,7 @@ private:
 	static constexpr int kMaxPlayerHealth = 3;
 	int playerHealth_ = kMaxPlayerHealth;
 	float enemyAttackCooldown_ = 0.0f;
+	float enemyHitFlashTimer_ = 0.0f; // 攻撃を受けた敵を白く点滅させる残り時間。
 	float damageFlashTimer_ = 0.0f;
 	float deathAnimationTimer_ = 0.0f;
 	float deathStartRotationX_ = 0.0f;

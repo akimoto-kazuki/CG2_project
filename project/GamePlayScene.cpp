@@ -20,6 +20,8 @@ namespace
 	constexpr float kDeltaTime = 1.0f / 60.0f;
 	constexpr float kDamageFlashDuration = 0.24f;
 	constexpr float kEnemyAttackInterval = 1.2f;
+	constexpr float kEnemyHitFlashDuration = 0.18f;
+	constexpr float kEnemyHitFlashBlinkInterval = 0.045f;
 	// 両モデルの幅(0.6)に余裕を少し足し、面同士が触れる手前で止める
 	constexpr float kEnemyAttackRange = 0.65f;
 	constexpr float kEnemySpawnDistance = 3.5f;
@@ -75,7 +77,8 @@ void GamePlayScene::Initialize()
 	velocityY = 0.0f;         // Y軸方向の現在の速度
 	gravity = -0.025f;        // 重力（毎フレーム下に向かって引っ張る力）
 	jumpPower = 0.3f;         // ジャンプ力（上に飛び上がる初速）
-	currentTool_ = TileMap::ToolType::Shovel;
+	// 初期装備は斧にする。
+	currentTool_ = TileMap::ToolType::Axe;
 	dirtCount_ = 0;
 	stoneCount_ = 0;
 	oreCount_ = 0;
@@ -186,11 +189,9 @@ void GamePlayScene::Initialize()
 	// パーティクル
 	// 1. 画像の読み込みだけを行う（戻り値は受け取らない）
 	TextureManager::GetInstance()->LoadTexture("Resources/circle2.png");
-	TextureManager::GetInstance()->LoadTexture("Resources/gradationLine.png");
 	// 2. これが「何枚目に読み込んだ画像か」で番号を直接決める
 	// (例: 他に2枚読み込んでいて、これが3枚目の画像なら、0から数えて「2」になります)
 	uint32_t particleTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/circle2.png"); // ★環境に合わせて 1 や 2 などに変えてみてください
-	uint32_t particleRingTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilepath("Resources/gradationLine.png");
 	// 設定
 	ParticleManager::GetInstance()->CreateGroup("magic", particleTexIndex);
 	particleEffectTransform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,10.0f } };
@@ -292,6 +293,8 @@ void GamePlayScene::Update()
 	{
 		UpdateDamageFlash();
 		UpdateDeathAnimation();
+		DrawObjectiveNavigation();
+		DrawControlGuide();
 		imGuiManager->ImGuiEnd();
 		return;
 	}
@@ -309,6 +312,8 @@ void GamePlayScene::Update()
 		object3d->SetRotate(playerRotate);
 		object3d->SetTranslate({ playerPosition.x, playerPosition.y + kPlayerHeight * 0.5f, playerPosition.z });
 		object3d->Update();
+		DrawObjectiveNavigation();
+		DrawControlGuide();
 		imGuiManager->ImGuiEnd();
 		return;
 	}
@@ -331,12 +336,14 @@ void GamePlayScene::Update()
 	DrawGameplayHud();
 #endif
 #ifdef USE_IMGUI
+	DrawObjectiveNavigation();
+	DrawControlGuide();
 	DrawHotbar();
 #endif
 	imGuiManager->ImGuiEnd();
 }
 
-// Debugビルドでだけ、画面上部にゲーム状況・操作方法・デバッグ値を表示する。
+// Debugビルドでだけ、追加のゲーム状態とデバッグ値を表示する。
 void GamePlayScene::DrawGameplayHud()
 {
 #ifdef USE_IMGUI
@@ -345,7 +352,7 @@ void GamePlayScene::DrawGameplayHud()
 	if (currentTool_ == TileMap::ToolType::Axe) toolName = "斧";
 
 	// 操作方法と目標は、フェーズに応じて必要なものだけを常時表示する。
-	ImGui::SetNextWindowPos(ImVec2(18.0f, 18.0f), ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(18.0f, 188.0f), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.82f);
 	const ImGuiWindowFlags guideWindowFlags = ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
@@ -365,31 +372,12 @@ void GamePlayScene::DrawGameplayHud()
 			{
 				ImGui::Text("目標: 鉱石2個で鉱石の剣を作り、ボスを倒す");
 			}
-			ImGui::Text("道具: %s (Tabで切り替え)", toolName);
+			ImGui::Text("道具: %s", toolName);
 		}
 		else
 		{
 			ImGui::Text("敵HP: %d / %d%s", enemyHealth_, enemyMaxHealth_, isBossFight_ ? "  ボス" : "");
 			ImGui::Text("プレイヤーHP: %d / %d", playerHealth_, kMaxPlayerHealth);
-		}
-
-		ImGui::Separator();
-		ImGui::TextUnformatted("共通: WASD カメラ方向へ移動 / Space ジャンプ / 右クリック+マウス 視点操作");
-		if (phase_ == GamePhase::Work)
-		{
-			ImGui::TextUnformatted("採掘: 左クリック=正面 / E=正面の上 / Q=足元");
-			if (equippedWeapon_ == WeaponType::None)
-			{
-				ImGui::TextUnformatted("C: 素材から武器作成");
-			}
-			else
-			{
-				ImGui::TextUnformatted("Enter: 戦闘開始");
-			}
-		}
-		else
-		{
-			ImGui::TextUnformatted("J または左クリック: 武器で攻撃");
 		}
 
 		if (ImGui::CollapsingHeader("素材の所持数"))
@@ -408,6 +396,122 @@ void GamePlayScene::DrawGameplayHud()
 			{
 				object3d->SetEnvironmentCoefficient(environmentRate);
 			}
+		}
+	}
+	ImGui::End();
+#endif
+}
+
+// 進行状況に合わせて、次の目標と操作を左上に表示する。
+void GamePlayScene::DrawObjectiveNavigation()
+{
+#ifdef USE_IMGUI
+	ImGui::SetNextWindowPos(ImVec2(18.0f, 18.0f), ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.86f);
+	const ImGuiWindowFlags navigationFlags = ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+	if (ImGui::Begin("##目標ナビ", nullptr, navigationFlags))
+	{
+		ImGui::TextUnformatted("ナビゲーション");
+		ImGui::Separator();
+
+		if (isPlayerDead_)
+		{
+			ImGui::TextUnformatted("体力がなくなりました");
+			ImGui::TextUnformatted("ゲームオーバーへ移動中...");
+		}
+		else if (isCombatIntroActive_)
+		{
+			ImGui::TextUnformatted("戦闘の案内を確認しよう");
+			ImGui::TextUnformatted("Spaceキーで次へ進む");
+		}
+		else if (phase_ == GamePhase::Work && !isBossFight_)
+		{
+			ImGui::TextUnformatted("通常戦の準備");
+			if (equippedWeapon_ == WeaponType::None && !IsWorkGoalComplete())
+			{
+				ImGui::Text("木材を%d個集めよう", kWorkGoalWoodCount);
+				ImGui::ProgressBar(
+					static_cast<float>(woodCount_) / kWorkGoalWoodCount,
+					ImVec2(250.0f, 0.0f));
+				ImGui::Text("木材: %d / %d", woodCount_, kWorkGoalWoodCount);
+			}
+			else if (equippedWeapon_ == WeaponType::None)
+			{
+				ImGui::TextUnformatted("木の剣を作ろう");
+				ImGui::TextUnformatted("Cキーで作成");
+			}
+			else
+			{
+				ImGui::TextUnformatted("通常戦を始めよう");
+				ImGui::TextUnformatted("Enterキーで開始");
+			}
+		}
+		else if (phase_ == GamePhase::Work)
+		{
+			ImGui::TextUnformatted("ボス戦の準備");
+			if (equippedWeapon_ == WeaponType::None && oreCount_ < 2)
+			{
+				ImGui::TextUnformatted("鉱石を2個集めよう");
+				ImGui::ProgressBar(static_cast<float>(oreCount_) / 2.0f, ImVec2(250.0f, 0.0f));
+				ImGui::Text("鉱石: %d / 2", oreCount_);
+			}
+			else if (equippedWeapon_ == WeaponType::None)
+			{
+				ImGui::TextUnformatted("鉱石の剣を作ろう");
+				ImGui::TextUnformatted("Cキーで作成");
+			}
+			else
+			{
+				ImGui::TextUnformatted("ボス戦を始めよう");
+				ImGui::TextUnformatted("Enterキーで開始");
+			}
+		}
+		else
+		{
+			ImGui::TextUnformatted(isBossFight_ ? "ボスを倒そう" : "通常敵を倒そう");
+			ImGui::Text("敵HP: %d / %d", enemyHealth_, enemyMaxHealth_);
+			ImGui::TextUnformatted("近づいてJキーまたは左クリックで攻撃");
+		}
+	}
+	ImGui::End();
+#endif
+}
+
+// 現在のフェーズで使える操作を、製品版でも常に見えるガイドにまとめる。
+void GamePlayScene::DrawControlGuide()
+{
+#ifdef USE_IMGUI
+	const float guideWidth = 360.0f;
+	ImGui::SetNextWindowPos(ImVec2(
+		WinApp::kClientWidth - guideWidth - 18.0f, 18.0f), ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.82f);
+	const ImGuiWindowFlags guideFlags = ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+	if (ImGui::Begin("##操作ガイド", nullptr, guideFlags))
+	{
+		ImGui::TextUnformatted(phase_ == GamePhase::Work ? "操作方法 / 作業パート" : "操作方法 / 戦闘パート");
+		ImGui::Separator();
+		ImGui::TextUnformatted("WASD: カメラ方向へ移動 / Space: ジャンプ");
+		ImGui::TextUnformatted("右クリック+マウス: 視点操作");
+		if (phase_ == GamePhase::Work)
+		{
+			ImGui::TextUnformatted("左クリック: 正面を採掘");
+			ImGui::TextUnformatted("E: 上を採掘 / Q: 足元を採掘");
+			if (equippedWeapon_ == WeaponType::None)
+			{
+				ImGui::TextUnformatted("C: 素材から武器を作成");
+			}
+			else
+			{
+				ImGui::TextUnformatted("Enter: 戦闘開始");
+			}
+		}
+		else
+		{
+			ImGui::TextUnformatted("J または左クリック: 武器で攻撃");
 		}
 	}
 	ImGui::End();
@@ -584,22 +688,6 @@ void GamePlayScene::UpdateWork()
 	{
 		StartCombat();
 	}
-	if (input->WasKeyPressed(DIK_TAB))
-	{
-		switch (currentTool_)
-		{
-		case TileMap::ToolType::Shovel:
-			currentTool_ = TileMap::ToolType::Pickaxe;
-			break;
-		case TileMap::ToolType::Pickaxe:
-			currentTool_ = TileMap::ToolType::Axe;
-			break;
-		case TileMap::ToolType::Axe:
-			currentTool_ = TileMap::ToolType::Shovel;
-			break;
-		}
-	}
-
 	// 左クリックで正面、Eで正面の一段上、Qで足元を採掘する。
 	if (input->WasMouseButtonPressed(VK_LBUTTON))
 	{
@@ -763,6 +851,10 @@ void GamePlayScene::TryPlayerAttack()
 	const int damage = equippedWeapon_ == WeaponType::WoodSword ? 7 : 12;
 	enemyHealth_ = (std::max)(0, enemyHealth_ - damage);
 	playerAttackCooldown_ = 0.45f;
+
+	// 命中時はエフェクトを出さず、敵の白点滅だけで攻撃成功を知らせる。
+	enemyHitFlashTimer_ = kEnemyHitFlashDuration;
+
 	if (enemyHealth_ == 0)
 	{
 		isEnemyAlive = false;
@@ -849,6 +941,7 @@ void GamePlayScene::UpdateDeathAnimation()
 void GamePlayScene::UpdateDamageFlash()
 {
 	damageFlashTimer_ = (std::max)(0.0f, damageFlashTimer_ - kDeltaTime);
+	enemyHitFlashTimer_ = (std::max)(0.0f, enemyHitFlashTimer_ - kDeltaTime);
 	const float flashProgress = damageFlashTimer_ / kDamageFlashDuration;
 	const float overlayAlpha = 0.22f * flashProgress;
 	damageFlashOverlay_->SetColor({ 1.0f, 0.02f, 0.02f, overlayAlpha });
@@ -996,6 +1089,15 @@ void GamePlayScene::UpdateSharedGameplay()
 	}
 	if (isEnemyAlive)
 	{
+		// 命中直後は短い間隔で白く点滅させ、通常敵／ボスの色は点滅後に戻す。
+		const Vector4 enemyBaseColor = isBossFight_
+			? Vector4{ 0.55f, 0.08f, 0.75f, 1.0f }
+			: Vector4{ 1.0f, 0.12f, 0.08f, 1.0f };
+		const bool showEnemyHitFlash = enemyHitFlashTimer_ > 0.0f &&
+			static_cast<int>(enemyHitFlashTimer_ / kEnemyHitFlashBlinkInterval) % 2 == 0;
+		enemy3d->SetColor(showEnemyHitFlash
+			? Vector4{ 2.0f, 2.0f, 2.0f, 1.0f }
+			: enemyBaseColor);
 		enemy3d->SetRotate(enemyRotate);
 		enemy3d->SetTranslate({ enemyPosition.x, enemyPosition.y + kPlayerHeight * 0.5f, enemyPosition.z });
 		enemy3d->Update();
@@ -1056,8 +1158,8 @@ void GamePlayScene::Draw()
 	SkyBoxCommon::GetInstance()->DrawCommon(); // Skybox用のルートシグネチャ・PSOに切り替え
 	//skyBox->Draw();             // 引数なしでスッキリ呼び出せます！
 	//lineRenderer->Draw(camera);
-	// ★ここに追加：パーティクルの描画
-	//ParticleManager::GetInstance()->Draw(camera);
+	// 戦闘のヒット表現は敵の点滅で行い、パーティクル描画はここでは行わない。
+	// ParticleManager::GetInstance()->Draw(camera);
 
 	SpriteCommon::GetInstance()->DrawCommon();
 
