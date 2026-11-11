@@ -372,7 +372,7 @@ void GamePlayScene::DrawGameplayHud()
 			{
 				ImGui::Text("目標: 鉱石2個で鉱石の剣を作り、ボスを倒す");
 			}
-			ImGui::Text("道具: %s", toolName);
+			ImGui::Text("道具: %s (Tabで切り替え)", toolName);
 		}
 		else
 		{
@@ -498,7 +498,7 @@ void GamePlayScene::DrawControlGuide()
 		ImGui::TextUnformatted("右クリック+マウス: 視点操作");
 		if (phase_ == GamePhase::Work)
 		{
-			ImGui::TextUnformatted("左クリック: 正面を採掘");
+			ImGui::TextUnformatted("Tab: 道具切替 / 左クリック: 正面を採掘");
 			ImGui::TextUnformatted("E: 上を採掘 / Q: 足元を採掘");
 			if (equippedWeapon_ == WeaponType::None)
 			{
@@ -687,6 +687,22 @@ void GamePlayScene::UpdateWork()
 	if (input->WasKeyPressed(DIK_RETURN) && equippedWeapon_ != WeaponType::None)
 	{
 		StartCombat();
+	}
+	// Tabキーでシャベル・つるはし・斧を順番に切り替える。
+	if (input->WasKeyPressed(DIK_TAB))
+	{
+		switch (currentTool_)
+		{
+		case TileMap::ToolType::Shovel:
+			currentTool_ = TileMap::ToolType::Pickaxe;
+			break;
+		case TileMap::ToolType::Pickaxe:
+			currentTool_ = TileMap::ToolType::Axe;
+			break;
+		case TileMap::ToolType::Axe:
+			currentTool_ = TileMap::ToolType::Shovel;
+			break;
+		}
 	}
 	// 左クリックで正面、Eで正面の一段上、Qで足元を採掘する。
 	if (input->WasMouseButtonPressed(VK_LBUTTON))
