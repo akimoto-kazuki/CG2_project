@@ -149,8 +149,17 @@ void Object3dCommon::GraphicsPipelineState()
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 	// BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
-
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	D3D12_RENDER_TARGET_BLEND_DESC& renderTargetBlend = blendDesc.RenderTarget[0];
+	renderTargetBlend.BlendEnable = TRUE;
+	renderTargetBlend.LogicOpEnable = FALSE;
+	renderTargetBlend.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	renderTargetBlend.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	renderTargetBlend.BlendOp = D3D12_BLEND_OP_ADD;
+	renderTargetBlend.SrcBlendAlpha = D3D12_BLEND_ONE;
+	renderTargetBlend.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+	renderTargetBlend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	renderTargetBlend.LogicOp = D3D12_LOGIC_OP_NOOP;
+	renderTargetBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	// RasterizerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	// 裏面(時計回り)を表示しない
