@@ -17,7 +17,15 @@
 
 namespace
 {
+	// 要素別コンテスト用: false にすると通常の作業パート開始に戻る。
+	constexpr bool kClearEffectContestDemoEnabled = true;
+	constexpr float kClearEffectContestDemoDelay = 1.0f;
 	constexpr float kDeltaTime = 1.0f / 60.0f;
+	constexpr float kBossDefeatFlashDuration = 0.22f;
+	constexpr float kBossDefeatFadeDelay = 0.2f;
+	constexpr float kBossDefeatFadeDuration = 0.45f;
+	constexpr float kBossDefeatPauseDuration =
+		kBossDefeatFlashDuration + kBossDefeatFadeDelay + kBossDefeatFadeDuration;
 	constexpr float kDamageFlashDuration = 0.24f;
 	constexpr float kEnemyAttackInterval = 1.2f;
 	constexpr float kEnemyHitFlashDuration = 0.18f;
@@ -34,11 +42,15 @@ namespace
 void GamePlayScene::Initialize()
 {
 	showSurvivalMessage_ = false;
-	// 制作チャートの最初の段階として、次の戦闘用素材を集める作業パートから始める。
+	// 通常時は作業パートから開始する。要素別コンテスト用デモは初期化の最後で上書きする。
 	phase_ = GamePhase::Work;
 	equippedWeapon_ = WeaponType::None;
 	isBossFight_ = false;
 	gameClearTransitionRequested_ = false;
+	bossDefeatPauseActive_ = false;
+	bossDefeatPauseTimer_ = 0.0f;
+	clearEffectContestDemoActive_ = false;
+	clearEffectContestDemoTimer_ = 0.0f;
 	enemyHealth_ = 0;
 	enemyMaxHealth_ = 0;
 	playerAttackCooldown_ = 0.0f;
@@ -223,6 +235,12 @@ void GamePlayScene::Initialize()
 	damageFlashOverlay_->SetSize({ WinApp::kClientWidth / 100.0f, WinApp::kClientHeight / 100.0f });
 	damageFlashOverlay_->SetColor({ 1.0f, 0.0f, 0.0f, 0.0f });
 	damageFlashOverlay_->Update();
+	bossDefeatFlashOverlay_ = new Sprite();
+	bossDefeatFlashOverlay_->Initialize("resources/white.png");
+	bossDefeatFlashOverlay_->SetPosition({ 0.0f, 0.0f, 0.0f });
+	bossDefeatFlashOverlay_->SetSize({ WinApp::kClientWidth / 100.0f, WinApp::kClientHeight / 100.0f });
+	bossDefeatFlashOverlay_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+	bossDefeatFlashOverlay_->Update();
 
 	// 倒れた後に画面全体を暗くしてからゲームオーバーへ遷移する
 	deathFadeOverlay_ = new Sprite();
@@ -244,6 +262,20 @@ void GamePlayScene::Initialize()
 	healthBarFill_->SetPosition({ 36.0f, 32.0f, 0.0f });
 	healthBarFill_->SetColor({ 0.85f, 0.06f, 0.08f, 1.0f });
 	UpdateHealthBar();
+
+	// 要素別コンテスト用デモ開始。通常進行に戻すときは上の設定を false にする。
+	if (kClearEffectContestDemoEnabled)
+	{
+		isBossFight_ = true;
+		equippedWeapon_ = WeaponType::OreSword;
+		StartCombat();
+		// 表示までの遷移中にプレイヤーが倒されないよう、デモ中だけ敵の初撃を遅らせる。
+		enemyAttackCooldown_ = 10.0f;
+		enemy3d->SetRotate(enemyRotate);
+		enemy3d->SetTranslate({ enemyPosition.x, enemyPosition.y + kPlayerHeight * 0.5f, enemyPosition.z });
+		enemy3d->Update();
+		clearEffectContestDemoActive_ = true;
+	}
 }
 
 void GamePlayScene::Finalize()
@@ -258,6 +290,8 @@ void GamePlayScene::Finalize()
 	startOverlay_ = nullptr;
 	delete damageFlashOverlay_;
 	damageFlashOverlay_ = nullptr;
+	delete bossDefeatFlashOverlay_;
+	bossDefeatFlashOverlay_ = nullptr;
 	delete deathFadeOverlay_;
 	deathFadeOverlay_ = nullptr;
 	delete healthBarBackground_;
@@ -295,6 +329,39 @@ void GamePlayScene::Update()
 		UpdateDeathAnimation();
 		DrawObjectiveNavigation();
 		DrawControlGuide();
+		imGuiManager->ImGuiEnd();
+		return;
+	}
+	// 要素別コンテスト用デモ。ゲーム画面が表示されてから2秒後に撃破演出へ進む。
+	if (clearEffectContestDemoActive_ && !bossDefeatPauseActive_ && sceneManager_->IsTransitionFinished())
+	{
+		clearEffectContestDemoTimer_ += kDeltaTime;
+		if (clearEffectContestDemoTimer_ >= kClearEffectContestDemoDelay)
+		{
+			clearEffectContestDemoActive_ = false;
+			enemyHealth_ = 0;
+			isEnemyAlive = false;
+			HandleEnemyDefeated();
+		}
+	}
+	// ボス撃破後はゲーム操作と敵更新を止め、短い余韻のあと既存遷移を始める。
+	if (bossDefeatPauseActive_)
+	{
+		bossDefeatPauseTimer_ += kDeltaTime;
+		const float flashProgress = (std::min)(1.0f, bossDefeatPauseTimer_ / kBossDefeatFlashDuration);
+		const float flashAlpha = 0.75f * (1.0f - flashProgress);
+		bossDefeatFlashOverlay_->SetColor({ 1.0f, 1.0f, 1.0f, flashAlpha });
+		bossDefeatFlashOverlay_->Update();
+		if (bossDefeatPauseTimer_ >= kBossDefeatPauseDuration && !gameClearTransitionRequested_)
+		{
+			gameClearTransitionRequested_ = true;
+			sceneManager_->StartTransition(SceneType::GameClear);
+		}
+		const float fadeStartTime = kBossDefeatFlashDuration + kBossDefeatFadeDelay;
+		const float fadeElapsed = (std::max)(0.0f, bossDefeatPauseTimer_ - fadeStartTime);
+		const float fadeProgress = (std::min)(1.0f, fadeElapsed / kBossDefeatFadeDuration);
+		enemy3d->SetColor({ 0.55f, 0.08f, 0.75f, 1.0f - fadeProgress });
+		enemy3d->Update();
 		imGuiManager->ImGuiEnd();
 		return;
 	}
@@ -883,11 +950,10 @@ void GamePlayScene::HandleEnemyDefeated()
 {
 	if (isBossFight_)
 	{
-		if (!gameClearTransitionRequested_)
-		{
-			gameClearTransitionRequested_ = true;
-			sceneManager_->StartTransition(SceneType::GameClear);
-		}
+		bossDefeatPauseActive_ = true;
+		bossDefeatPauseTimer_ = 0.0f;
+		bossDefeatFlashOverlay_->SetColor({ 1.0f, 1.0f, 1.0f, 0.75f });
+		bossDefeatFlashOverlay_->Update();
 		return;
 	}
 
@@ -1223,6 +1289,10 @@ void GamePlayScene::Draw()
 	{
 		deathFadeOverlay_->Draw();
 	}
+	if (bossDefeatPauseActive_ && bossDefeatPauseTimer_ < kBossDefeatFlashDuration)
+	{
+		bossDefeatFlashOverlay_->Draw();
+	}
 	sceneManager_->DrawTransitionEffect();
 	// ImGuiの描画
 	imGuiManager->ImGuiDraw();
@@ -1238,7 +1308,7 @@ void GamePlayScene::DrawWork()
 void GamePlayScene::DrawCombat()
 {
 	// 戦闘パート専用のオブジェクトやUIはここに追加する
-	if (isEnemyAlive)
+	if (isEnemyAlive || (isBossFight_ && bossDefeatPauseActive_))
 	{
 		enemy3d->Draw();
 	}

@@ -45,6 +45,11 @@ private:
 	// false は通常敵、true は強化後に挑む最後のボス。
 	bool isBossFight_ = false;
 	bool gameClearTransitionRequested_ = false; // ボス撃破後にクリア画面への遷移を重複して呼ばないための印。
+	bool bossDefeatPauseActive_ = false; // ボス撃破後、クリア遷移まで決着の余韻を作る。
+	float bossDefeatPauseTimer_ = 0.0f;
+	// 要素別コンテスト用の自動クリアデモ。終了後は関連箇所をまとめて削除できる。
+	bool clearEffectContestDemoActive_ = false;
+	float clearEffectContestDemoTimer_ = 0.0f;
 	int enemyHealth_ = 0; // 現在の敵HP。攻撃を受けるたびに減る。
 	int enemyMaxHealth_ = 0; // 戦闘開始時に決まる敵の最大HP。HUD表示にも使う。
 	float playerAttackCooldown_ = 0.0f; // 次の攻撃までの待ち時間。連打で攻撃が速くなりすぎないようにする。
@@ -155,6 +160,7 @@ private:
 	std::vector<Sprite*> sprites_;
 	Sprite* startOverlay_ = nullptr;
 	Sprite* damageFlashOverlay_ = nullptr;
+	Sprite* bossDefeatFlashOverlay_ = nullptr;
 	Sprite* deathFadeOverlay_ = nullptr;
 	Sprite* healthBarBackground_ = nullptr;
 	Sprite* healthBarFill_ = nullptr;
