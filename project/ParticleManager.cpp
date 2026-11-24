@@ -29,6 +29,8 @@ void ParticleManager::Initialize(SrvManager* srvManager)
 	CreateParticleVertexData();
 	CreateRingVertexData();
 	CreateCylinderVertexData();
+	CreateBlockVertexData();
+	CreateBloodDropVertexData();
 
 	// 1. マテリアル (0番)
 	materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
@@ -60,7 +62,7 @@ void ParticleManager::Initialize(SrvManager* srvManager)
 }
 
 // ★新しくパーティクルのグループ（枠）を作る関数
-void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing,bool isCylinder)
+void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing, bool isCylinder, bool isBlockDebris, bool isBillboard, bool isBloodDrop)
 {
 	// すでに同じ名前のグループがあったらスキップ
 	if (particleGroups_.find(groupName) != particleGroups_.end()) return;
@@ -70,6 +72,9 @@ void ParticleManager::CreateGroup(const std::string& groupName, uint32_t srvInde
 	newGroup.srvIndex = srvIndex; // 使うテクスチャの番号を記録
 	newGroup.isRing = isRing;
 	newGroup.isCylinder = isCylinder;
+	newGroup.isBlockDebris = isBlockDebris;
+	newGroup.isBillboard = isBillboard;
+	newGroup.isBloodDrop = isBloodDrop;
 
 	particleGroups_[groupName] = newGroup;	
 }
@@ -180,6 +185,78 @@ void ParticleManager::EmitSparkEffect(const std::string& groupName, const EulerT
 	}
 }
 
+void ParticleManager::EmitMiningDebrisEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count, const Vector4& color)
+{
+	auto it = particleGroups_.find(groupName);
+	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
+
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distSpawnOffset(-0.4f, 0.4f);
+	std::uniform_real_distribution<float> distHorizontalSpeed(2.8f, 5.5f);
+	std::uniform_real_distribution<float> distUpward(1.0f, 2.5f);
+	std::uniform_real_distribution<float> distRotation(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distLifetime(0.45f, 0.75f);
+	std::uniform_real_distribution<float> distScale(0.09f, 0.17f);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		Particle particle;
+		particle.position = {
+			transform.translate.x + distSpawnOffset(randomEngine_),
+			transform.translate.y + distSpawnOffset(randomEngine_),
+			transform.translate.z + distSpawnOffset(randomEngine_)
+		};
+		const float angle = distAngle(randomEngine_);
+		const float horizontalSpeed = distHorizontalSpeed(randomEngine_);
+		particle.velocity = { std::cos(angle) * horizontalSpeed, distUpward(randomEngine_), std::sin(angle) * horizontalSpeed };
+		particle.color = color;
+		particle.transform = transform;
+		particle.transform.translate = particle.position;
+		particle.transform.scale = { distScale(randomEngine_), distScale(randomEngine_), distScale(randomEngine_) };
+		particle.transform.rotate = { distRotation(randomEngine_), distRotation(randomEngine_), distRotation(randomEngine_) };
+		particle.rotationVelocity = { distRotation(randomEngine_) * 3.0f, distRotation(randomEngine_) * 3.0f, distRotation(randomEngine_) * 3.0f };
+		particle.lifeTime = distLifetime(randomEngine_);
+		particle.currentLifeTime = 0.0f;
+		particle.useGravity = true;
+		it->second.particles.push_back(particle);
+	}
+}
+
+void ParticleManager::EmitBloodEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count, const Vector3& direction)
+{
+	auto it = particleGroups_.find(groupName);
+	assert(it != particleGroups_.end() && "存在しないグループ名が指定されました。");
+
+	std::uniform_real_distribution<float> distSpread(-1.2f, 1.2f);
+	std::uniform_real_distribution<float> distSpeed(2.0f, 4.2f);
+	std::uniform_real_distribution<float> distVertical(-1.2f, 2.4f);
+	std::uniform_real_distribution<float> distRotation(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distLifetime(0.3f, 0.55f);
+	std::uniform_real_distribution<float> distScale(0.12f, 0.22f);
+	const Vector4 bloodColor = { 0.52f, 0.008f, 0.02f, 1.0f };
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		Particle particle;
+		particle.position = transform.translate;
+		const float speed = distSpeed(randomEngine_);
+		particle.velocity = {
+			direction.x * speed + distSpread(randomEngine_) * 0.7f,
+			distVertical(randomEngine_),
+			direction.z * speed + distSpread(randomEngine_) * 0.7f
+		};
+		particle.color = bloodColor;
+		particle.transform = transform;
+		const float scale = distScale(randomEngine_);
+		particle.transform.scale = { scale, scale, scale };
+		particle.transform.rotate.z = distRotation(randomEngine_);
+		particle.lifeTime = distLifetime(randomEngine_);
+		particle.currentLifeTime = 0.0f;
+		particle.useGravity = true;
+		it->second.particles.push_back(particle);
+	}
+}
+
 void ParticleManager::EmitCylinderEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count)
 {
 	// 指定されたグループが存在するかチェック
@@ -265,6 +342,12 @@ void ParticleManager::Update(float deltaTime)
 					const float kRotationSpeed = std::numbers::pi_v<float> * 0.5f; // これだと1秒間に1回転
 					it->transform.rotate.y += kRotationSpeed * kDeltaTime;
 				}
+				else if (group.isBlockDebris)
+				{
+					it->transform.rotate.x += it->rotationVelocity.x * kDeltaTime;
+					it->transform.rotate.y += it->rotationVelocity.y * kDeltaTime;
+					it->transform.rotate.z += it->rotationVelocity.z * kDeltaTime;
+				}
 
 				// ★追加：フェードアウト処理 (0.0 〜 1.0 の範囲)
 				float alpha = 1.0f - (it->currentLifeTime / it->lifeTime);
@@ -316,7 +399,13 @@ void ParticleManager::Draw(Camera* camera)
 			// 制限個数を超えたら安全のために描画を終了
 			if (particleIndex >= kMaxParticles) break;
 			// ① パーティクルの現在位置からワールド行列を作る
-			MyMath::Matrix4x4 worldMatrix = MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
+			Vector3 particleRotation = particle.transform.rotate;
+			if (group.isBillboard)
+			{
+				particleRotation = camera->GetRotate();
+				particleRotation.z += particle.transform.rotate.z;
+			}
+			MyMath::Matrix4x4 worldMatrix = MakeAffineMatrix(particle.transform.scale, particleRotation, particle.transform.translate);
 			Matrix4x4 worldViewProjectionMatrix;
 			if (camera)
 			{
@@ -346,6 +435,16 @@ void ParticleManager::Draw(Camera* camera)
 			{
 				commandList->IASetVertexBuffers(0, 1, &cylinderVbv_);
 				commandList->DrawInstanced(192, 1, 0, 0);
+			}
+			else if (group.isBlockDebris)
+			{
+				commandList->IASetVertexBuffers(0, 1, &blockVbv_);
+				commandList->DrawInstanced(36, 1, 0, 0);
+			}
+			else if (group.isBloodDrop)
+			{
+				commandList->IASetVertexBuffers(0, 1, &bloodDropVbv_);
+				commandList->DrawInstanced(33, 1, 0, 0);
 			}
 			else
 			{
@@ -474,10 +573,10 @@ void ParticleManager::CreateGraphicsPipeline()
 	psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
 
-	// 加算合成（光るエフェクト用）のブレンド設定
+	// パーティクルの色を自然に重ねるアルファ合成
 	psoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
 	psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 	psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 	psoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
 	psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
@@ -675,4 +774,77 @@ void ParticleManager::CreateCylinderVertexData()
 	cylinderVbv_.BufferLocation = cylinderVertexResource_->GetGPUVirtualAddress();
 	cylinderVbv_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
 	cylinderVbv_.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::CreateBlockVertexData()
+{
+	struct VertexData { Vector4 position; Vector2 texcoord; Vector3 normal; };
+	const float p[24][3] = {
+		{-0.5f,-0.5f,-0.5f}, {-0.5f,0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {0.5f,-0.5f,-0.5f},
+		{-0.5f,-0.5f,0.5f}, {0.5f,-0.5f,0.5f}, {0.5f,0.5f,0.5f}, {-0.5f,0.5f,0.5f},
+		{-0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,-0.5f}, {0.5f,-0.5f,0.5f}, {-0.5f,-0.5f,0.5f},
+		{-0.5f,0.5f,-0.5f}, {-0.5f,0.5f,0.5f}, {0.5f,0.5f,0.5f}, {0.5f,0.5f,-0.5f},
+		{-0.5f,-0.5f,-0.5f}, {-0.5f,-0.5f,0.5f}, {-0.5f,0.5f,0.5f}, {-0.5f,0.5f,-0.5f},
+		{0.5f,-0.5f,-0.5f}, {0.5f,0.5f,-0.5f}, {0.5f,0.5f,0.5f}, {0.5f,-0.5f,0.5f}
+	};
+	const uint32_t indices[6][6] = {
+		{0,1,2,0,2,3}, {4,5,6,4,6,7}, {8,9,10,8,10,11},
+		{12,13,14,12,14,15}, {16,17,18,16,18,19}, {20,21,22,20,22,23}
+	};
+	const Vector3 normals[6] = { {0,0,-1}, {0,0,1}, {0,-1,0}, {0,1,0}, {-1,0,0}, {1,0,0} };
+	const Vector2 uvs[6] = { {0,1}, {0,0}, {1,0}, {0,1}, {1,0}, {1,1} };
+	VertexData vertices[36]{};
+	for (uint32_t face = 0; face < 6; ++face)
+	{
+		for (uint32_t vertex = 0; vertex < 6; ++vertex)
+		{
+			const uint32_t source = indices[face][vertex];
+			vertices[face * 6 + vertex] = { {p[source][0], p[source][1], p[source][2], 1.0f}, uvs[vertex], normals[face] };
+		}
+	}
+	const size_t bufferSize = sizeof(vertices);
+	blockVertexResource_ = DirectXCommon::GetInstance()->CreateBufferResource(bufferSize);
+	VertexData* vertexData = nullptr;
+	blockVertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	for (uint32_t i = 0; i < 36; ++i) vertexData[i] = vertices[i];
+	blockVertexResource_->Unmap(0, nullptr);
+	blockVbv_.BufferLocation = blockVertexResource_->GetGPUVirtualAddress();
+	blockVbv_.SizeInBytes = static_cast<UINT>(bufferSize);
+	blockVbv_.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::CreateBloodDropVertexData()
+{
+	struct VertexData { Vector4 position; Vector2 texcoord; Vector3 normal; };
+	const Vector2 outline[] = {
+		{ -0.55f, -0.55f }, { -0.82f, -0.18f }, { -0.78f, 0.22f },
+		{ -0.52f, 0.55f }, { -0.23f, 0.78f }, { 0.0f, 1.2f },
+		{ 0.23f, 0.78f }, { 0.52f, 0.55f }, { 0.78f, 0.22f },
+		{ 0.82f, -0.18f }, { 0.55f, -0.55f }
+	};
+	constexpr uint32_t kOutlineCount = 11;
+	VertexData vertices[kOutlineCount * 3]{};
+	const Vector3 normal = { 0.0f, 0.0f, -1.0f };
+	const Vector2 centerUv = { 0.5f, 0.55f };
+	for (uint32_t i = 0; i < kOutlineCount; ++i)
+	{
+		const Vector2 points[] = { { 0.0f, 0.0f }, outline[i], outline[(i + 1) % kOutlineCount] };
+		for (uint32_t vertex = 0; vertex < 3; ++vertex)
+		{
+			const Vector2 point = points[vertex];
+			const Vector2 uv = vertex == 0
+				? centerUv
+				: Vector2{ 0.5f + point.x * 0.4f, 0.55f - point.y * 0.36f };
+			vertices[i * 3 + vertex] = { { point.x, point.y, 0.0f, 1.0f }, uv, normal };
+		}
+	}
+	const size_t bufferSize = sizeof(vertices);
+	bloodDropVertexResource_ = DirectXCommon::GetInstance()->CreateBufferResource(bufferSize);
+	VertexData* vertexData = nullptr;
+	bloodDropVertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	for (uint32_t i = 0; i < kOutlineCount * 3; ++i) vertexData[i] = vertices[i];
+	bloodDropVertexResource_->Unmap(0, nullptr);
+	bloodDropVbv_.BufferLocation = bloodDropVertexResource_->GetGPUVirtualAddress();
+	bloodDropVbv_.SizeInBytes = static_cast<UINT>(bufferSize);
+	bloodDropVbv_.StrideInBytes = sizeof(VertexData);
 }
