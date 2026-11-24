@@ -59,6 +59,7 @@ public:
 		// ★追加：このパーティクルが重力の影響を受けるかどうか
 		bool useGravity = false;
 		bool isExploded = false; // ★追加：爆発済みかどうかのフラグ
+		Vector3 rotationVelocity = {};
 	};
 
 	// ★スライド3枚目：パーティクルグループの構造体
@@ -70,6 +71,9 @@ public:
 
 		bool isRing = false; // 使うエフェクトがリングかリングじゃないのか
 		bool isCylinder = false;
+		bool isBlockDebris = false;
+		bool isBillboard = false;
+		bool isBloodDrop = false;
 	};
 
 private:
@@ -99,11 +103,13 @@ public:
 	void EmitHitEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
 	void EmitSparkEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
+	void EmitMiningDebrisEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count, const Vector4& color);
+	void EmitBloodEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count, const Vector3& direction);
 
 	void EmitCylinderEffect(const std::string& groupName, const EulerTransform& transform, uint32_t count);
 
 	// ★新しくグループを作って登録する関数
-	void CreateGroup(const std::string& groupName, uint32_t srvIndex,bool isRing = false,bool isCylinder = false);
+	void CreateGroup(const std::string& groupName, uint32_t srvIndex, bool isRing = false, bool isCylinder = false, bool isBlockDebris = false, bool isBillboard = false, bool isBloodDrop = false);
 
 private:
 
@@ -113,6 +119,8 @@ private:
 	void CreateParticleVertexData();
 	void CreateRingVertexData();
 	void CreateCylinderVertexData();
+	void CreateBlockVertexData();
+	void CreateBloodDropVertexData();
 
 	SrvManager* srvManager_ = nullptr;
 
@@ -138,6 +146,10 @@ private:
 	// 円柱(サークル)用
 	Microsoft::WRL::ComPtr<ID3D12Resource> cylinderVertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW cylinderVbv_{};
+	Microsoft::WRL::ComPtr<ID3D12Resource> blockVertexResource_;
+	D3D12_VERTEX_BUFFER_VIEW blockVbv_{};
+	Microsoft::WRL::ComPtr<ID3D12Resource> bloodDropVertexResource_;
+	D3D12_VERTEX_BUFFER_VIEW bloodDropVbv_{};
 
 	// --- クラスの下の方に追加：定数バッファ用のリソース変数 ---
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;

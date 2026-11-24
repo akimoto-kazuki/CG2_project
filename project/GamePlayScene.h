@@ -38,21 +38,23 @@ public:
 
 private:
 	enum class GamePhase { Work, Combat };
-	// 作業パートで作れる武器。None は素材集め後、まだ武器を作っていない状態。
-	enum class WeaponType { None, WoodSword, OreSword };
+	// None は道具・素材スロットを選択して武器をしまっている状態。
+	enum class WeaponType { None, WoodSword, WoodHammer, WoodSpear, OreSword };
 	GamePhase phase_ = GamePhase::Work;
 	WeaponType equippedWeapon_ = WeaponType::None; // 現在装備中の武器。戦闘の攻撃力もこの値で決める。
+	int selectedHotbarSlot_ = 1; // 0始まり。最初は木の剣のスロットを選択する。
+	bool ownsOreSword_ = false;
 	// false は通常敵、true は強化後に挑む最後のボス。
 	bool isBossFight_ = false;
 	bool gameClearTransitionRequested_ = false; // ボス撃破後にクリア画面への遷移を重複して呼ばないための印。
 	bool bossDefeatPauseActive_ = false; // ボス撃破後、クリア遷移まで決着の余韻を作る。
 	float bossDefeatPauseTimer_ = 0.0f;
-	// 要素別コンテスト用の自動クリアデモ。終了後は関連箇所をまとめて削除できる。
-	bool clearEffectContestDemoActive_ = false;
-	float clearEffectContestDemoTimer_ = 0.0f;
 	int enemyHealth_ = 0; // 現在の敵HP。攻撃を受けるたびに減る。
 	int enemyMaxHealth_ = 0; // 戦闘開始時に決まる敵の最大HP。HUD表示にも使う。
 	float playerAttackCooldown_ = 0.0f; // 次の攻撃までの待ち時間。連打で攻撃が速くなりすぎないようにする。
+	float attackAnimationTimer_ = 0.0f;
+	float attackAnimationDuration_ = 0.0f;
+	bool attackHitResolved_ = false;
 	// 作業・戦闘の両パートで共有するマップ
 	TileMap tileMap_;
 	void UpdateSharedGameplay();
@@ -68,6 +70,8 @@ private:
 	void UpdateCombat();
 	void StartCombat();
 	void TryPlayerAttack();
+	void UpdateWeaponVisuals();
+	void ResolvePlayerAttackHit();
 	void HandleEnemyDefeated();
 	void CraftWeapon();
 	void UpdateCombatIntro();
@@ -98,8 +102,12 @@ private:
 	// Object3D
 	// プレイヤー
 	Object3d* object3d = nullptr;
+	Object3d* weaponPrimaryPart_ = nullptr;
+	Object3d* weaponSecondaryPart_ = nullptr;
+	Object3d* weaponTertiaryPart_ = nullptr;
 	// 敵
 	Object3d* enemy3d = nullptr;
+	Object3d* targetDummyMark_ = nullptr;
 	// 戦闘開始時の案内モデル
 	Object3d* enemyApproachMessage_ = nullptr;
 	Object3d* survivalGoalMessage_ = nullptr;
@@ -127,8 +135,6 @@ private:
 	int oreCount_ = 0;
 	int woodCount_ = 0;
 	// 次の戦闘に向けた作業目標。達成判定と作業パートの案内表示で共用する。
-	static constexpr int kWorkGoalWoodCount = 3;
-	bool IsWorkGoalComplete() const;
 	float velocityY;			// Y軸方向の現在の速度
 	float gravity;				// 重力（毎フレーム下に向かって引っ張る力）
 	float jumpPower;			// ジャンプ力（上に飛び上がる初速）
